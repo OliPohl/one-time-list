@@ -4,7 +4,7 @@
 </script>
 
 <main class="page-layout">
-  <TaskInput />
+  <TaskInput placeholder="Add Task" />
 </main>
 
 <style>

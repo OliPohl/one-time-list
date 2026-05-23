@@ -1,5 +1,9 @@
 <!-- src/lib/TaskInput.svelte -->
 <script>
+  let { 
+    placeholder = "Add Task"
+  } = $props();
+
   let text = $state('');
   let isPressed = $state(false);
   let isActive = $derived(text.trim().length > 0);
@@ -33,8 +37,7 @@
 
   function submit() {
     if (!text) return;
-
-    console.log("Value submitted:", text);
+    console.log("Value submitted:", text.trim());
     text = "";
     animatePress();
   }
@@ -54,7 +57,7 @@
     name="text" 
     rows=1
     wrap="soft" 
-    placeholder="Add Task"
+    placeholder={placeholder}
     class="input-field"
     maxlength="500"
     bind:value={text}
@@ -105,14 +108,12 @@
     cursor: auto;
     color: #8c8c8c;
     margin-left: 5px;
-    transition: color 0.2s;
-    transition: font-variation-settings 0.4s;
+    transition: color 0.4s, font-variation-settings 0.7s;
   }
 
   .active > .send-btn {
     color: #dc3737;
     cursor: pointer;
-
   }
 
   .active > .send-btn:hover {
