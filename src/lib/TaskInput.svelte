@@ -1,7 +1,8 @@
 <!-- src/lib/TaskInput.svelte -->
 <script>
   let { 
-    placeholder = "Add Task"
+    placeholder = "Add Task",
+    onSubmit
   } = $props();
 
   let text = $state('');
@@ -37,7 +38,8 @@
 
   function submit() {
     if (!text) return;
-    console.log("Value submitted:", text.trim());
+    // console.log("Value submitted:", text.trim());
+    onSubmit({ message: text });
     text = "";
     animatePress();
   }

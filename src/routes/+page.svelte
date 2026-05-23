@@ -1,10 +1,15 @@
 <!-- src/routes/+page.svelte -->
 <script>
   import { TaskInput } from '$lib';
+
+  // @ts-ignore
+  function addTask(event) {
+    console.log("Value recieved", event.message);
+  }
 </script>
 
 <main class="page-layout">
-  <TaskInput placeholder="Add Task" />
+  <TaskInput placeholder="Add Task" onSubmit={addTask} />
 </main>
 
 <style>
