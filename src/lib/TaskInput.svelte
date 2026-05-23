@@ -1,6 +1,7 @@
 <!-- src/lib/TaskInput.svelte -->
 <script>
   let text = $state('');
+  let isPressed = $state(false);
   let isActive = $derived(text.trim().length > 0);
 
   /**
@@ -18,6 +19,32 @@
       textarea.style.height = `${textarea.scrollHeight - 4}px`;
     }
   }
+  
+  // @ts-ignore
+  function handleKeyDown(event) {
+    if (event.key === 'Enter' && event.shiftKey) return; 
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.target.style.height = 'auto';
+      submit();
+    }
+  }
+
+  function submit() {
+    if (!text) return;
+
+    console.log("Value submitted:", text);
+    text = "";
+    animatePress();
+  }
+
+  function animatePress() {
+    isPressed = true;
+    setTimeout(() => {
+      isPressed = false;
+    }, 10);
+  }
 </script>
 
 
@@ -32,8 +59,11 @@
     maxlength="500"
     bind:value={text}
     oninput={handleInput}
+    onkeydown={handleKeyDown}
     ></textarea>
-    <span class="send-btn m3-icon">add_circle</span>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <span class="send-btn m3-icon" onclick={submit} class:pressed={isPressed}>add_circle</span>
   </label>
 </div>
 
@@ -75,23 +105,24 @@
     cursor: auto;
     color: #8c8c8c;
     margin-left: 5px;
-    transition: none;
+    transition: color 0.2s;
+    transition: font-variation-settings 0.4s;
   }
 
   .active > .send-btn {
     color: #dc3737;
     cursor: pointer;
-    transition: all 0.2s;
-    transition: font-variation-settings 0.4s;
+
   }
 
   .active > .send-btn:hover {
     color: #ff0000;
   }
 
-  .active > .send-btn:active {
-    color: #ff0000;
-    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30;
-    transition: none;
+  .active > .send-btn:active,
+  .send-btn.pressed {
+    color: #ff0000 !important;
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30 !important;
+    transition: none !important;
   }
 </style>
