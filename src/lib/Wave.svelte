@@ -81,6 +81,7 @@ bind:this={waveContainerEl}
 
 <style>
   .wave-container {
+    z-index: 1000;
     position: fixed;
     top: 50%;
     left: 0;

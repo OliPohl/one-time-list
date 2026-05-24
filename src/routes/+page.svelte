@@ -1,6 +1,8 @@
 <!-- src/routes/+page.svelte -->
 <script >
-  import { TaskInput, Task, Wave } from '$lib';
+// @ts-nocheck
+
+  import { TaskInput, Task, Wave, NextTask } from '$lib';
 
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
@@ -8,13 +10,18 @@
 
   // @ts-ignore
   function addTask(event) {
-    console.log("Value recieved", event.message);
-    
     const lastTask = tasks.at(-1);
     tasks.push({
       id: lastTask ? lastTask.id + 1 : 1,
       text: event.message
     })
+  }
+
+  function editTask(id, text) {
+    const taskToEdit = tasks.find(task => task.id === id);
+    if (taskToEdit) {
+    taskToEdit.text = text;
+  }
   }
 
   // @ts-ignore
@@ -31,14 +38,20 @@
 <main class="page-layout">
   <Wave bottom={hasTasks}/>
   <TaskInput placeholder="Add Task" heading="What's next?" onSubmit={addTask} bottom={hasTasks} />
-  <div class="task-layout">
-    {#each tasks as task (task.id)}
-      <Task text={task.text} onDone={() => removeTask(task.id)} />
-    {/each}
+
+  <div class="task-warpper" class:bottom={hasTasks ? "bottom" : ""}>
+    <NextTask />
+
+    <div class="task-layout">
+      {#each tasks as task (task.id)}
+        <Task 
+        text={task.text} 
+        onEdit={(event) => editTask(task.id, event.message)} 
+        onDone={() => removeTask(task.id)}
+        onDelete={() => removeTask(task.id)} />
+      {/each}
+    </div>
   </div>
-
-
-  <span class="center-line"></span>
 </main>
 
 
@@ -46,6 +59,7 @@
   .page-layout {
     margin: auto;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100vh;
@@ -59,9 +73,23 @@
     max-height: 100vh;
   }
 
+  .task-warpper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    transition: transform 2s cubic-bezier(0.76, 0, 0.24, 1);
+    transform: translateY(-100%);
+  }
+
+  .bottom {
+    transform: translateY(0);
+  }
+
   .task-layout {
     box-sizing: border-box;
-    /* background-color: rgb(2, 2, 2); */
     flex-grow: 1;
     width: 100%;
     overflow-y: scroll;
@@ -70,18 +98,7 @@
     align-items: center;
     justify-content: start;
     gap: 25px;
-    padding-top: 10%;
-    padding-bottom: 20%;
-  }
-
-  .center-line{
-    z-index: 1000;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100vw;
-    /* background-color: aliceblue; */
-    height: 2px;
+    padding-top: 5px;
+    padding-bottom: 180px;
   }
 </style>

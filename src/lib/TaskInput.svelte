@@ -83,6 +83,7 @@
 
 <style>
   .wrapper {
+    z-index: 1001;
     position: fixed;
     left: 50%;
     bottom: 50%;
@@ -94,6 +95,7 @@
     justify-content: center;
     align-items: center;
     transition: bottom 2s cubic-bezier(0.76, 0, 0.24, 1);
+    pointer-events: none;
   }
 
   .bottom {
@@ -110,8 +112,6 @@
 
   .bottom > .heading-wrapper {
     opacity: 0;
-    pointer-events: none;
-
   }
 
 
@@ -149,6 +149,7 @@
     border-style: solid;
     border-width: 2.5px;
     border-color:#d6e550;
+    pointer-events: all;
   }
 
   .input-field {
