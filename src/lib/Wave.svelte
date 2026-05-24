@@ -3,6 +3,12 @@
   let { bottom = false } = $props();
 
   let path = $state('');
+  /**
+	 * @type {Element}
+	 */
+  let waveContainerEl;
+  let isTransitioning = $state(false);
+  let lastY = $state(0);
 
   const width = 1920;
 	const height = 1080;
@@ -14,6 +20,7 @@
   const amplitude2 = 10;
 
   const baseSpeed = 0.005;
+  const transitionSpeedMult = 0.007;
 
   let count = 0;
 
@@ -23,13 +30,24 @@
   let frameId;
 
   function animate() {
-    count += baseSpeed;
+    let currentSpeed = baseSpeed;
+
+    if (isTransitioning && waveContainerEl) {
+      const style = window.getComputedStyle(waveContainerEl);
+      const currentY = new DOMMatrix(style.transform).m42;
+      const velocity = Math.abs(currentY - lastY);
+
+      currentSpeed = baseSpeed + (velocity * transitionSpeedMult);
+      
+      lastY = currentY;
+    }
+    count += currentSpeed;
 
     let d = `M 0 ${height} L 0 0`;
 
 		for (let x = 0; x <= width; x += 10) {
 			let y1 = Math.sin(x * frequency1 + count) * amplitude1;
-			let y2 = Math.sin(x * frequency2 + count * 1.5) * amplitude2;
+			let y2 = Math.sin(x * frequency2 + count * 1.52) * amplitude2;
 			let y = y1 + y2;
 
 			d += ` L ${x} ${y}`;
@@ -48,7 +66,13 @@
  </script>
 
 
-<div class="wave-container" class:bottom={bottom}>
+<div 
+class="wave-container" 
+class:bottom={bottom}
+ontransitionstart={() => isTransitioning = true}
+ontransitionend={() => isTransitioning = false}
+bind:this={waveContainerEl}
+>
   <svg viewBox="0 0 {width} {height}" preserveAspectRatio="none">
 		<path d={path} fill=#f73f43 />
 	</svg>
@@ -67,7 +91,7 @@
   }
 
   .wave-container.bottom {
-    transform: translateY(38vh);
+    transform: translateY(calc(50% - 160px));
   }
 
   svg {
