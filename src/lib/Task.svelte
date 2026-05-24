@@ -9,6 +9,10 @@
 
   let currentText = $derived(text);
   let isEditing = $state(false)
+  /**
+	 * @type {HTMLLabelElement}
+	 */
+  let componentRef;
 
   /**
 	 * @type {HTMLTextAreaElement}
@@ -47,13 +51,23 @@
     textarea.disabled = true;
   }
 
+  // @ts-ignore
+  function handleClickOutside(event) {
+    if (!isEditing) return;
+
+    if (componentRef && !componentRef.contains(event.target)) {
+      cancelEdit();
+    }
+  }
+
   $effect(() => {
     handleInput();
   });
 </script>
 
+<svelte:window onclick={handleClickOutside} />
 
-<div class="container">
+<label class="container" bind:this={componentRef}>
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span 
@@ -80,7 +94,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span class="edit-btn m3-icon" class:editing={isEditing} onclick={handleEdit}>{isEditing ? "check" : "edit_square"}</span>
-</div>
+</label>
 
 
 <style>
@@ -102,7 +116,7 @@
     font-size: 30px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 30;
     cursor: pointer ;
-    color: #28c54a;
+    color: #cacaca;
     transition: color 0.4s, font-variation-settings 0.7s;
   }
 
@@ -127,7 +141,7 @@
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
     color: #dadada;
-    transition: color 0.4s, opacity 0.3s;
+    transition: opacity 0.3s;
   }
 
   .container:hover .edit-btn,
