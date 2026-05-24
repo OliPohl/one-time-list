@@ -88,7 +88,7 @@
     justify-content: center;
     align-items: center;
     background-color: rgba(255, 255, 255, 0);
-    transition: bottom 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: bottom 2s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
   .bottom {
@@ -101,9 +101,12 @@
     display: flex;
     align-items: center;
     justify-content: left;
-    background-color: rgb(69, 69, 69);
+    background-color: rgb(0, 0, 0);
     padding: 15px 25px;
     border-radius: 40px;
+    border-style: solid;
+    border-width: 2.5px;
+    border-color:#d6e550;
   }
 
   .input-field {
@@ -114,7 +117,8 @@
     border: none;
     resize: none;
     overflow:scroll;
-    color: #bebebe;
+    color: #ffffff;
+    font-family: "Roboto Slab", serif;
   }
 
   .send-btn {
@@ -127,17 +131,17 @@
   }
 
   .active > .send-btn {
-    color: #dc3737;
+    color: #d6e550;
     cursor: pointer;
   }
 
   .active > .send-btn:hover {
-    color: #ff0000;
+    color: #e1f053;
   }
 
   .active > .send-btn:active,
   .send-btn.pressed {
-    color: #ff0000 !important;
+    color: #eeff55 !important;
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30 !important;
     transition: none !important;
   }
