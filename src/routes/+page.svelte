@@ -1,6 +1,6 @@
 <!-- src/routes/+page.svelte -->
 <script >
-  import { TaskInput, Task } from '$lib';
+  import { TaskInput, Task, Wave } from '$lib';
 
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
@@ -25,10 +25,11 @@
   $effect(() => {
     tasks.length ? hasTasks = true : hasTasks = false;
   })
-
 </script>
 
+
 <main class="page-layout">
+  <Wave transformState={hasTasks}/>
   <TaskInput placeholder="Add Task" onSubmit={addTask} bottom={hasTasks} />
   <div class="task-layout">
     {#each tasks as task (task.id)}
@@ -36,6 +37,7 @@
     {/each}
   </div>
 </main>
+
 
 <style>
   .page-layout {
