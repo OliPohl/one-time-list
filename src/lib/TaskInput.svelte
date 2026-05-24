@@ -8,13 +8,12 @@
   let text = $state('');
   let isPressed = $state(false);
   let isActive = $derived(text.trim().length > 0);
-
   /**
-	 * @param {{ target: any; }} event
+	 * @type {HTMLTextAreaElement}
 	 */
-  function handleInput(event) {
-    const textarea = event.target;
-    
+  let textarea;
+
+  function handleInput() {
     textarea.style.height = 'auto';
     const maxPixelHeight = 18 * 1.5 * 3; 
     
@@ -31,7 +30,6 @@
 
     if (event.key === 'Enter') {
       event.preventDefault();
-      event.target.style.height = 'auto';
       submit();
     }
   }
@@ -41,6 +39,7 @@
     // console.log("Value submitted:", text.trim());
     onSubmit({ message: text });
     text = "";
+    textarea.style.height = 'auto';
     animatePress();
   }
 
@@ -62,9 +61,11 @@
     placeholder={placeholder}
     class="input-field"
     maxlength="500"
+    spellcheck="false"
     bind:value={text}
     oninput={handleInput}
     onkeydown={handleKeyDown}
+    bind:this={textarea}
     ></textarea>
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -84,6 +85,7 @@
   }
 
   .container {
+    box-sizing: border-box;
     width: 100%;
     display: flex;
     align-items: center;
@@ -98,7 +100,7 @@
     font-size: 18px;
     line-height: 1.5;
     background-color: transparent;
-    border-color: transparent;
+    border: none;
     resize: none;
     overflow:scroll;
     color: #bebebe;
