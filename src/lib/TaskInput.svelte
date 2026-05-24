@@ -81,7 +81,6 @@
     left: 50%;
     transform: translateX(-50%);
 
-    margin: 0 10px;
     max-width: 600px;
     bottom: 50%;
     width: 100%;

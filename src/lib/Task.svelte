@@ -68,7 +68,7 @@
     color: #fff200;
   }
 
-  .done-btn:hover:active {
+  .done-btn:active {
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30 !important;
     transition: none !important;
   }

@@ -30,18 +30,17 @@
 
 <main class="page-layout">
   <TaskInput placeholder="Add Task" onSubmit={addTask} bottom={hasTasks} />
-
-  {#each tasks as task (task.id)}
-    <Task text={task.text} onDone={() => removeTask(task.id)} />
-  {/each}
+  <div class="task-layout">
+    {#each tasks as task (task.id)}
+      <Task text={task.text} onDone={() => removeTask(task.id)} />
+    {/each}
+  </div>
 </main>
 
 <style>
   .page-layout {
     margin: auto;
     display: flex;
-    flex-direction: column;
-    gap: 25px;
     justify-content: center;
     align-items: center;
     height: 100vh;
@@ -53,5 +52,20 @@
 
     max-width: 600px;
     max-height: 100vh;
+  }
+
+  .task-layout {
+    box-sizing: border-box;
+    background-color: rgb(2, 2, 2);
+    flex-grow: 1;
+    width: 100%;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    gap: 25px;
+    padding-top: 10%;
+    padding-bottom: 20%;
   }
 </style>
