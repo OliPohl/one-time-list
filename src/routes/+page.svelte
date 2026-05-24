@@ -4,6 +4,7 @@
 
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
+  let hasTasks = $state(false);
 
   // @ts-ignore
   function addTask(event) {
@@ -21,10 +22,14 @@
     tasks = tasks.filter(task => task.id !== id);
   }
 
+  $effect(() => {
+    tasks.length ? hasTasks = true : hasTasks = false;
+  })
+
 </script>
 
 <main class="page-layout">
-  <TaskInput placeholder="Add Task" onSubmit={addTask} />
+  <TaskInput placeholder="Add Task" onSubmit={addTask} bottom={hasTasks} />
 
   {#each tasks as task (task.id)}
     <Task text={task.text} onDone={() => removeTask(task.id)} />
@@ -36,7 +41,7 @@
     margin: auto;
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: 25px;
     justify-content: center;
     align-items: center;
     height: 100vh;

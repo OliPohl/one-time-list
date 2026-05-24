@@ -2,6 +2,7 @@
 <script>
   let { 
     placeholder = "Add Task",
+    bottom = true,
     onSubmit
   } = $props();
 
@@ -52,7 +53,7 @@
 </script>
 
 
-<div class="wrapper">
+<div class="wrapper" class:bottom={bottom}>
   <label class="container" class:active={isActive}>
     <textarea 
     name="text" 
@@ -76,12 +77,23 @@
 
 <style>
   .wrapper {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+
+    margin: 0 10px;
+    max-width: 600px;
+    bottom: 50%;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-
     background-color: rgba(255, 255, 255, 0);
+    transition: bottom 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .bottom {
+    bottom: 10px;
   }
 
   .container {
