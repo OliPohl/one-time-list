@@ -87,7 +87,7 @@
     left: 50%;
     bottom: 50%;
     transform: translate(-50%, 50%);
-    gap: 50px;
+    gap: 70px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -97,7 +97,7 @@
   }
 
   .bottom {
-    bottom: 150px;
+    bottom: 160px;
   }
 
   .heading-wrapper {

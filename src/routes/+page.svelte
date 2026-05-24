@@ -29,7 +29,7 @@
 
 
 <main class="page-layout">
-  <Wave transformState={hasTasks}/>
+  <Wave bottom={hasTasks}/>
   <TaskInput placeholder="Add Task" heading="What's next?" onSubmit={addTask} bottom={hasTasks} />
   <div class="task-layout">
     {#each tasks as task (task.id)}
@@ -61,7 +61,7 @@
 
   .task-layout {
     box-sizing: border-box;
-    background-color: rgb(2, 2, 2);
+    /* background-color: rgb(2, 2, 2); */
     flex-grow: 1;
     width: 100%;
     overflow-y: scroll;
@@ -81,7 +81,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     width: 100vw;
-    background-color: aliceblue;
+    /* background-color: aliceblue; */
     height: 2px;
   }
 </style>
