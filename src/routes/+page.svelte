@@ -1,10 +1,9 @@
 <!-- src/routes/+page.svelte -->
-<script>
+<script >
   import { TaskInput, Task } from '$lib';
 
-  let tasks = $state([
-    { id: 1, text: "Wäsche waschen" }
-  ])
+  /** @type {Array<{id: number, text: string}>} */
+  let tasks = $state([]);
 
   // @ts-ignore
   function addTask(event) {
