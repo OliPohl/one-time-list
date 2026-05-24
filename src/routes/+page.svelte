@@ -30,12 +30,15 @@
 
 <main class="page-layout">
   <Wave transformState={hasTasks}/>
-  <TaskInput placeholder="Add Task" onSubmit={addTask} bottom={hasTasks} />
+  <TaskInput placeholder="Add Task" heading="What's next?" onSubmit={addTask} bottom={hasTasks} />
   <div class="task-layout">
     {#each tasks as task (task.id)}
       <Task text={task.text} onDone={() => removeTask(task.id)} />
     {/each}
   </div>
+
+
+  <span class="center-line"></span>
 </main>
 
 
@@ -69,5 +72,16 @@
     gap: 25px;
     padding-top: 10%;
     padding-bottom: 20%;
+  }
+
+  .center-line{
+    z-index: 1000;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    background-color: aliceblue;
+    height: 2px;
   }
 </style>
