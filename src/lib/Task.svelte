@@ -137,10 +137,20 @@
   }
 
   .done-btn.current:active {
-    color: #c3d04c;
+    color: #d6e550;
   }
 
   .done-btn.editing {
+    color: #f73f43;
+    transition: none;
+  }
+
+  .done-btn.editing:hover {
+    color: #f73f43;
+    transition: none;
+  }
+
+  .done-btn.editing:active {
     color: #f73f43;
     transition: none;
   }
