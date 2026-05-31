@@ -20,7 +20,7 @@ html, body {
   font-style: normal;
   font-weight: 100 700;
   src: url(/m3_icons/MaterialSymbolsOutlined[FILL\,GRAD\,opsz\,wght].woff2) format('woff2');
-}
+  }
 
 /* Base icon class */
 .m3-icon {
@@ -40,3 +40,19 @@ html, body {
   font-size: 12px;
   font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 16;
 */
+
+ @font-face {
+  font-family: 'Roboto Slab';
+  font-style: normal; 
+  font-weight: 100 900;
+  src: url(/Roboto_Slab/RobotoSlab-VariableFont_wght.ttf) format('truetype');
+  font-display: swap;
+  }
+
+  @font-face {
+  font-family: 'Stoke';
+  font-style: normal; 
+  font-weight: 400;
+  src: url(/Stoke/Stoke-Regular.ttf) format('truetype');
+  font-display: swap;
+  }

@@ -187,6 +187,7 @@
     border: none;
     resize: none;
     overflow: hidden;
+    font-family: "Roboto Slab", serif;
     color: #ffffff;
     margin: 0 20px;
   }

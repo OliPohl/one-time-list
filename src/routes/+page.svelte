@@ -127,8 +127,7 @@
 
     padding: 0 10px;
 
-    overflow-y: scroll;
-    overflow-x: hidden;
+    overflow: hidden;
 
     max-width: 600px;
     max-height: 100vh;
