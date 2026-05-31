@@ -6,7 +6,8 @@
 
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
-  let hasTasks = $derived(tasks.length > 0);
+  let currentTask = $state(null);
+  let hasTasks = $derived(tasks.length > 0 && currentTask !== null);
 
   function generateUniqueId() {
   let newId;
@@ -14,46 +15,85 @@
 
   while (isTaken) {
     newId = Math.random().toString(36).substring(2, 8);
-    isTaken = tasks.some(task => task.id === newId);
+    isTaken = tasks.some(task => task.id === newId) ||  currentTask.id === newId;
   }
   return newId;
 }
 
   // @ts-ignore
-  function addTask(event) {
+  function addTask(text) {
     const updatedTasks = [
       ...tasks,
       {
         id: generateUniqueId(),
-        text: event.message
+        text: text
       }
     ];
 
     tasks = updatedTasks.toSorted((a, b) => a.text.localeCompare(b.text));
   }
 
-  function editTask(id, text) {
-    const taskToEdit = tasks.find(task => task.id === id);
-    if (taskToEdit) {
-    taskToEdit.text = text;
-    }
+  function editTask(id, newText) {
+    if (id === currentTask.id) {
+      currentTask.text = newText;
+    } else {
+      const taskToEdit = tasks.find(task => task.id === id);
+      if (taskToEdit) {
+      taskToEdit.text = newText;
+      }
 
-    tasks = tasks.toSorted((a, b) => a.text.localeCompare(b.text));
+      tasks = tasks.toSorted((a, b) => a.text.localeCompare(b.text));
+    }
   }
 
   // @ts-ignore
   function removeTask(id) {
-    tasks = tasks.filter(task => task.id !== id);
+    if (id === currentTask.id) {
+      currentTask = null;
+    } else {
+      tasks = tasks.filter(task => task.id !== id);
+    }
+  }
+
+  function selectTask(id) {
+    if (currentTask) {
+      addTask(currentTask.text);
+    }
+
+    const taskToSelect = tasks.find(task => task.id === id);
+    if (taskToSelect) {
+      currentTask = taskToSelect;
+      tasks = tasks.filter(task => task.id !== id);
+    }
+  }
+
+  function unselectTask() {
+    if (currentTask) {
+      addTask(currentTask.text)
+      currentTask = null;
+    }
   }
 </script>
 
 
 <main class="page-layout">
   <Wave bottom={hasTasks}/>
-  <TaskInput placeholder="Add Task" heading="What's next?" onSubmit={addTask} bottom={hasTasks} />
+  <TaskInput placeholder="Add Task" heading="What's next?" onSubmit={addTask(event.message)} bottom={hasTasks} />
 
   <div class="task-warpper" class:bottom={hasTasks ? "bottom" : ""}>
-    <NextTask />
+    <NextTask 
+    onSelectRandom = {() => selectTask(tasks[Math.floor(Math.random() * tasks.length)].id)}
+    onSelectAlphabetical = {() => selectTask(tasks.toSorted((a, b) => a.text.localeCompare(b.text)).id)}
+    onUnselect ={() => unselectTask()}
+    >
+      {#if currentTask}
+        <Task 
+          text={currentTask.text} 
+          onEdit={(event) => editTask(currentTask.id, event.message)} 
+          onDone={() => removeTask(currentTask.id)}
+          onDelete={() => removeTask(currentTask.id)} />
+      {/if}
+    </NextTask>
 
     <div class="task-layout">
       {#each tasks as task (task.id)}
