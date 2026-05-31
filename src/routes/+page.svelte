@@ -35,7 +35,7 @@
   }
 
   function editTask(id, newText) {
-    if (id === currentTask.id) {
+    if (currentTask && id === currentTask.id) {
       currentTask.text = newText;
     } else {
       const taskToEdit = tasks.find(task => task.id === id);
