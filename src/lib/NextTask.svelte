@@ -104,15 +104,15 @@
 }
 
 .button-alpha {
-    background-color: #003f79;
+    background-color: #29acdf;
 }
 
 .button-random {
-    background-color: #00820d;
+    background-color: #2cdf29;
 }
 
 .button-unselect {
-    background-color: #920020;
+    background-color: #f73f43;
 }
 
 .button-icon {
