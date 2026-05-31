@@ -92,12 +92,14 @@
     onSelectAlphabetical = {() => selectTask(tasks.toSorted((a, b) => a.text.localeCompare(b.text))[0]?.id)}
     onUnselect ={() => unselectTask()}>
       {#if currentTask}
-        {@const activeId = currentTask.id}
-        <Task 
-          text={currentTask.text} 
-          onEdit={(event) => editTask(activeId, event.message)} 
-          onDone={() => removeTask(activeId)}
-          onDelete={() => removeTask(activeId)} />
+        {#key currentTask.id}
+          {@const activeId = currentTask.id}
+          <Task 
+            text={currentTask.text} 
+            onEdit={(event) => editTask(activeId, event.message)} 
+            onDone={() => removeTask(activeId)}
+            onDelete={() => removeTask(activeId)} />
+        {/key}
       {/if}
     </NextTask>
 
