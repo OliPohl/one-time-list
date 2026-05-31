@@ -1,12 +1,14 @@
 <!-- src/routes/+page.svelte -->
 <script >
 // @ts-nocheck
+  import { onMount } from 'svelte';
   import { TaskInput, Task, Wave, NextTask } from '$lib';
 
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
   let currentTask = $state(null);
   let hasTasks = $derived(tasks.length > 0 || currentTask !== null);
+  let isLoaded = $state(false);
 
   function generateUniqueId() {
   let newId;
@@ -17,7 +19,7 @@
     isTaken = tasks.some(task => task.id === newId) ||  currentTask?.id === newId;
   }
   return newId;
-}
+  }
 
   // @ts-ignore
   function addTask(text) {
@@ -72,6 +74,30 @@
       currentTask = null;
     }
   }
+
+  $effect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('otl_tasks', JSON.stringify(tasks));
+  });
+
+  $effect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('otl_current_task', JSON.stringify(currentTask));
+  });
+
+  onMount(() => {
+    const savedTasks = localStorage.getItem('otl_tasks');
+    const savedCurrent = localStorage.getItem('otl_current_task');
+
+    if (savedTasks) {
+      tasks = JSON.parse(savedTasks);
+   }
+  
+    if (savedCurrent) {
+      currentTask = JSON.parse(savedCurrent);
+    }
+    isLoaded = true;
+  });
 </script>
 
 
