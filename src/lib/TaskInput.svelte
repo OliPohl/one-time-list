@@ -159,7 +159,7 @@
     background-color: transparent;
     border: none;
     resize: none;
-    overflow:scroll;
+    overflow: auto;
     color: #ffffff;
     font-family: "Roboto Slab", serif;
   }

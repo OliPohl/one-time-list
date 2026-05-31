@@ -41,6 +41,7 @@ html, body {
   font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 16;
 */
 
+/* Local Fonts */
  @font-face {
   font-family: 'Roboto Slab';
   font-style: normal; 
@@ -56,3 +57,30 @@ html, body {
   src: url(/Stoke/Stoke-Regular.ttf) format('truetype');
   font-display: swap;
   }
+
+
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #494949;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #494949;
+}
+
+html, body {
+  scrollbar-color: #494949 transparent;
+  scrollbar-width: thin; 
+  
+  scrollbar-gutter: stable both-edges;
+}

@@ -127,7 +127,7 @@
 
     padding: 0 10px;
 
-    overflow: hidden;
+    overflow: auto;
 
     max-width: 600px;
     max-height: 100vh;
@@ -152,7 +152,7 @@
     box-sizing: border-box;
     flex-grow: 1;
     width: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
