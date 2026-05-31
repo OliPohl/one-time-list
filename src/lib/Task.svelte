@@ -2,9 +2,10 @@
 <script>
   let { 
     text = "Empty Task",
-    onDone,
+    onAction,
     onDelete,
-    onEdit
+    onEdit,
+    isCurrent
   } = $props();
 
   let currentText = $derived(text);
@@ -73,7 +74,8 @@
   <span 
   class="done-btn m3-icon" 
   class:editing={isEditing} 
-  onclick={isEditing ? onDelete : onDone}>{isEditing ? "delete" : "check_circle"}</span>
+  class:current={isCurrent}
+  onclick={isEditing ? onDelete : onAction}>{isEditing ? "delete" : isCurrent ? "check_circle" : "arrow_circle_up"}</span>
   
   <textarea 
     name="text" 
@@ -121,13 +123,21 @@
   }
 
   .done-btn:hover{
-    color: #25f151;
+    color: #7356f4;
   }
 
   .done-btn:active {
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30 !important;
     transition: none !important;
-    color: #23fe54;
+    color: #6a51d9;
+  }
+
+  .done-btn.current:hover {
+    color: #d6e550;
+  }
+
+  .done-btn.current:active {
+    color: #c3d04c;
   }
 
   .done-btn.editing {

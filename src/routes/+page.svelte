@@ -123,8 +123,9 @@
           <Task 
             text={currentTask.text} 
             onEdit={(event) => editTask(activeId, event.message)} 
-            onDone={() => removeTask(activeId)}
-            onDelete={() => removeTask(activeId)} />
+            onAction={() => removeTask(activeId)}
+            onDelete={() => removeTask(activeId)}
+            isCurrent={true} />
         {/key}
       {/if}
     </NextTask>
@@ -134,8 +135,9 @@
         <Task 
         text={task.text} 
         onEdit={(event) => editTask(task.id, event.message)} 
-        onDone={() => removeTask(task.id)}
-        onDelete={() => removeTask(task.id)} />
+        onAction={() => selectTask(task.id)}
+        onDelete={() => removeTask(task.id)}
+        isCurrent={false} />
       {/each}
     </div>
   </div>
