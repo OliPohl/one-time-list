@@ -89,7 +89,7 @@
       const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
       if (randomTask) selectTask(randomTask.id);
     }}
-    onSelectAlphabetical = {() => selectTask(tasks.toSorted((a, b) => a.text.localeCompare(b.text))[0]?.id)}
+    onSelectAlphabetical={() => tasks.length > 0 && selectTask(tasks.toSorted((a, b) => a.text.localeCompare(b.text))[0]?.id)}
     onUnselect ={() => unselectTask()}>
       {#if currentTask}
         {#key currentTask.id}
@@ -159,7 +159,7 @@
     align-items: center;
     justify-content: start;
     gap: 25px;
-    padding-top: 5px;
+    padding-top: 30px;
     padding-bottom: 180px;
   }
 </style>
