@@ -120,4 +120,15 @@
   font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
   color: white;
 }
+
+@media (max-width: 380px) {
+  .heading {
+    font-size: 18px;
+  }
+
+  .button-icon {
+    font-size: 18px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 18;
+  }
+}
 </style>
