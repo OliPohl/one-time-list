@@ -7,7 +7,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Todo</title>
+	<title>One Time List</title>
 </svelte:head>
 
 {@render children()}
