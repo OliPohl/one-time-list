@@ -1,7 +1,6 @@
 <!-- src/routes/+page.svelte -->
 <script >
 // @ts-nocheck
-
   import { TaskInput, Task, Wave, NextTask } from '$lib';
 
   /** @type {Array<{id: number, text: string}>} */
