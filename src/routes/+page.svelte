@@ -6,32 +6,45 @@
 
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
-  let hasTasks = $state(false);
+  let hasTasks = $derived(tasks.length > 0);
+
+  function generateUniqueId() {
+  let newId;
+  let isTaken = true;
+
+  while (isTaken) {
+    newId = Math.random().toString(36).substring(2, 8);
+    isTaken = tasks.some(task => task.id === newId);
+  }
+  return newId;
+}
 
   // @ts-ignore
   function addTask(event) {
-    const lastTask = tasks.at(-1);
-    tasks.push({
-      id: lastTask ? lastTask.id + 1 : 1,
-      text: event.message
-    })
+    const updatedTasks = [
+      ...tasks,
+      {
+        id: generateUniqueId(),
+        text: event.message
+      }
+    ];
+
+    tasks = updatedTasks.toSorted((a, b) => a.text.localeCompare(b.text));
   }
 
   function editTask(id, text) {
     const taskToEdit = tasks.find(task => task.id === id);
     if (taskToEdit) {
     taskToEdit.text = text;
-  }
+    }
+
+    tasks = tasks.toSorted((a, b) => a.text.localeCompare(b.text));
   }
 
   // @ts-ignore
   function removeTask(id) {
     tasks = tasks.filter(task => task.id !== id);
   }
-
-  $effect(() => {
-    tasks.length ? hasTasks = true : hasTasks = false;
-  })
 </script>
 
 
