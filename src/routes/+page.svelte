@@ -6,7 +6,7 @@
   /** @type {Array<{id: number, text: string}>} */
   let tasks = $state([]);
   let currentTask = $state(null);
-  let hasTasks = $derived(tasks.length > 0 && currentTask !== null);
+  let hasTasks = $derived(tasks.length > 0 || currentTask !== null);
 
   function generateUniqueId() {
   let newId;
@@ -14,7 +14,7 @@
 
   while (isTaken) {
     newId = Math.random().toString(36).substring(2, 8);
-    isTaken = tasks.some(task => task.id === newId) ||  currentTask.id === newId;
+    isTaken = tasks.some(task => task.id === newId) ||  currentTask?.id === newId;
   }
   return newId;
 }
@@ -47,7 +47,7 @@
 
   // @ts-ignore
   function removeTask(id) {
-    if (id === currentTask.id) {
+    if (id === currentTask?.id) {
       currentTask = null;
     } else {
       tasks = tasks.filter(task => task.id !== id);
@@ -77,20 +77,27 @@
 
 <main class="page-layout">
   <Wave bottom={hasTasks}/>
-  <TaskInput placeholder="Add Task" heading="What's next?" onSubmit={addTask(event.message)} bottom={hasTasks} />
+  <TaskInput 
+  placeholder="Add Task" 
+  heading="What's next?" 
+  onSubmit={(event) => addTask(event.message)} 
+  bottom={hasTasks} />
 
   <div class="task-warpper" class:bottom={hasTasks ? "bottom" : ""}>
     <NextTask 
-    onSelectRandom = {() => selectTask(tasks[Math.floor(Math.random() * tasks.length)].id)}
-    onSelectAlphabetical = {() => selectTask(tasks.toSorted((a, b) => a.text.localeCompare(b.text)).id)}
-    onUnselect ={() => unselectTask()}
-    >
+    onSelectRandom = {() => {
+      const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
+      if (randomTask) selectTask(randomTask.id);
+    }}
+    onSelectAlphabetical = {() => selectTask(tasks.toSorted((a, b) => a.text.localeCompare(b.text))[0]?.id)}
+    onUnselect ={() => unselectTask()}>
       {#if currentTask}
+        {@const activeId = currentTask.id}
         <Task 
           text={currentTask.text} 
-          onEdit={(event) => editTask(currentTask.id, event.message)} 
-          onDone={() => removeTask(currentTask.id)}
-          onDelete={() => removeTask(currentTask.id)} />
+          onEdit={(event) => editTask(activeId, event.message)} 
+          onDone={() => removeTask(activeId)}
+          onDelete={() => removeTask(activeId)} />
       {/if}
     </NextTask>
 
