@@ -34,46 +34,66 @@ export function unlockAudio() {
   window.addEventListener('keydown', unlock);
 }
 
+/** @type {BiquadFilterNode | undefined} */
+let softener;
+
+/** Low-pass filter shared by all notes, takes the harsh top off the tones. @param {AudioContext} audio */
+function output(audio) {
+  if (!softener) {
+    softener = audio.createBiquadFilter();
+    softener.type = 'lowpass';
+    softener.frequency.value = 2200;
+    softener.Q.value = 0.5;
+    softener.connect(audio.destination);
+  }
+  return softener;
+}
+
 /**
- * Plays a single note with a soft attack and decay.
+ * Plays a soft bell-like note: a sine tone plus a quiet overtone, slow fade in and long fade out.
  * @param {AudioContext} audio
  * @param {number} frequency
  * @param {number} start seconds from now
- * @param {number} duration seconds
- * @param {{type?: OscillatorType, volume?: number}} [options]
+ * @param {number} duration seconds until the note has faded out
+ * @param {number} [volume]
  */
-function note(audio, frequency, start, duration, { type = 'sine', volume = 0.2 } = {}) {
+function note(audio, frequency, start, duration, volume = 0.12) {
   const time = audio.currentTime + start;
-  const oscillator = audio.createOscillator();
   const gain = audio.createGain();
-
-  oscillator.type = type;
-  oscillator.frequency.value = frequency;
   gain.gain.setValueAtTime(0, time);
-  gain.gain.linearRampToValueAtTime(volume, time + 0.01);
+  gain.gain.linearRampToValueAtTime(volume, time + 0.03);
   gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  gain.connect(output(audio));
 
-  oscillator.connect(gain).connect(audio.destination);
-  oscillator.start(time);
-  oscillator.stop(time + duration + 0.05);
+  // Fundamental plus a faint octave for warmth.
+  for (const [multiple, level] of [[1, 1], [2, 0.15]]) {
+    const oscillator = audio.createOscillator();
+    const partGain = audio.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency * multiple;
+    partGain.gain.value = level;
+    oscillator.connect(partGain).connect(gain);
+    oscillator.start(time);
+    oscillator.stop(time + duration + 0.05);
+  }
 }
 
-/** Short rising two-note chime for a completed task. */
+/** Gentle rising two-note chime for a completed task. */
 export function playComplete() {
   const audio = getContext();
   if (!audio || !canPlay(audio)) return;
 
-  note(audio, 880, 0, 0.25, { type: 'triangle' });
-  note(audio, 1318.5, 0.1, 0.45, { type: 'triangle' });
+  note(audio, 523.25, 0, 0.9); // C5
+  note(audio, 783.99, 0.12, 1.3); // G5
 }
 
-/** Three quick beeps for a finished timer or a ringing alarm. */
+/** Soft three-note chime for a finished timer or a ringing alarm. */
 export function playAlarm() {
   // Alarms fire without a user interaction, so they never create the context themselves.
   const audio = getContext(false);
   if (!audio || !canPlay(audio)) return;
 
-  for (let i = 0; i < 3; i++) {
-    note(audio, 1046.5, i * 0.22, 0.18, { type: 'square', volume: 0.08 });
-  }
+  note(audio, 659.25, 0, 1.2); // E5
+  note(audio, 783.99, 0.3, 1.2); // G5
+  note(audio, 1046.5, 0.6, 1.8); // C6
 }
