@@ -64,6 +64,21 @@
   $effect(() => {
     handleInput();
   });
+
+  // Re-measure once styles/fonts are ready and whenever the width changes,
+  // otherwise the height is calculated with the fallback font on page load.
+  $effect(() => {
+    let lastWidth = textarea.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (textarea.clientWidth === lastWidth) return;
+      lastWidth = textarea.clientWidth;
+      handleInput();
+    });
+
+    observer.observe(textarea);
+    document.fonts?.ready.then(handleInput);
+    return () => observer.disconnect();
+  });
 </script>
 
 <svelte:window onclick={handleClickOutside} />

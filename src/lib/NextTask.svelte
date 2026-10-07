@@ -2,7 +2,7 @@
 <script>
   let { 
     onSelectRandom,
-    onSelectAlphabetical,
+    onSelectAlphanumeric,
     onUnselect,
     children
   } = $props();
@@ -14,11 +14,11 @@
     <h1 class="heading">Current Task</h1>
 
     <div class="button-container">
-      <button class="button button-alpha" title="Select Task Alphabetically" onclick={onSelectAlphabetical}>
+      <button class="button button-alpha" title="Sort Alphanumerically and Select First Task" onclick={onSelectAlphanumeric}>
         <span class="button-icon m3-icon">sort_by_alpha</span>
       </button>
 
-      <button class="button button-random" title="Select Task Random" onclick={onSelectRandom}>
+      <button class="button button-random" title="Shuffle and Select Random Task" onclick={onSelectRandom}>
         <span class="button-icon m3-icon">shuffle</span>
       </button>
 
