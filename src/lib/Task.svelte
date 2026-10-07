@@ -8,6 +8,8 @@
     onDelete,
     onEdit,
     isCurrent,
+    /** Completed task: the action returns it to the list and delete is always shown. */
+    isHistory = false,
     /** Enables reordering by dragging the task. */
     onDragStart = undefined,
     isDragging = false
@@ -107,7 +109,8 @@
   class="done-btn m3-icon" 
   class:editing={isEditing} 
   class:current={isCurrent}
-  onclick={isEditing ? onDelete : onAction}>{isEditing ? "delete" : isCurrent ? "check_circle" : "arrow_circle_up"}</span>
+  title={isEditing ? "Delete Task" : isHistory ? "Return Task to List" : isCurrent ? undefined : "Select Task"}
+  onclick={isEditing ? onDelete : onAction}>{isEditing ? "delete" : isCurrent ? "check_circle" : isHistory ? "undo" : "arrow_circle_up"}</span>
   
   <textarea 
     name="text" 
@@ -128,6 +131,11 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span class="edit-btn m3-icon" class:editing={isEditing} onclick={handleEdit}>{isEditing ? "check" : "edit_square"}</span>
+  {#if isHistory && !isEditing}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <span class="delete-btn m3-icon" title="Delete Task" onclick={onDelete}>delete</span>
+  {/if}
 </label>
 
 
@@ -218,6 +226,19 @@
 
   .edit-btn.editing:hover {
     color: #1fff50;
+  }
+
+  .delete-btn {
+    margin-left: 10px;
+    font-size: 25px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
+    color: #b7b7b7;
+    cursor: pointer;
+    transition: color 0.4s;
+  }
+
+  .delete-btn:hover {
+    color: #f73f43;
   }
 
   .cancel-btn {

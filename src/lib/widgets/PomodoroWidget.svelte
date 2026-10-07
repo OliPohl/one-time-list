@@ -80,8 +80,8 @@
       <NumberField bind:value={every} label="Long Break every" unit="sessions" min={1} max={12} onchange={applySettings} />
     </EditorRow>
 
-    <Toggle checked={widget.autoStart} onchange={(checked) => widgets.setAutoStart(widget, checked)}>
-      Start when a task is completed
+    <Toggle checked={widget.startOnSelect} onchange={(checked) => widgets.setOption(widget, 'startOnSelect', checked)}>
+      Start when a task is selected
     </Toggle>
   {/snippet}
 </Widget>

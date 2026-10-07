@@ -3,6 +3,7 @@
   import Widget from './Widget.svelte';
   import EditorRow from './ui/EditorRow.svelte';
   import Chip from './ui/Chip.svelte';
+  import TimeField from './ui/TimeField.svelte';
   import { widgets, WIDGET_TYPES, formatRemaining } from './widgets.svelte.js';
 
   let { widget, variant = 'dock', ghost = false } = $props();
@@ -38,12 +39,10 @@
     <EditorRow label="Alarm">
       <Chip icon="alarm_off" active={widget.alarmMode === 'off'} onclick={() => widgets.setAlarm(widget, 'off')}>Off</Chip>
       <Chip icon="alarm" active={widget.alarmMode === 'time'} onclick={() => widgets.setAlarm(widget, 'time')}>Alarm</Chip>
-      <input
-        class="time-input"
-        class:active={widget.alarmMode === 'time'}
-        type="time"
+      <TimeField
         value={widget.alarmTime}
-        onchange={(event) => event.currentTarget.value && widgets.setAlarm(widget, 'time', event.currentTarget.value)} />
+        active={widget.alarmMode === 'time'}
+        onchange={(time) => widgets.setAlarm(widget, 'time', time)} />
     </EditorRow>
 
     <EditorRow label="Quick Alarms">
@@ -54,23 +53,3 @@
   {/snippet}
 </Widget>
 
-
-<style>
-  .time-input {
-    color-scheme: dark;
-    padding: 4px 12px;
-    background: transparent;
-    border-radius: 40px;
-    border: 1.5px solid #494949;
-    color: #dadada;
-    font-family: "Roboto Slab", serif;
-    font-size: 14px;
-    transition: border-color 0.4s, color 0.4s;
-  }
-
-  .time-input:focus,
-  .time-input.active {
-    border-color: #d6e550;
-    color: #ffffff;
-  }
-</style>

@@ -55,8 +55,12 @@
       {/each}
     </EditorRow>
 
-    <Toggle checked={widget.autoStart} onchange={(checked) => widgets.setAutoStart(widget, checked)}>
-      Start timer when a task is completed
+    <Toggle checked={widget.autoStart} onchange={(checked) => widgets.setOption(widget, 'autoStart', checked)}>
+      Start when a task is completed
+    </Toggle>
+
+    <Toggle checked={widget.startOnSelect} onchange={(checked) => widgets.setOption(widget, 'startOnSelect', checked)}>
+      Start when a task is selected
     </Toggle>
   {/snippet}
 </Widget>

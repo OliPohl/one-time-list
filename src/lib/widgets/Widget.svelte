@@ -309,7 +309,7 @@
     -webkit-user-select: text;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 520px) {
     .dock .label {
       display: none;
     }

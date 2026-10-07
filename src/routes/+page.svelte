@@ -3,20 +3,32 @@
 // @ts-nocheck
   import { onMount, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
-  import { TaskInput, Task, Wave, NextTask } from '$lib';
+  import { TaskInput, Task, Wave, NextTask, History } from '$lib';
   import { WidgetDock, WidgetSideLayer, widgets } from '$lib/widgets';
+  import { unlockAudio, playComplete } from '$lib/sounds.js';
 
   /** @type {Array<{id: string, text: string, createdAt: number}>} */
   let tasks = $state([]);
   let currentTask = $state(null);
+  /** Completed tasks, newest first. */
+  let history = $state([]);
   /** Task ids in the user's own order: the order added, until a task is dragged. */
   let customOrder = $state([]);
   /** 'custom', 'alphanumeric' or 'random' */
   let sortMode = $state('custom');
-  /** @type {{id: string, y: number, startY: number, offsetY: number, left: number, width: number, moved: boolean} | null} */
+  /**
+   * source 'list' reorders the list live, source 'history' shows a drop slot at dropIndex.
+   * @type {{id: string, source: 'list' | 'history', y: number, startY: number, offsetY: number, left: number, width: number, height: number, moved: boolean, dropIndex: number | null} | null}
+   */
   let taskDrag = $state(null);
   let taskListEl;
-  let draggedTask = $derived(taskDrag && tasks.find(task => task.id === taskDrag.id));
+  let draggedTask = $derived(taskDrag && (taskDrag.source === 'history' ? history : tasks).find(task => task.id === taskDrag.id));
+  // Active list plus the drop slot while a history item is dragged over it.
+  let displayTasks = $derived(
+    taskDrag?.source === 'history' && taskDrag.dropIndex !== null
+      ? tasks.toSpliced(taskDrag.dropIndex, 0, { id: '__drop', isDropSlot: true })
+      : tasks
+  );
   let hasTasks = $derived(tasks.length > 0 || currentTask !== null);
   let isLoaded = $state(false);
 
@@ -26,7 +38,7 @@
 
   while (isTaken) {
     newId = Math.random().toString(36).substring(2, 8);
-    isTaken = tasks.some(task => task.id === newId) ||  currentTask?.id === newId;
+    isTaken = tasks.some(task => task.id === newId) ||  currentTask?.id === newId || history.some(task => task.id === newId);
   }
   return newId;
   }
@@ -99,15 +111,18 @@
     sortMode = 'custom';
   }
 
-  function startTaskDrag(id, point, rect) {
+  function startTaskDrag(id, point, rect, source = 'list') {
     taskDrag = {
       id,
+      source,
       y: point.clientY,
       startY: point.clientY,
       offsetY: point.clientY - rect.top,
       left: rect.left,
       width: rect.width,
-      moved: false
+      height: rect.height,
+      moved: false,
+      dropIndex: null
     };
 
     window.addEventListener('pointermove', moveTaskDrag);
@@ -123,10 +138,26 @@
     reorderToPointer();
   }
 
-  // Moves the dragged task to the slot under the pointer.
+  // Moves the dragged task (or the history drop slot) to the slot under the pointer.
   function reorderToPointer() {
     const listRect = taskListEl.getBoundingClientRect();
     const y = taskDrag.y - listRect.top + taskListEl.scrollTop;
+
+    if (taskDrag.source === 'history') {
+      // History items only drop into the list once they are dragged above the history section.
+      const historyTop = taskListEl.querySelector('[data-history]')?.getBoundingClientRect().top ?? Infinity;
+      if (taskDrag.y >= historyTop) {
+        taskDrag.dropIndex = null;
+        return;
+      }
+
+      let index = 0;
+      for (const element of taskListEl.querySelectorAll('[data-task-id]')) {
+        if (element.offsetTop + element.offsetHeight / 2 < y) index++;
+      }
+      taskDrag.dropIndex = index;
+      return;
+    }
 
     let index = 0;
     for (const element of taskListEl.querySelectorAll('[data-task-id]')) {
@@ -168,8 +199,48 @@
     window.removeEventListener('pointerup', endTaskDrag);
     window.removeEventListener('pointercancel', endTaskDrag);
 
-    if (taskDrag?.moved) saveCustomOrder();
+    if (taskDrag?.source === 'history' && taskDrag.dropIndex !== null) {
+      const task = history.find(item => item.id === taskDrag.id);
+      if (task) {
+        history = history.filter(item => item.id !== task.id);
+        tasks = tasks.toSpliced(taskDrag.dropIndex, 0, withoutCompletion(task));
+        saveCustomOrder();
+      }
+    } else if (taskDrag?.moved) {
+      saveCustomOrder();
+    }
+
     taskDrag = null;
+  }
+
+  function withoutCompletion(task) {
+    // eslint-disable-next-line no-unused-vars
+    const { completedAt, ...rest } = task;
+    return rest;
+  }
+
+  function returnFromHistory(id) {
+    const task = history.find(item => item.id === id);
+    if (!task) return;
+
+    history = history.filter(item => item.id !== id);
+    returnToList(withoutCompletion(task));
+  }
+
+  function editHistory(id, newText) {
+    const task = history.find(item => item.id === id);
+    if (task) task.text = newText;
+  }
+
+  function deleteFromHistory(id) {
+    history = history.filter(item => item.id !== id);
+    customOrder = customOrder.filter(taskId => taskId !== id);
+  }
+
+  function clearHistory() {
+    const ids = new Set(history.map(item => item.id));
+    customOrder = customOrder.filter(taskId => !ids.has(taskId));
+    history = [];
   }
 
   function editTask(id, newText) {
@@ -203,11 +274,23 @@
     if (taskToSelect) {
       currentTask = taskToSelect;
       tasks = tasks.filter(task => task.id !== id);
+      widgets.taskSelected();
     }
   }
 
   function completeTask(id) {
-    removeTask(id);
+    const task = currentTask?.id === id ? currentTask : tasks.find(item => item.id === id);
+    if (!task) return;
+
+    // Keep the id in the custom order so returning the task puts it back in its old spot.
+    history = [{ ...task, completedAt: Date.now() }, ...history];
+    if (task === currentTask) {
+      currentTask = null;
+    } else {
+      tasks = tasks.filter(item => item.id !== id);
+    }
+
+    playComplete();
     widgets.taskCompleted();
   }
 
@@ -240,6 +323,11 @@
 
   $effect(() => {
     if (!isLoaded) return;
+    localStorage.setItem('otl_history', JSON.stringify(history));
+  });
+
+  $effect(() => {
+    if (!isLoaded) return;
     widgets.save();
   });
 
@@ -266,6 +354,8 @@
       if (currentTask && currentTask.createdAt === undefined) currentTask.createdAt = Date.now();
     }
 
+    history = JSON.parse(localStorage.getItem('otl_history') ?? '[]');
+
     const savedMode = localStorage.getItem('otl_sort_mode');
     sortMode = savedMode === 'alphanumeric' || savedMode === 'random' ? savedMode : 'custom';
 
@@ -277,6 +367,7 @@
       if (!customOrder.includes(task.id)) customOrder.push(task.id);
     }
 
+    unlockAudio();
     widgets.load();
     isLoaded = true;
   });
@@ -315,22 +406,35 @@
     <WidgetDock />
 
     <div class="task-layout" bind:this={taskListEl}>
-      {#each tasks as task (task.id)}
+      {#each displayTasks as task (task.id)}
         <div
           class="task-item"
-          class:placeholder={taskDrag?.id === task.id}
-          data-task-id={task.id}
+          class:placeholder={task.isDropSlot || taskDrag?.id === task.id}
+          style:height={task.isDropSlot ? `${taskDrag.height}px` : null}
+          data-task-id={task.isDropSlot ? undefined : task.id}
           animate:flip={{ duration: 200 }}>
-          <Task 
-          text={task.text} 
-          onEdit={(event) => editTask(task.id, event.message)} 
-          onAction={() => selectTask(task.id)}
-          onDelete={() => removeTask(task.id)}
-          onDragStart={(point, rect) => startTaskDrag(task.id, point, rect)}
-          isDragging={taskDrag?.id === task.id}
-          isCurrent={false} />
+          {#if !task.isDropSlot}
+            <Task 
+            text={task.text} 
+            onEdit={(event) => editTask(task.id, event.message)} 
+            onAction={() => selectTask(task.id)}
+            onDelete={() => removeTask(task.id)}
+            onDragStart={(point, rect) => startTaskDrag(task.id, point, rect)}
+            isDragging={taskDrag?.id === task.id}
+            isCurrent={false} />
+          {/if}
         </div>
       {/each}
+
+      <History
+        items={history}
+        visible={hasTasks}
+        draggingId={taskDrag?.source === 'history' ? taskDrag.id : null}
+        onReturn={returnFromHistory}
+        onDelete={deleteFromHistory}
+        onEdit={editHistory}
+        onClear={clearHistory}
+        onDragStart={(id, point, rect) => startTaskDrag(id, point, rect, 'history')} />
     </div>
   </div>
 </main>
@@ -343,7 +447,7 @@
     style:left="{taskDrag.left}px"
     style:top="{taskDrag.y - taskDrag.offsetY}px"
     style:width="{taskDrag.width}px">
-    <Task text={draggedTask.text} isCurrent={false} />
+    <Task text={draggedTask.text} isCurrent={false} isHistory={taskDrag.source === 'history' && taskDrag.dropIndex === null} />
   </div>
 {/if}
 

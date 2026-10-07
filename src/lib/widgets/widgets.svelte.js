@@ -1,7 +1,12 @@
 // src/lib/widgets/widgets.svelte.js
 // Shared widget state: the widget list, a ticking clock, timer logic and drag & drop.
 
+import { playAlarm } from '../sounds.js';
+
 const STORAGE_KEY = 'otl_widgets';
+/** The alarm sound repeats while a widget rings, up to this many times. */
+const ALARM_REPEATS = 6;
+const ALARM_INTERVAL = 5000;
 
 const MINUTE = 60 * 1000;
 
@@ -22,6 +27,7 @@ export const WIDGET_TYPES = {
 
 export const POMODORO_PRESETS = [
   { name: 'Classic', work: 25, short: 5, long: 15, every: 4 },
+  { name: 'Long Focus', work: 45, short: 15, long: 30, every: 3 },
   { name: 'Deep Work', work: 50, short: 10, long: 30, every: 3 },
   { name: 'Sprint', work: 15, short: 3, long: 10, every: 4 }
 ];
@@ -34,7 +40,7 @@ function createWidget(type, id) {
 
   if (type === 'timer') {
     const duration = 15 * MINUTE;
-    return { id, type, pos: null, duration, remaining: duration, endsAt: null, ringing: false, autoStart: false };
+    return { id, type, pos: null, duration, remaining: duration, endsAt: null, ringing: false, autoStart: false, startOnSelect: false };
   }
 
   const { work, short, long, every } = POMODORO_PRESETS[0];
@@ -42,7 +48,7 @@ function createWidget(type, id) {
     id, type, pos: null,
     work: work * MINUTE, short: short * MINUTE, long: long * MINUTE, every,
     phase: 'work', completed: 0,
-    remaining: work * MINUTE, endsAt: null, ringing: false, autoStart: false
+    remaining: work * MINUTE, endsAt: null, ringing: false, startOnSelect: false
   };
 }
 
@@ -95,17 +101,32 @@ export function formatRemaining(ms) {
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
 }
 
+/** Updates widgets saved by older versions. @param {any} widget */
+function migrate(widget) {
+  // Pomodoros used to start when a task was completed, now they start when one is selected.
+  if (widget.type === 'pomodoro' && 'autoStart' in widget) {
+    const { autoStart, ...rest } = widget;
+    return { ...rest, startOnSelect: autoStart };
+  }
+  if (widget.type === 'timer' && !('startOnSelect' in widget)) {
+    return { ...widget, startOnSelect: false };
+  }
+  return widget;
+}
+
 class WidgetStore {
   /** @type {any[]} */
   list = $state([]);
   now = $state(Date.now());
   /** @type {ReturnType<typeof setInterval> | undefined} */
   #interval;
+  #alarmCount = 0;
+  #lastAlarmAt = 0;
 
   load() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) this.list = JSON.parse(saved);
+      if (saved) this.list = JSON.parse(saved).map(migrate);
     } catch {
       this.list = [];
     }
@@ -142,16 +163,44 @@ class WidgetStore {
   tick() {
     const now = Date.now();
     this.now = now;
+    let startedRinging = false;
 
     for (const widget of this.list) {
       if (widget.type === 'clock') {
-        if (widget.nextAt && now >= widget.nextAt && !widget.ringing) widget.ringing = true;
+        if (widget.nextAt && now >= widget.nextAt && !widget.ringing) {
+          widget.ringing = true;
+          startedRinging = true;
+        }
       } else if (widget.endsAt && now >= widget.endsAt) {
         widget.endsAt = null;
         widget.remaining = 0;
         widget.ringing = true;
+        startedRinging = true;
       }
     }
+
+    this.#playAlarmSound(now, startedRinging);
+  }
+
+  /**
+   * Beeps when a widget starts ringing and repeats a few times until it's confirmed.
+   * @param {number} now
+   * @param {boolean} startedRinging
+   */
+  #playAlarmSound(now, startedRinging) {
+    if (startedRinging) this.#alarmCount = 0;
+
+    if (!this.list.some((widget) => widget.ringing)) {
+      this.#alarmCount = 0;
+      return;
+    }
+
+    if (this.#alarmCount >= ALARM_REPEATS) return;
+    if (!startedRinging && now - this.#lastAlarmAt < ALARM_INTERVAL) return;
+
+    playAlarm();
+    this.#alarmCount += 1;
+    this.#lastAlarmAt = now;
   }
 
   // Clock
@@ -233,9 +282,13 @@ class WidgetStore {
     this.reset(widget);
   }
 
-  /** @param {any} widget @param {boolean} value */
-  setAutoStart(widget, value) {
-    widget.autoStart = value;
+  /**
+   * @param {any} widget
+   * @param {'autoStart' | 'startOnSelect'} option
+   * @param {boolean} value
+   */
+  setOption(widget, option, value) {
+    widget[option] = value;
   }
 
   /** Stops all timers and alarms and puts every widget back to its start state. */
@@ -252,15 +305,27 @@ class WidgetStore {
   /** Called when the current task is completed. */
   taskCompleted() {
     for (const widget of this.list) {
-      if (!widget.autoStart || widget.ringing) continue;
+      if (widget.type === 'timer' && widget.autoStart && !widget.ringing) this.#restart(widget);
+    }
+  }
+
+  /** Called when a task becomes the current task. */
+  taskSelected() {
+    for (const widget of this.list) {
+      if (!widget.startOnSelect || widget.ringing) continue;
 
       if (widget.type === 'timer') {
-        this.reset(widget);
-        this.start(widget);
+        this.#restart(widget);
       } else if (widget.type === 'pomodoro') {
         this.start(widget);
       }
     }
+  }
+
+  /** @param {any} widget */
+  #restart(widget) {
+    this.reset(widget);
+    this.start(widget);
   }
 }
 

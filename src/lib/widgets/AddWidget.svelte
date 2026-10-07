@@ -71,7 +71,7 @@
 
   .add-btn:hover,
   .add-btn.open {
-    color: #29acdf;
+    color: #d6e550;
   }
 
   .add-icon {
