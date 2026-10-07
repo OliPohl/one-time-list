@@ -1,8 +1,9 @@
 <!-- src/lib/NextTask.svelte -->
 <script>
   let { 
-    onSelectRandom,
-    onSelectAlphanumeric,
+    onShuffle,
+    onSortAlphanumeric,
+    onCustomOrder,
     onUnselect,
     children
   } = $props();
@@ -14,11 +15,15 @@
     <h1 class="heading">Current Task</h1>
 
     <div class="button-container">
-      <button class="button button-alpha" title="Sort Alphanumerically and Select First Task" onclick={onSelectAlphanumeric}>
+      <button class="button button-custom" title="Restore Custom Order" onclick={onCustomOrder}>
+        <span class="button-icon m3-icon">layers</span>
+      </button>
+
+      <button class="button button-alpha" title="Sort Alphanumerically" onclick={onSortAlphanumeric}>
         <span class="button-icon m3-icon">sort_by_alpha</span>
       </button>
 
-      <button class="button button-random" title="Shuffle and Select Random Task" onclick={onSelectRandom}>
+      <button class="button button-random" title="Shuffle Tasks" onclick={onShuffle}>
         <span class="button-icon m3-icon">shuffle</span>
       </button>
 
@@ -103,6 +108,10 @@
     filter: brightness(90%);
 }
 
+.button-custom {
+    background-color: #7356f4;
+}
+
 .button-alpha {
     background-color: #29acdf;
 }
@@ -121,9 +130,28 @@
   color: white;
 }
 
+@media (max-width: 480px) {
+  .heading {
+    font-size: 21px;
+  }
+
+  .button-container {
+    gap: 8px;
+  }
+
+  .button-icon {
+    font-size: 21px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 21;
+  }
+}
+
 @media (max-width: 380px) {
   .heading {
     font-size: 18px;
+  }
+
+  .button-container {
+    gap: 6px;
   }
 
   .button-icon {

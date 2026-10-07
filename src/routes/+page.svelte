@@ -2,14 +2,21 @@
 <script >
 // @ts-nocheck
   import { onMount, untrack } from 'svelte';
+  import { flip } from 'svelte/animate';
   import { TaskInput, Task, Wave, NextTask } from '$lib';
   import { WidgetDock, WidgetSideLayer, widgets } from '$lib/widgets';
 
   /** @type {Array<{id: string, text: string, createdAt: number}>} */
   let tasks = $state([]);
   let currentTask = $state(null);
-  /** How the list is ordered: by time added until a sort button is clicked. */
-  let sortMode = $state('added');
+  /** Task ids in the user's own order: the order added, until a task is dragged. */
+  let customOrder = $state([]);
+  /** 'custom', 'alphanumeric' or 'random' */
+  let sortMode = $state('custom');
+  /** @type {{id: string, y: number, startY: number, offsetY: number, left: number, width: number, moved: boolean} | null} */
+  let taskDrag = $state(null);
+  let taskListEl;
+  let draggedTask = $derived(taskDrag && tasks.find(task => task.id === taskDrag.id));
   let hasTasks = $derived(tasks.length > 0 || currentTask !== null);
   let isLoaded = $state(false);
 
@@ -37,16 +44,21 @@
     return shuffled;
   }
 
+  function customIndex(task) {
+    const index = customOrder.indexOf(task.id);
+    return index === -1 ? Infinity : index;
+  }
+
   // @ts-ignore
   function addTask(text) {
-    tasks = [
-      ...tasks,
-      {
-        id: generateUniqueId(),
-        text: text,
-        createdAt: Date.now()
-      }
-    ];
+    const task = {
+      id: generateUniqueId(),
+      text: text,
+      createdAt: Date.now()
+    };
+
+    tasks = [...tasks, task];
+    customOrder = [...customOrder, task.id];
   }
 
   // Puts a task back into the list at the spot matching the current sort mode.
@@ -57,19 +69,107 @@
     } else if (sortMode === 'random') {
       index = Math.floor(Math.random() * (tasks.length + 1));
     } else {
-      index = tasks.findIndex(other => other.createdAt > task.createdAt);
+      index = tasks.findIndex(other => customIndex(other) > customIndex(task));
     }
 
     if (index === -1) index = tasks.length;
     tasks = tasks.toSpliced(index, 0, task);
   }
 
-  function sortAndSelect(mode) {
-    if (tasks.length === 0) return;
-
+  function sortTasks(mode) {
     sortMode = mode;
     tasks = mode === 'alphanumeric' ? tasks.toSorted(compareAlphanumeric) : shuffle(tasks);
-    selectTask(tasks[0].id);
+  }
+
+  function restoreCustomOrder() {
+    sortMode = 'custom';
+    tasks = tasks.toSorted((a, b) => customIndex(a) - customIndex(b));
+  }
+
+  // The current list order becomes the new custom order.
+  function saveCustomOrder() {
+    const order = tasks.map(task => task.id);
+
+    if (currentTask) {
+      const oldIndex = customOrder.indexOf(currentTask.id);
+      order.splice(oldIndex === -1 ? 0 : Math.min(oldIndex, order.length), 0, currentTask.id);
+    }
+
+    customOrder = order;
+    sortMode = 'custom';
+  }
+
+  function startTaskDrag(id, point, rect) {
+    taskDrag = {
+      id,
+      y: point.clientY,
+      startY: point.clientY,
+      offsetY: point.clientY - rect.top,
+      left: rect.left,
+      width: rect.width,
+      moved: false
+    };
+
+    window.addEventListener('pointermove', moveTaskDrag);
+    window.addEventListener('pointerup', endTaskDrag);
+    window.addEventListener('pointercancel', endTaskDrag);
+    navigator.vibrate?.(15);
+    requestAnimationFrame(autoScroll);
+  }
+
+  function moveTaskDrag(event) {
+    if (!taskDrag) return;
+    taskDrag.y = event.clientY;
+    reorderToPointer();
+  }
+
+  // Moves the dragged task to the slot under the pointer.
+  function reorderToPointer() {
+    const listRect = taskListEl.getBoundingClientRect();
+    const y = taskDrag.y - listRect.top + taskListEl.scrollTop;
+
+    let index = 0;
+    for (const element of taskListEl.querySelectorAll('[data-task-id]')) {
+      if (element.dataset.taskId === taskDrag.id) continue;
+      if (element.offsetTop + element.offsetHeight / 2 < y) index++;
+    }
+
+    const from = tasks.findIndex(task => task.id === taskDrag.id);
+    if (from === -1 || from === index) return;
+
+    const dragged = tasks[from];
+    tasks = tasks.toSpliced(from, 1).toSpliced(index, 0, dragged);
+    taskDrag.moved = true;
+  }
+
+  // Scrolls the list while the dragged task is held near its top or bottom edge.
+  function autoScroll() {
+    if (!taskDrag) return;
+
+    const rect = taskListEl.getBoundingClientRect();
+    const bottom = Math.min(rect.bottom, window.innerHeight - 180);
+    const edge = 60;
+    let speed = 0;
+
+    // Only scroll in the direction the task is dragged, so picking up a task near an edge doesn't scroll.
+    if (taskDrag.y < rect.top + edge && taskDrag.y < taskDrag.startY) speed = -(rect.top + edge - taskDrag.y) / 4;
+    else if (taskDrag.y > bottom - edge && taskDrag.y > taskDrag.startY) speed = (taskDrag.y - bottom + edge) / 4;
+
+    if (speed !== 0) {
+      taskListEl.scrollTop += speed;
+      reorderToPointer();
+    }
+
+    requestAnimationFrame(autoScroll);
+  }
+
+  function endTaskDrag() {
+    window.removeEventListener('pointermove', moveTaskDrag);
+    window.removeEventListener('pointerup', endTaskDrag);
+    window.removeEventListener('pointercancel', endTaskDrag);
+
+    if (taskDrag?.moved) saveCustomOrder();
+    taskDrag = null;
   }
 
   function editTask(id, newText) {
@@ -85,6 +185,8 @@
 
   // @ts-ignore
   function removeTask(id) {
+    customOrder = customOrder.filter(taskId => taskId !== id);
+
     if (id === currentTask?.id) {
       currentTask = null;
     } else {
@@ -133,6 +235,11 @@
 
   $effect(() => {
     if (!isLoaded) return;
+    localStorage.setItem('otl_custom_order', JSON.stringify(customOrder));
+  });
+
+  $effect(() => {
+    if (!isLoaded) return;
     widgets.save();
   });
 
@@ -159,7 +266,16 @@
       if (currentTask && currentTask.createdAt === undefined) currentTask.createdAt = Date.now();
     }
 
-    sortMode = localStorage.getItem('otl_sort_mode') ?? 'added';
+    const savedMode = localStorage.getItem('otl_sort_mode');
+    sortMode = savedMode === 'alphanumeric' || savedMode === 'random' ? savedMode : 'custom';
+
+    // Without a saved custom order fall back to the order the tasks were added.
+    const allTasks = currentTask ? [...tasks, currentTask] : tasks;
+    const savedOrder = JSON.parse(localStorage.getItem('otl_custom_order') ?? 'null');
+    customOrder = savedOrder ?? allTasks.toSorted((a, b) => a.createdAt - b.createdAt).map(task => task.id);
+    for (const task of allTasks) {
+      if (!customOrder.includes(task.id)) customOrder.push(task.id);
+    }
 
     widgets.load();
     isLoaded = true;
@@ -177,8 +293,9 @@
 
   <div class="task-warpper" class:bottom={hasTasks ? "bottom" : ""}>
     <NextTask 
-    onSelectRandom={() => sortAndSelect('random')}
-    onSelectAlphanumeric={() => sortAndSelect('alphanumeric')}
+    onShuffle={() => sortTasks('random')}
+    onSortAlphanumeric={() => sortTasks('alphanumeric')}
+    onCustomOrder={() => restoreCustomOrder()}
     onUnselect ={() => unselectTask()}>
       {#if currentTask}
         {#key currentTask.id}
@@ -190,25 +307,45 @@
             onDelete={() => removeTask(activeId)}
             isCurrent={true} />
         {/key}
+      {:else if tasks.length > 0}
+        <button class="select-next" onclick={() => selectTask(tasks[0].id)}>Select Task</button>
       {/if}
     </NextTask>
 
     <WidgetDock />
 
-    <div class="task-layout">
+    <div class="task-layout" bind:this={taskListEl}>
       {#each tasks as task (task.id)}
-        <Task 
-        text={task.text} 
-        onEdit={(event) => editTask(task.id, event.message)} 
-        onAction={() => selectTask(task.id)}
-        onDelete={() => removeTask(task.id)}
-        isCurrent={false} />
+        <div
+          class="task-item"
+          class:placeholder={taskDrag?.id === task.id}
+          data-task-id={task.id}
+          animate:flip={{ duration: 200 }}>
+          <Task 
+          text={task.text} 
+          onEdit={(event) => editTask(task.id, event.message)} 
+          onAction={() => selectTask(task.id)}
+          onDelete={() => removeTask(task.id)}
+          onDragStart={(point, rect) => startTaskDrag(task.id, point, rect)}
+          isDragging={taskDrag?.id === task.id}
+          isCurrent={false} />
+        </div>
       {/each}
     </div>
   </div>
 </main>
 
 <WidgetSideLayer visible={hasTasks} />
+
+{#if taskDrag && draggedTask}
+  <div
+    class="task-ghost"
+    style:left="{taskDrag.left}px"
+    style:top="{taskDrag.y - taskDrag.offsetY}px"
+    style:width="{taskDrag.width}px">
+    <Task text={draggedTask.text} isCurrent={false} />
+  </div>
+{/if}
 
 
 <style>
@@ -244,6 +381,7 @@
   }
 
   .task-layout {
+    position: relative;
     box-sizing: border-box;
     flex-grow: 1;
     width: 100%;
@@ -255,5 +393,47 @@
     gap: 25px;
     padding-top: 30px;
     padding-bottom: 180px;
+  }
+
+  .task-item {
+    width: 100%;
+  }
+
+  .task-item.placeholder {
+    border-radius: 40px;
+    outline: 2.5px dashed #494949;
+    outline-offset: -2.5px;
+  }
+
+  .task-item.placeholder > :global(*) {
+    visibility: hidden;
+  }
+
+  .task-ghost {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    transform: scale(1.02);
+    filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
+  }
+
+  .select-next {
+    width: 100%;
+    min-height: 50px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: "Roboto Slab", serif;
+    font-size: 18px;
+    color: #7356f4;
+    transition: filter 0.2s;
+  }
+
+  .select-next:hover {
+    filter: brightness(130%);
+  }
+
+  .select-next:active {
+    filter: brightness(90%);
   }
 </style>

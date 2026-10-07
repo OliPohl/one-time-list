@@ -1,10 +1,9 @@
 <!-- src/lib/widgets/Widget.svelte -->
-<!-- Shared shell for all widgets: layout, border state, controls, edit panel and long-press dragging. -->
+<!-- Shared shell for all widgets: layout, border state, controls, edit panel and dragging. -->
 <script>
+  import { slide } from 'svelte/transition';
   import { layout, widgets } from './widgets.svelte.js';
-
-  const LONG_PRESS_MS = 500;
-  const MOVE_TOLERANCE = 10;
+  import { pressDrag } from '../pressDrag.js';
 
   let {
     widget,
@@ -14,7 +13,7 @@
     label,
     time,
     sub = '',
-    /** @type {'idle' | 'green' | 'blue' | 'ring'} */
+    /** @type {'idle' | 'blue' | 'orange' | 'ring'} */
     tone = 'idle',
     /** @type {Array<{icon: string, title: string, onclick: () => void, kind?: 'confirm'}>} */
     controls = [],
@@ -28,48 +27,6 @@
 
   /** @type {HTMLDivElement} */
   let root;
-  /** @type {ReturnType<typeof setTimeout> | undefined} */
-  let pressTimer;
-  let pressOrigin = { x: 0, y: 0 };
-  let pressPoint = { clientX: 0, clientY: 0 };
-
-  /** @param {PointerEvent} event */
-  function handlePointerDown(event) {
-    if (isGhost || event.button !== 0) return;
-    // Only empty space starts a drag, never buttons, inputs or the edit panel.
-    if (/** @type {Element} */ (event.target).closest('button, input, label, .editor')) return;
-
-    pressOrigin = { x: event.clientX, y: event.clientY };
-    pressPoint = event;
-    pressing = true;
-
-    window.addEventListener('pointermove', handlePressMove);
-    window.addEventListener('pointerup', cancelPress);
-    window.addEventListener('pointercancel', cancelPress);
-
-    pressTimer = setTimeout(() => {
-      const rect = root.getBoundingClientRect();
-      cancelPress();
-      editing = false;
-      layout.startDrag(widget.id, pressPoint, rect);
-    }, LONG_PRESS_MS);
-  }
-
-  /** @param {PointerEvent} event */
-  function handlePressMove(event) {
-    pressPoint = event;
-    if (Math.hypot(event.clientX - pressOrigin.x, event.clientY - pressOrigin.y) > MOVE_TOLERANCE) {
-      cancelPress();
-    }
-  }
-
-  function cancelPress() {
-    clearTimeout(pressTimer);
-    pressing = false;
-    window.removeEventListener('pointermove', handlePressMove);
-    window.removeEventListener('pointerup', cancelPress);
-    window.removeEventListener('pointercancel', cancelPress);
-  }
 
   /** @param {MouseEvent} event */
   function handleClickOutside(event) {
@@ -77,35 +34,27 @@
       editing = false;
     }
   }
-
-  // Stop touch scrolling while this widget is being dragged (needs a non-passive listener).
-  $effect(() => {
-    if (isGhost) return;
-
-    /** @param {TouchEvent} event */
-    const preventScroll = (event) => {
-      if (layout.drag?.id === widget.id) event.preventDefault();
-    };
-
-    root.addEventListener('touchmove', preventScroll, { passive: false });
-    return () => {
-      root.removeEventListener('touchmove', preventScroll);
-      cancelPress();
-    };
-  });
 </script>
 
 <svelte:window onclick={handleClickOutside} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="widget {variant} {tone}"
   class:editing
   class:pressing
   class:placeholder={isPlaceholder}
   bind:this={root}
-  onpointerdown={handlePointerDown}
-  oncontextmenu={(event) => (pressing || layout.drag) && event.preventDefault()}
+  {@attach pressDrag({
+    enabled: () => !isGhost,
+    // Only empty space starts a drag, never buttons, inputs or the edit panel.
+    ignore: 'button, input, label, .editor',
+    isDragging: () => layout.drag?.id === widget.id,
+    onPressChange: (value) => (pressing = value),
+    onStart: (point, rect) => {
+      editing = false;
+      layout.startDrag(widget.id, point, rect);
+    }
+  })}
 >
   <div class="head">
     <span class="type-icon m3-icon">{icon}</span>
@@ -138,7 +87,7 @@
   </div>
 
   {#if editing && editor}
-    <div class="editor">
+    <div class="editor" transition:slide={{ duration: 250 }}>
       {@render editor()}
     </div>
   {/if}
@@ -169,15 +118,15 @@
       border-color 0.4s,
       border-radius 0.3s,
       opacity 0.3s,
-      transform 0.5s;
-  }
-
-  .widget.green {
-    border-color: #29df50;
+      transform 0.15s;
   }
 
   .widget.blue {
     border-color: #29acdf;
+  }
+
+  .widget.orange {
+    border-color: #f7a23f;
   }
 
   .widget.ring {
@@ -207,9 +156,7 @@
     column-gap: 16px;
     padding: 5px 20px 5px 25px;
     min-height: 50px;
-  }
-
-  .dock.editing {
+    /* Renders like the task pill at one line, stays constant while the edit menu opens */
     border-radius: 30px;
   }
 
@@ -335,11 +282,11 @@
   }
 
   .control.confirm {
-    color: #f73f43;
+    color: #29df50;
   }
 
   .control.confirm:hover {
-    color: #ff6266;
+    color: #1fff50;
   }
 
   .control.remove {

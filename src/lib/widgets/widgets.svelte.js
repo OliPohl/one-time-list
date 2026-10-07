@@ -233,6 +233,11 @@ class WidgetStore {
     this.reset(widget);
   }
 
+  /** @param {any} widget @param {boolean} value */
+  setAutoStart(widget, value) {
+    widget.autoStart = value;
+  }
+
   /** Stops all timers and alarms and puts every widget back to its start state. */
   resetAll() {
     for (const widget of this.list) {

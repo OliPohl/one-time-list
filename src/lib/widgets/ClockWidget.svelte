@@ -7,7 +7,7 @@
 
   let { widget, variant = 'dock', ghost = false } = $props();
 
-  const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+  const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
   const QUICK_ALARMS = [
     { mode: 'hour', label: 'Every hour' },
@@ -24,7 +24,7 @@
     return '';
   });
 
-  let tone = $derived(widget.ringing ? 'ring' : hasAlarm ? 'green' : 'idle');
+  let tone = $derived(widget.ringing ? 'ring' : hasAlarm ? 'orange' : 'blue');
 
   let controls = $derived(
     widget.ringing

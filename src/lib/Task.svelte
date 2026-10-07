@@ -1,15 +1,21 @@
 <!-- src/lib/Task.svelte -->
 <script>
+  import { pressDrag } from './pressDrag.js';
+
   let { 
     text = "Empty Task",
     onAction,
     onDelete,
     onEdit,
-    isCurrent
+    isCurrent,
+    /** Enables reordering by dragging the task. */
+    onDragStart = undefined,
+    isDragging = false
   } = $props();
 
   let currentText = $derived(text);
   let isEditing = $state(false)
+  let pressing = $state(false);
   /**
 	 * @type {HTMLLabelElement}
 	 */
@@ -83,7 +89,18 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<label class="container" bind:this={componentRef}>
+<label
+  class="container"
+  class:pressing
+  bind:this={componentRef}
+  {@attach pressDrag({
+    enabled: () => Boolean(onDragStart) && !isEditing,
+    ignore: '.m3-icon',
+    isDragging: () => isDragging,
+    onPressChange: (value) => (pressing = value),
+    onStart: (point, rect) => onDragStart(point, rect)
+  })}
+>
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <span 
@@ -127,6 +144,14 @@
     border-style: solid;
     border-width: 2.5px;
     border-color:#ffffff00;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    transition: transform 0.15s;
+  }
+
+  .container.pressing {
+    transform: scale(0.98);
   }
 
   .done-btn {
@@ -225,5 +250,15 @@
     font-family: "Roboto Slab", serif;
     color: #ffffff;
     margin: 0 20px;
+  }
+
+  /* Let presses reach the container so the task can be dragged */
+  .task:disabled {
+    pointer-events: none;
+  }
+
+  .task:enabled {
+    -webkit-user-select: text;
+    user-select: text;
   }
 </style>

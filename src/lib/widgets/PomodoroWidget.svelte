@@ -23,7 +23,7 @@
     return isWork ? `${phase} ${widget.completed + 1}/${widget.every}` : phase;
   });
 
-  let tone = $derived(widget.ringing ? 'ring' : !running ? 'idle' : isWork ? 'green' : 'blue');
+  let tone = $derived(widget.ringing ? 'ring' : !running ? 'idle' : isWork ? 'orange' : 'blue');
 
   // Edit fields, re-synced whenever the configured durations change.
   let work = $derived(widget.work / MINUTE);
@@ -80,7 +80,7 @@
       <NumberField bind:value={every} label="Long Break every" unit="sessions" min={1} max={12} onchange={applySettings} />
     </EditorRow>
 
-    <Toggle checked={widget.autoStart} onchange={(checked) => (widget.autoStart = checked)}>
+    <Toggle checked={widget.autoStart} onchange={(checked) => widgets.setAutoStart(widget, checked)}>
       Start when a task is completed
     </Toggle>
   {/snippet}

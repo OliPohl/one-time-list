@@ -21,6 +21,8 @@
     font-family: "Roboto Slab", serif;
     font-size: 14px;
     transition: color 0.4s;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .toggle:hover {

@@ -15,7 +15,7 @@
   let running = $derived(widget.endsAt !== null);
   let time = $derived(formatCountdown(remainingOf(widget, widgets.now)));
   let sub = $derived(widget.ringing ? "Time's up!" : running ? 'Running' : widget.remaining < widget.duration ? 'Paused' : '');
-  let tone = $derived(widget.ringing ? 'ring' : running ? 'green' : 'idle');
+  let tone = $derived(widget.ringing ? 'ring' : running ? 'orange' : 'idle');
 
   // Edit fields, re-synced whenever the configured duration changes.
   let minutes = $derived(Math.floor(widget.duration / MINUTE));
@@ -55,8 +55,8 @@
       {/each}
     </EditorRow>
 
-    <Toggle checked={widget.autoStart} onchange={(checked) => (widget.autoStart = checked)}>
-      Restart when a task is completed
+    <Toggle checked={widget.autoStart} onchange={(checked) => widgets.setAutoStart(widget, checked)}>
+      Start timer when a task is completed
     </Toggle>
   {/snippet}
 </Widget>

@@ -61,8 +61,8 @@
     border-radius: 40px;
     border-style: solid;
     border-width: 2.5px;
-    border-color: #d4d4d4;
-    color: #d4d4d4;
+    border-color: #8c8c8c;
+    color: #8c8c8c;
     font-family: "Roboto Slab", serif;
     font-size: 18px;
     cursor: pointer;
@@ -71,8 +71,7 @@
 
   .add-btn:hover,
   .add-btn.open {
-    color: #d6e550;
-    border-color: #d6e550;
+    color: #29acdf;
   }
 
   .add-icon {
