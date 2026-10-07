@@ -27,7 +27,10 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
-    padding-top: 25px;
+    margin-top: 15px;
+    background-color: #0c0c0c;
+    padding:10px;
+    border-radius: 30px;
   }
 
   .item {

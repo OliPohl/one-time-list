@@ -495,7 +495,7 @@
     align-items: center;
     justify-content: start;
     gap: 25px;
-    padding-top: 30px;
+    padding-top: 15px;
     padding-bottom: 180px;
   }
 

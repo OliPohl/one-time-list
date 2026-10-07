@@ -51,18 +51,16 @@
   .add-btn {
     box-sizing: border-box;
     width: 100%;
-    min-height: 50px;
+    max-height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
     padding: 5px 25px;
     border-radius: 40px;
-    border-style: solid;
-    border-width: 2.5px;
-    border-color: #8c8c8c;
-    color: #8c8c8c;
+    border-color: #8c8c8c00;
+    color: #aaaaaa;
     font-family: "Roboto Slab", serif;
     font-size: 18px;
     cursor: pointer;
