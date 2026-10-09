@@ -1,7 +1,7 @@
 <!-- src/lib/pages/tasks/TasksOptions.svelte -->
 <!-- Customization of a Tasks page, shown on the "New Page" screen and in the page settings. Edits `options` in place. -->
 <script>
-  import { COLORS, colorsKey } from './colors.js';
+  import { COLORS, colorsKey } from '../../colors.js';
 
   /** @type {{options: Record<string, any>}} */
   let { options } = $props();

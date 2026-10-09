@@ -3,7 +3,8 @@
 import TasksPage from './TasksPage.svelte';
 import TasksOptions from './TasksOptions.svelte';
 import { getListStore, findListStore, deleteListStore, importLegacyList } from './list.svelte.js';
-import { DEFAULT_COLORS, colorsOf, colorsStyle } from './colors.js';
+import { colorsOf, colorsStyle } from '../../colors.js';
+import { settings } from '../../app/settings.svelte.js';
 
 export { getListStore };
 
@@ -16,7 +17,8 @@ export default {
   defaultName: 'Tasks',
   component: TasksPage,
   Options: TasksOptions,
-  defaultOptions: () => ({ colors: DEFAULT_COLORS }),
+  // New lists start with the default colors from the settings.
+  defaultOptions: () => ({ colors: settings.colors }),
   style: (page) => colorsStyle(colorsOf(page.options)),
   // Load every list on startup so its timers and alarms run while another page is open.
   init: (page) => void getListStore(page.id),

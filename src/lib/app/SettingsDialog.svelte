@@ -3,6 +3,7 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { settings, THEMES } from './settings.svelte.js';
+  import { COLORS } from '../colors.js';
 
   /** @type {Record<typeof THEMES[number], {label: string, icon: string}>} */
   const THEME_OPTIONS = {
@@ -41,6 +42,41 @@
       <h2 class="title" id="settings-title">Settings</h2>
       <button class="close-btn m3-icon" title="Close" bind:this={closeButton} onclick={close}>close</button>
     </div>
+
+    <section class="setting">
+      <h3 class="setting-label" id="colors-label">Colors</h3>
+      <div class="color-options" role="radiogroup" aria-labelledby="colors-label">
+        {#each Object.entries(COLORS) as [key, colors] (key)}
+          <button
+            class="color-option"
+            class:selected={settings.colors === key}
+            role="radio"
+            aria-checked={settings.colors === key}
+            style:--preview-wave={colors.wave}
+            style:--preview-accent={colors.accent}
+            style:--preview-task={colors.task}
+            onclick={() => (settings.colors = key)}>
+            <!-- A tiny sidebar next to a page: that's where the default colors show. -->
+            <span class="preview" aria-hidden="true">
+              <span class="mini-sidebar">
+                <span class="mini-menu"></span>
+                <span class="mini-label"></span>
+                <span class="mini-row active"></span>
+                <span class="mini-row"></span>
+                <span class="mini-slider"><span class="mini-thumb"></span></span>
+              </span>
+              <span class="mini-page">
+                <span class="mini-title"></span>
+                <span class="mini-line"></span>
+                <span class="mini-line short"></span>
+                <span class="mini-button"></span>
+              </span>
+            </span>
+            <span class="color-name">{colors.label}</span>
+          </button>
+        {/each}
+      </div>
+    </section>
 
     <section class="setting">
       <h3 class="setting-label" id="theme-label">Appearance</h3>
@@ -90,7 +126,6 @@
     gap: 16px;
     padding: 24px;
     background-color: var(--surface);
-    border: 2.5px solid var(--line-strong);
     border-radius: 30px;
     box-shadow: 0 12px 40px var(--shadow);
   }
@@ -139,6 +174,140 @@
     font-size: 16px;
     font-weight: 400;
     color: var(--text-muted);
+  }
+
+  .color-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
+  }
+
+  .color-option {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 7px 7px 9px;
+    background-color: var(--surface);
+    border: 2.5px solid var(--line);
+    border-radius: 22px;
+    color: var(--text-soft);
+    font-family: "Roboto Slab", serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.4s, color 0.4s;
+  }
+
+  .color-option:hover {
+    border-color: var(--text-muted);
+  }
+
+  .color-option.selected {
+    border-color: var(--preview-accent);
+    color: var(--preview-accent);
+  }
+
+  .preview {
+    height: 64px;
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    overflow: hidden;
+    border-radius: 15px;
+    background-color: var(--bg);
+    box-sizing: border-box;
+  }
+
+  .mini-sidebar {
+    width: 44%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px 4px;
+    border-radius: 10px;
+    background-color: var(--surface-raised);
+    box-sizing: border-box;
+  }
+
+  .mini-menu {
+    width: 9px;
+    height: 6px;
+    border-top: 1.5px solid var(--preview-accent);
+    border-bottom: 1.5px solid var(--preview-accent);
+    box-sizing: border-box;
+  }
+
+  .mini-label {
+    width: 55%;
+    height: 3px;
+    border-radius: 3px;
+    background-color: var(--preview-task);
+  }
+
+  .mini-row {
+    height: 6px;
+    border-radius: 6px;
+    background-color: var(--line);
+  }
+
+  .mini-row.active {
+    background-color: var(--preview-accent);
+  }
+
+  .mini-slider {
+    position: relative;
+    margin-top: auto;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--preview-accent) 60%, var(--line) 60%);
+  }
+
+  .mini-thumb {
+    position: absolute;
+    left: 60%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--preview-accent);
+    translate: -50% -50%;
+  }
+
+  .mini-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px 2px;
+  }
+
+  .mini-title {
+    width: 70%;
+    height: 5px;
+    border-radius: 5px;
+    background-color: var(--preview-accent);
+  }
+
+  .mini-line {
+    height: 3px;
+    border-radius: 3px;
+    background-color: var(--line);
+  }
+
+  .mini-line.short {
+    width: 60%;
+  }
+
+  .mini-button {
+    align-self: flex-end;
+    margin-top: auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--preview-wave);
+  }
+
+  .color-name {
+    text-align: center;
   }
 
   .segments {

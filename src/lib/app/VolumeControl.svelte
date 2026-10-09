@@ -3,7 +3,7 @@
 <script>
   import { settings } from './settings.svelte.js';
   import { playVolumePreview } from '../utils/sounds.js';
-  import { COLORS } from '../pages/tasks/colors.js';
+  import { COLORS } from '../colors.js';
 
   /** Icon and slider turn crimson red while there is no sound. */
   const SILENT_COLOR = COLORS.crimson.wave;

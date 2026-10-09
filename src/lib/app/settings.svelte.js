@@ -3,6 +3,7 @@
 // settings dialog (`SettingsDialog.svelte`).
 
 import { setVolume as applyVolume } from '../utils/sounds.js';
+import { COLORS, DEFAULT_COLORS, colorsStyle } from '../colors.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 
 const STORAGE_KEY = 'otl_settings';
@@ -17,6 +18,8 @@ class AppSettings {
   muted = $state(false);
   /** @type {typeof THEMES[number]} */
   theme = $state('auto');
+  /** Default colors: everything that has no colors of its own (sidebar, dialogs, widget pages, new Tasks pages). */
+  colors = $state(DEFAULT_COLORS);
   /** The system prefers light mode, followed while `theme` is `auto`. */
   systemLight = $state(false);
   dialogOpen = $state(false);
@@ -28,10 +31,11 @@ class AppSettings {
   effectiveVolume = $derived(this.muted ? 0 : this.volume);
 
   load() {
-    const saved = loadJSON(STORAGE_KEY, /** @type {{volume?: number, muted?: boolean, theme?: string}} */ ({}));
+    const saved = loadJSON(STORAGE_KEY, /** @type {{volume?: number, muted?: boolean, theme?: string, colors?: string}} */ ({}));
     if (typeof saved.volume === 'number') this.volume = Math.min(1, Math.max(0, saved.volume));
     this.muted = saved.muted === true;
     this.theme = THEMES.find((theme) => theme === saved.theme) ?? 'auto';
+    this.colors = saved.colors && saved.colors in COLORS ? saved.colors : DEFAULT_COLORS;
 
     const lightQuery = window.matchMedia('(prefers-color-scheme: light)');
     this.systemLight = lightQuery.matches;
@@ -39,13 +43,20 @@ class AppSettings {
 
     $effect.root(() => {
       $effect(() => {
-        saveJSON(STORAGE_KEY, { volume: this.volume, muted: this.muted, theme: this.theme });
+        // `colorsCss` lets app.html apply the colors before the app has loaded.
+        const colorsCss = colorsStyle(COLORS[this.colors]);
+        saveJSON(STORAGE_KEY, { volume: this.volume, muted: this.muted, theme: this.theme, colors: this.colors, colorsCss });
         applyVolume(this.effectiveVolume);
       });
 
       // global.css switches every color on this attribute.
       $effect(() => {
         document.documentElement.dataset.theme = this.resolvedTheme;
+      });
+
+      // Overrides the Crimson defaults of global.css, pages with their own colors override these again.
+      $effect(() => {
+        document.documentElement.style.cssText = colorsStyle(COLORS[this.colors]);
       });
     });
   }

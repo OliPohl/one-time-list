@@ -153,18 +153,20 @@
     cursor: pointer;
     transition: transform 0.15s;
     /* Blinks with the ringing time. */
+    --blink-from: var(--tone-idle);
+    --blink-to: var(--tone-ring);
     animation: confirm-blink 2s ease-in-out infinite;
   }
 
   @keyframes confirm-blink {
-    0%, 100% { color: var(--tone-idle); border-color: var(--tone-idle); }
-    50% { color: var(--tone-ring); border-color: var(--tone-ring); }
+    0%, 100% { color: var(--blink-from); border-color: var(--blink-from); }
+    50% { color: var(--blink-to); border-color: var(--blink-to); }
   }
 
+  /* Hovering keeps the blink, with brighter colors (darker ones in light mode). */
   .confirm:hover {
-    animation: none;
-    color: var(--red-hover);
-    border-color: var(--red-hover);
+    --blink-from: var(--text);
+    --blink-to: var(--red-hover);
   }
 
   .confirm:active {

@@ -65,8 +65,14 @@
     }
   }
 
+  /** The click that armed delete, it reaches the window too and must not disarm it right away. @type {Event | null} */
+  let armingClick = null;
+
   // Deleting needs a second click, the first one only changes the icon.
-  function requestDelete() {
+  /** @param {MouseEvent} event */
+  function requestDelete(event) {
+    // The task is a label: without this the click is also sent to the textarea, which would disarm again.
+    event.preventDefault();
     clearTimeout(disarmTimer);
     if (deleteArmed) {
       deleteArmed = false;
@@ -74,7 +80,13 @@
       return;
     }
     deleteArmed = true;
+    armingClick = event;
     disarmTimer = setTimeout(() => (deleteArmed = false), DELETE_CONFIRM_MS);
+  }
+
+  /** Any other click forgets the first delete click. @param {MouseEvent} event */
+  function disarmOnClick(event) {
+    if (deleteArmed && event !== armingClick) deleteArmed = false;
   }
 
   // Entering or leaving edit mode forgets a first delete click.
@@ -123,7 +135,7 @@
   });
 </script>
 
-<svelte:window onclick={handleClickOutside} />
+<svelte:window onclick={(event) => { disarmOnClick(event); handleClickOutside(event); }} />
 
 <label
   class="container"

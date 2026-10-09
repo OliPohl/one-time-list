@@ -119,7 +119,8 @@
     flex-direction: column;
     gap: 6px;
     padding: 76px 12px 24px;
-    overflow-y: auto;
+    /* Only the page list scrolls, see `.pages`. */
+    overflow: hidden;
     background-color: var(--surface-raised);
     border-radius: 0 30px 30px 0;
     box-shadow: 0 0 40px var(--shadow);
@@ -150,7 +151,17 @@
     border-top: 1.5px solid var(--surface-active);
   }
 
+  /* Fixed heights everywhere, nothing gets squeezed when the list is long. */
+  .drawer > *,
+  .pages > :global(*) {
+    flex-shrink: 0;
+  }
+
+  /* Takes the space between the top items and the bottom block, scrolls when there are many pages. */
   .pages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 6px;

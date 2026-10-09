@@ -1,6 +1,6 @@
 <!-- src/lib/pages/tasks/components/NextTask.svelte -->
 <script>
-  import { COLORS } from '../colors.js';
+  import { COLORS } from '../../../colors.js';
 
   // The buttons always use the wave colors of the color sets, whichever set the page uses.
   const buttonColors = `--button-custom: ${COLORS.amethyst.wave}; --button-alpha: ${COLORS.cobalt.wave}; --button-random: ${COLORS.emerald.wave}; --button-unselect: ${COLORS.crimson.wave};`;

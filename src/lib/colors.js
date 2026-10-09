@@ -1,6 +1,7 @@
-// src/lib/pages/tasks/colors.js
-// Colors a Tasks page can use. `wave` fills the wave and the bottom area, `accent` is used for
-// headings and the task input, `task` for the current task and selecting tasks.
+// src/lib/colors.js
+// Color sets: the app default (chosen in the settings) and the ones a Tasks page can pick for itself.
+// `wave` fills the wave and the bottom area, `accent` is used for headings, highlights and the task input,
+// `task` for the current task, section labels and selecting tasks.
 
 /** @typedef {{label: string, wave: string, accent: string, task: string}} Colors */
 

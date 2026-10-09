@@ -25,8 +25,32 @@
     editor
   } = $props();
 
+  /** After the first click on remove, a second click within this time removes the widget. */
+  const REMOVE_CONFIRM_MS = 3000;
+
   let editing = $state(false);
   let pressing = $state(false);
+  /** True after the first click on remove, like deleting a task. */
+  let removeArmed = $state(false);
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let disarmTimer;
+
+  /** The click that armed remove, it reaches the window too and must not disarm it right away. @type {Event | null} */
+  let armingClick = null;
+
+  /** @param {MouseEvent} event */
+  function requestRemove(event) {
+    clearTimeout(disarmTimer);
+    if (removeArmed) {
+      widgets.remove(widget.id);
+      return;
+    }
+    removeArmed = true;
+    armingClick = event;
+    disarmTimer = setTimeout(() => (removeArmed = false), REMOVE_CONFIRM_MS);
+  }
+
+  $effect(() => () => clearTimeout(disarmTimer));
   let isGhost = $derived(ghost || variant === 'drag');
   let isPlaceholder = $derived(!isGhost && layout.drag?.id === widget.id);
 
@@ -35,6 +59,8 @@
 
   /** @param {MouseEvent} event */
   function handleClickOutside(event) {
+    // Any other click forgets the first remove click.
+    if (removeArmed && event !== armingClick) removeArmed = false;
     if (editing && root && !root.contains(/** @type {Node} */ (event.target))) {
       editing = false;
     }
@@ -91,7 +117,11 @@
         onclick={() => (editing = !editing)}>{editing ? 'check' : 'edit_square'}</button>
     {/if}
 
-    <button class="control remove m3-icon" title="Remove Widget" onclick={() => widgets.remove(widget.id)}>delete</button>
+    <button
+      class="control remove m3-icon"
+      class:armed={removeArmed}
+      title={removeArmed ? 'Click again to remove' : 'Remove Widget'}
+      onclick={requestRemove}>{removeArmed ? 'delete_forever' : 'delete'}</button>
   </div>
 
   {#if editing && editor}
@@ -288,19 +318,23 @@
   }
 
   /* Blinks with the ringing border. */
+  /* Blinks between two colors, hovering swaps them for brighter ones without restarting the blink. */
   .control.confirm {
+    --blink-from: var(--tone-idle);
+    --blink-to: var(--tone-ring);
+
     color: var(--tone-ring);
     animation: confirm-blink 2s ease-in-out infinite;
   }
 
   @keyframes confirm-blink {
-    0%, 100% { color: var(--tone-idle); }
-    50% { color: var(--tone-ring); }
+    0%, 100% { color: var(--blink-from); }
+    50% { color: var(--blink-to); }
   }
 
   .control.confirm:hover {
-    animation: none;
-    color: var(--red-hover);
+    --blink-from: var(--text);
+    --blink-to: var(--red-hover);
   }
 
   .control.placeholder {
@@ -314,6 +348,11 @@
 
   .control.remove:hover {
     color: var(--red);
+  }
+
+  .control.remove.armed {
+    color: var(--red);
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 25;
   }
 
   .editor {
