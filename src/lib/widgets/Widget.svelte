@@ -305,8 +305,6 @@
     margin: 6px 0 12px;
     padding-top: 14px;
     border-top: 1.5px dashed #494949;
-    user-select: text;
-    -webkit-user-select: text;
   }
 
   @media (max-width: 520px) {

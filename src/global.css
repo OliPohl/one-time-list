@@ -6,6 +6,18 @@ html, body {
 
   background-color: #1b1b1b;
   color: #fcfcff;
+
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Only active text fields may be selected */
+input:not(:disabled),
+textarea:not(:disabled),
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 * {

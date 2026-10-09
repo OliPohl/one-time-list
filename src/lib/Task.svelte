@@ -1,6 +1,9 @@
 <!-- src/lib/Task.svelte -->
 <script>
+  import { fade } from 'svelte/transition';
   import { pressDrag } from './pressDrag.js';
+
+  const swapFade = { duration: 250 };
 
   let { 
     text = "Empty Task",
@@ -17,6 +20,7 @@
 
   let currentText = $derived(text);
   let isEditing = $state(false)
+  let doneIcon = $derived(isEditing ? "delete" : isCurrent ? "check_circle" : isHistory ? "undo" : "arrow_circle_up");
   let pressing = $state(false);
   /**
 	 * @type {HTMLLabelElement}
@@ -64,7 +68,9 @@
   function handleClickOutside(event) {
     if (!isEditing) return;
 
-    if (componentRef && !componentRef.contains(event.target)) {
+    // composedPath is captured at dispatch, so it still holds buttons the
+    // click itself swapped out of the DOM.
+    if (componentRef && !event.composedPath().includes(componentRef)) {
       cancelEdit();
     }
   }
@@ -105,12 +111,15 @@
 >
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <span 
-  class="done-btn m3-icon" 
-  class:editing={isEditing} 
-  class:current={isCurrent}
-  title={isEditing ? "Delete Task" : isHistory ? "Return Task to List" : isCurrent ? undefined : "Select Task"}
-  onclick={isEditing ? onDelete : onAction}>{isEditing ? "delete" : isCurrent ? "check_circle" : isHistory ? "undo" : "arrow_circle_up"}</span>
+  {#key doneIcon}
+    <span 
+    class="done-btn m3-icon" 
+    class:editing={isEditing} 
+    class:current={isCurrent}
+    title={isEditing ? "Delete Task" : isHistory ? "Return Task to List" : isCurrent ? undefined : "Select Task"}
+    in:fade={swapFade}
+    onclick={isEditing ? onDelete : onAction}>{doneIcon}</span>
+  {/key}
   
   <textarea 
     name="text" 
@@ -127,14 +136,18 @@
 
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <span class="cancel-btn m3-icon" class:editing={isEditing} onclick={cancelEdit}>close</span>
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <span class="edit-btn m3-icon" class:editing={isEditing} onclick={handleEdit}>{isEditing ? "check" : "edit_square"}</span>
+  {#if isEditing}
+    <span class="cancel-btn m3-icon" in:fade={swapFade} onclick={cancelEdit}>close</span>
+  {/if}
+  {#key isEditing}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <span class="edit-btn m3-icon" class:editing={isEditing} in:fade={swapFade} onclick={handleEdit}>{isEditing ? "check" : "edit_square"}</span>
+  {/key}
   {#if isHistory && !isEditing}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <span class="delete-btn m3-icon" title="Delete Task" onclick={onDelete}>delete</span>
+    <span class="delete-btn m3-icon" title="Delete Task" in:fade={swapFade} onclick={onDelete}>delete</span>
   {/if}
 </label>
 
@@ -242,7 +255,7 @@
   }
 
   .cancel-btn {
-    display: none;
+    margin-right: 5px;
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
     color: #b7b7b7;
@@ -250,12 +263,7 @@
     transition: color 0.4s;
   }
 
-  .cancel-btn.editing {
-    display: block !important;
-    margin-right: 5px;
-  }
-
-  .cancel-btn.editing:hover {
+  .cancel-btn:hover {
     color: #e0e0e0;
   }
 
