@@ -37,8 +37,8 @@
 
   <h4>Deleting your data</h4>
   <p>
-    Deleting a page removes everything saved for it. To remove all data, clear the site data for this page in
-    your browser's settings.
+    Deleting a page removes everything saved for it. To remove all data, use "Clear Cache" in the settings or
+    clear the site data for this page in your browser's settings.
   </p>
 
   <h4>Questions</h4>

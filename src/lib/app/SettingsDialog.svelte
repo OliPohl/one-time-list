@@ -3,6 +3,8 @@
 <script>
   import { fade, scale, slide } from 'svelte/transition';
   import PrivacyPolicy from './PrivacyPolicy.svelte';
+  import { confirm, confirmState } from './confirm.svelte.js';
+  import { clearAppData } from '../utils/storage.js';
   import { settings, THEMES } from './settings.svelte.js';
   import { COLORS } from '../colors.js';
 
@@ -26,9 +28,22 @@
   // Capture phase, so Escape doesn't also close the sidebar behind the dialog.
   /** @param {KeyboardEvent} event */
   function handleKeyDown(event) {
-    if (event.key !== 'Escape') return;
+    // The "Are you sure?" popup on top handles its own Escape.
+    if (event.key !== 'Escape' || confirmState.request) return;
     event.stopPropagation();
     close();
+  }
+
+  async function clearCache() {
+    const confirmed = await confirm({
+      title: 'Are you sure?',
+      message: 'All pages, tasks, widgets and settings saved in this browser will be deleted. This can\'t be undone.',
+      confirmLabel: 'Clear Cache'
+    });
+    if (!confirmed) return;
+    clearAppData();
+    // Start fresh, like the first visit.
+    location.reload();
   }
 </script>
 
@@ -98,6 +113,15 @@
     </section>
 
     <!-- At the bottom, opens below so the settings stay short. -->
+    <section class="setting">
+      <h3 class="setting-label">Data</h3>
+      <button class="clear-btn" onclick={clearCache}>
+        <span class="clear-icon m3-icon">delete_sweep</span>
+        <span>Clear Cache</span>
+      </button>
+      <p class="hint">Deletes everything this app saved in this browser.</p>
+    </section>
+
     <section class="setting privacy">
       <!-- Looks like plain text (like "Show History" on Tasks pages), still a button for keyboards and screen readers. -->
       <button class="privacy-toggle" aria-expanded={privacyOpen} onclick={() => (privacyOpen = !privacyOpen)}>
@@ -324,6 +348,41 @@
 
   .color-name {
     text-align: center;
+  }
+
+  .clear-btn {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px 9px 16px;
+    background: none;
+    border: 2.5px solid var(--line);
+    border-radius: 40px;
+    color: var(--text-soft);
+    font-family: "Roboto Slab", serif;
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.4s, border-color 0.4s;
+  }
+
+  /* Destructive, so it turns red on hover like the other delete buttons. */
+  .clear-btn:hover,
+  .clear-btn:focus-visible {
+    color: var(--red);
+    border-color: var(--red);
+  }
+
+  .clear-icon {
+    font-size: 22px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 22;
+  }
+
+  .hint {
+    margin: 0;
+    font-family: "Roboto Slab", serif;
+    font-size: 13px;
+    color: var(--text-muted);
   }
 
   .privacy {
