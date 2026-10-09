@@ -3,6 +3,12 @@
   --wave: #f73f43;
   --accent: #d6e550;
   --task: #7356f4;
+
+  /* Widget state colors (`tone` in widgets/views.js), for the widget border and the widget page time. */
+  --tone-idle: #d4d4d4;
+  --tone-blue: #29acdf;
+  --tone-orange: #f7a23f;
+  --tone-ring: #f73f43;
 }
 
 html, body {

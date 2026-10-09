@@ -6,8 +6,7 @@ import { playAlarm } from '../utils/sounds.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 import { uniqueId } from '../utils/id.js';
 
-/** The alarm sound repeats while a widget rings, up to this many times. */
-const ALARM_REPEATS = 6;
+/** The alarm sound repeats this often (ms) while a widget rings, until it's confirmed. */
 const ALARM_INTERVAL = 5000;
 
 const MINUTE = 60 * 1000;
@@ -28,7 +27,7 @@ export const POMODORO_PRESETS = [
 /** @param {string} type @param {string} id */
 function createWidget(type, id) {
   if (type === 'clock') {
-    return { id, type, pos: null, alarmMode: 'off', alarmTime: '07:00', nextAt: null, ringing: false };
+    return { id, type, pos: null, alarmMode: 'off', alarmTime: '07:00', nextAt: null, ringing: false, showSeconds: false };
   }
 
   if (type === 'timer') {
@@ -104,6 +103,9 @@ function migrate(widget) {
   if (widget.type === 'timer' && !('startOnSelect' in widget)) {
     return { ...widget, startOnSelect: false };
   }
+  if (widget.type === 'clock' && !('showSeconds' in widget)) {
+    return { ...widget, showSeconds: false };
+  }
   return widget;
 }
 
@@ -113,8 +115,9 @@ export class WidgetStore {
   now = $state(Date.now());
   /** @type {ReturnType<typeof setInterval> | undefined} */
   #interval;
-  #alarmCount = 0;
   #lastAlarmAt = 0;
+  /** Stops the chimes this store started that may still be playing. @type {Array<() => void>} */
+  #playingChimes = [];
   #storageKey;
   /** @type {(() => void) | undefined} */
   #stopSaving;
@@ -143,6 +146,7 @@ export class WidgetStore {
     clearInterval(this.#interval);
     this.#stopSaving?.();
     localStorage.removeItem(this.#storageKey);
+    for (const stop of this.#playingChimes) stop();
   }
 
   /** @param {string} id */
@@ -158,6 +162,7 @@ export class WidgetStore {
   /** @param {string} id */
   remove(id) {
     this.list = this.list.filter((widget) => widget.id !== id);
+    this.#silenceIfQuiet();
   }
 
   tick() {
@@ -183,24 +188,24 @@ export class WidgetStore {
   }
 
   /**
-   * Beeps when a widget starts ringing and repeats a few times until it's confirmed.
+   * Chimes when a widget starts ringing and repeats until every ringing widget is confirmed.
    * @param {number} now
    * @param {boolean} startedRinging
    */
   #playAlarmSound(now, startedRinging) {
-    if (startedRinging) this.#alarmCount = 0;
-
-    if (!this.list.some((widget) => widget.ringing)) {
-      this.#alarmCount = 0;
-      return;
-    }
-
-    if (this.#alarmCount >= ALARM_REPEATS) return;
+    if (!this.list.some((widget) => widget.ringing)) return;
     if (!startedRinging && now - this.#lastAlarmAt < ALARM_INTERVAL) return;
 
-    playAlarm();
-    this.#alarmCount += 1;
+    // A chime is shorter than the interval, so only the one just started can still be playing.
+    this.#playingChimes = [playAlarm()];
     this.#lastAlarmAt = now;
+  }
+
+  /** Cuts off the chime right away once nothing of this store rings anymore. */
+  #silenceIfQuiet() {
+    if (this.list.some((widget) => widget.ringing)) return;
+    for (const stop of this.#playingChimes) stop();
+    this.#playingChimes = [];
   }
 
   // Clock
@@ -211,12 +216,14 @@ export class WidgetStore {
     widget.alarmTime = time;
     widget.ringing = false;
     widget.nextAt = nextAlarm(mode, time, Date.now());
+    this.#silenceIfQuiet();
   }
 
   /** @param {any} widget */
   confirmAlarm(widget) {
     widget.ringing = false;
     widget.nextAt = nextAlarm(widget.alarmMode, widget.alarmTime, Date.now());
+    this.#silenceIfQuiet();
   }
 
   // Timer & Pomodoro
@@ -249,6 +256,7 @@ export class WidgetStore {
     } else {
       widget.remaining = widget.duration;
     }
+    this.#silenceIfQuiet();
   }
 
   /** @param {any} widget @param {number} ms */
@@ -271,6 +279,7 @@ export class WidgetStore {
     widget.endsAt = null;
     widget.remaining = phaseDuration(widget);
     if (autoStart) this.start(widget);
+    this.#silenceIfQuiet();
   }
 
   /** @param {any} widget @param {{work: number, short: number, long: number, every: number}} settings minutes */
@@ -284,7 +293,7 @@ export class WidgetStore {
 
   /**
    * @param {any} widget
-   * @param {'autoStart' | 'startOnSelect'} option
+   * @param {'autoStart' | 'startOnSelect' | 'showSeconds'} option
    * @param {boolean} value
    */
   setOption(widget, option, value) {

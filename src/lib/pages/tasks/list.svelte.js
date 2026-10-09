@@ -289,6 +289,11 @@ export function getListStore(pageId) {
   return store;
 }
 
+/** The store of a page if it's loaded, without loading it. @param {string} pageId */
+export function findListStore(pageId) {
+  return stores.get(pageId);
+}
+
 /** @param {string} pageId */
 export function deleteListStore(pageId) {
   (stores.get(pageId) ?? new ListStore(pageId)).destroy();

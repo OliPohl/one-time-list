@@ -1,7 +1,7 @@
-<!-- src/lib/pages/tasks/components/Grain.svelte -->
+<!-- src/lib/ui/Grain.svelte -->
 <!-- Subtle grain behind the whole page, tinted with the accent color. -->
 <script>
-  import { grainUrl, GRAIN_SIZE } from '../../../utils/grain.js';
+  import { grainUrl, GRAIN_SIZE } from '../utils/grain.js';
 
   const mask = grainUrl();
 </script>

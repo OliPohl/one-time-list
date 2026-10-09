@@ -26,6 +26,7 @@
   let input = $state();
 
   let pageType = $derived(PAGE_TYPES[page.type]);
+  let ringing = $derived(pages.isRinging(page));
 
   // Start every edit from the current name.
   $effect(() => {
@@ -68,7 +69,7 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<div class="row" class:active class:editing bind:this={root}>
+<div class="row" class:active class:editing class:ringing bind:this={root}>
   {#if editing}
     <button class="icon-btn delete m3-icon" title="Delete Page" in:fade={swapFade} onclick={deletePage}>delete</button>
     <input
@@ -82,7 +83,7 @@
     <button class="icon-btn cancel m3-icon" title="Cancel" in:fade={swapFade} onclick={cancel}>close</button>
     <button class="icon-btn save m3-icon" title="Save Name" in:fade={swapFade} onclick={save}>check</button>
   {:else}
-    <button class="main" title={pageType.label} onclick={() => navigation.go({ kind: 'page', id: page.id })}>
+    <button class="main" title={ringing ? `${pageType.label}: ringing` : pageType.label} onclick={() => navigation.go({ kind: 'page', id: page.id })}>
       <span class="type-icon m3-icon" in:fade={swapFade}>{pageType.icon}</span>
       <span class="name">{page.name}</span>
     </button>
@@ -133,6 +134,16 @@
 
   .row:not(.editing):hover {
     color: var(--accent);
+  }
+
+  /* An alarm or timer of this page rings: blink until it's confirmed. */
+  .row.ringing:not(.editing) .main {
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { color: inherit; }
+    50% { color: #f73f43; }
   }
 
   .type-icon {

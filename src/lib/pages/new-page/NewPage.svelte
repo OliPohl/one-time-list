@@ -77,7 +77,7 @@
       <h2 class="label">Options</h2>
       {#key pageType.type}
         {#if pageType.Options}
-          <pageType.Options {options} />
+          <pageType.Options {options} type={pageType.type} />
         {/if}
       {/key}
     </section>

@@ -1,5 +1,10 @@
 <!-- src/lib/pages/tasks/components/NextTask.svelte -->
 <script>
+  import { COLORS } from '../colors.js';
+
+  // The buttons always use the wave colors of the color sets, whichever set the page uses.
+  const buttonColors = `--button-custom: ${COLORS.amethyst.wave}; --button-alpha: ${COLORS.cobalt.wave}; --button-random: ${COLORS.emerald.wave}; --button-unselect: ${COLORS.crimson.wave};`;
+
   let { 
     onShuffle,
     onSortAlphanumeric,
@@ -14,7 +19,7 @@
   <div class="heading-container">
     <h2 class="heading">Current Task</h2>
 
-    <div class="button-container">
+    <div class="button-container" style={buttonColors}>
       <button class="button button-custom" title="Restore Custom Order" onclick={onCustomOrder}>
         <span class="button-icon m3-icon">layers</span>
       </button>
@@ -109,19 +114,19 @@
 }
 
 .button-custom {
-    background-color: var(--task);
+    background-color: var(--button-custom);
 }
 
 .button-alpha {
-    background-color: #29acdf;
+    background-color: var(--button-alpha);
 }
 
 .button-random {
-    background-color: #2cdf29;
+    background-color: var(--button-random);
 }
 
 .button-unselect {
-    background-color: #f73f43;
+    background-color: var(--button-unselect);
 }
 
 .button-icon {

@@ -2,11 +2,13 @@
 <!-- Hamburger button in the top left corner, toggles the sidebar. It stays above the open drawer so it can close it too. -->
 <script>
   import { navigation } from './navigation.svelte.js';
+  import { pages } from './pages.svelte.js';
 </script>
 
 <button
   class="menu-btn m3-icon"
   class:open={navigation.sidebarOpen}
+  class:ringing={pages.anyRinging && !navigation.sidebarOpen}
   title={navigation.sidebarOpen ? 'Close Menu' : 'Open Menu'}
   aria-expanded={navigation.sidebarOpen}
   onclick={() => (navigation.sidebarOpen = !navigation.sidebarOpen)}
@@ -43,5 +45,15 @@
 
   .menu-btn:hover {
     background-color: #0c0c0c;
+  }
+
+  /* Something rings on a page, the sidebar shows which one. */
+  .menu-btn.ringing {
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { color: #cacaca; }
+    50% { color: #f73f43; }
   }
 </style>

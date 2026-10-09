@@ -3,10 +3,14 @@
 // `dashboard/` and `new-page/` are built-in views of the app, not page types.
 
 import tasks from './tasks/index.js';
+import { clock, timer, pomodoro } from './widget-pages/index.js';
 
 /** @type {Record<string, import('./types.js').PageType>} */
 export const PAGE_TYPES = {
-  [tasks.type]: tasks
+  [tasks.type]: tasks,
+  [clock.type]: clock,
+  [timer.type]: timer,
+  [pomodoro.type]: pomodoro
 };
 
 /** Types that were renamed: old key -> current key. Saved pages are updated on load. */

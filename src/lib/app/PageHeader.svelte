@@ -8,9 +8,10 @@
 
   /**
    * `visible` is false while the page hides the header, it then can't be focused and its settings close.
-   * @type {{page: import('../pages/types.js').Page, visible?: boolean}}
+   * `icon` is shown before the title, `centered` puts icon, title and settings button in the middle of the page.
+   * @type {{page: import('../pages/types.js').Page, visible?: boolean, icon?: string, centered?: boolean}}
    */
-  let { page, visible = true } = $props();
+  let { page, visible = true, icon = '', centered = false } = $props();
 
   let open = $state(false);
   /** @type {HTMLElement} */
@@ -51,7 +52,8 @@
 
 <svelte:window onclick={handleClickOutside} onkeydown={handleKeyDown} />
 
-<header class="page-header" inert={!visible} bind:this={root}>
+<header class="page-header" class:centered inert={!visible} bind:this={root}>
+  {#if icon}<span class="title-icon m3-icon">{icon}</span>{/if}
   <h1 class="title">{page.name}</h1>
 
   <button class="settings-btn m3-icon" class:open title="Page Settings" aria-expanded={open} onclick={toggle}>settings</button>
@@ -70,7 +72,7 @@
       </label>
 
       {#if pageType.Options}
-        <pageType.Options options={page.options} />
+        <pageType.Options options={page.options} {page} type={page.type} />
       {/if}
 
       <button class="delete-btn" onclick={deletePage}>
@@ -97,13 +99,26 @@
     gap: 12px;
   }
 
+  .page-header.centered {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 0;
+  }
+
+  .title-icon {
+    font-size: 30px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 30;
+    color: var(--accent);
+  }
+
   /* Without room beside the column the menu button sits in the first column, the title is centered between both buttons. */
   @media (max-width: 740px) {
-    .page-header {
+    .page-header:not(.centered) {
       grid-template-columns: 46px 1fr 46px;
     }
 
-    .title {
+    .page-header:not(.centered) .title {
       grid-column: 2;
       text-align: center;
     }
@@ -157,6 +172,8 @@
     right: 0;
     box-sizing: border-box;
     width: min(100%, 420px);
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -166,6 +183,14 @@
     border-radius: 30px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
     animation: drop-in 0.2s ease-out;
+  }
+
+  /* Below the middle of a centered header, `translate` keeps the drop-in animation's transform free. */
+  .centered .panel {
+    right: auto;
+    left: 50%;
+    width: min(calc(100vw - 20px), 420px);
+    translate: -50% 0;
   }
 
   @keyframes drop-in {

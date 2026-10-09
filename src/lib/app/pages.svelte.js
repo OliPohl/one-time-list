@@ -33,7 +33,8 @@ class PageList {
 
     if (saved.length === 0) {
       const type = PAGE_TYPES[DEFAULT_PAGE_TYPE];
-      const page = this.create({ type: type.type, name: type.defaultName, options: type.defaultOptions() });
+      // Not started yet, the old data has to be in place before the page loads it.
+      const page = this.#add({ type: type.type, name: type.defaultName, options: type.defaultOptions() });
       type.importLegacy?.(page.id);
     }
 
@@ -44,16 +45,35 @@ class PageList {
     });
   }
 
+  /** Some page has an alarm or timer ringing. */
+  anyRinging = $derived(this.list.some((page) => this.isRinging(page)));
+
+  /** @param {Page} page */
+  isRinging(page) {
+    return PAGE_TYPES[page.type].isRinging?.(page) ?? false;
+  }
+
   /** @param {string | undefined} id */
   get(id) {
     return this.list.find((page) => page.id === id);
   }
 
   /**
+   * Adds and starts a page.
    * @param {{type: string, name: string, options: Record<string, any>}} settings
    * @returns {Page}
    */
-  create({ type, name, options }) {
+  create(settings) {
+    const page = this.#add(settings);
+    PAGE_TYPES[page.type].init?.(page);
+    return page;
+  }
+
+  /**
+   * @param {{type: string, name: string, options: Record<string, any>}} settings
+   * @returns {Page}
+   */
+  #add({ type, name, options }) {
     /** @type {Page} */
     const page = {
       id: uniqueId((id) => Boolean(this.get(id))),

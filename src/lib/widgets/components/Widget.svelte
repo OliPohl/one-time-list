@@ -20,6 +20,8 @@
     tone = 'idle',
     /** @type {Array<{icon: string, title: string, onclick: () => void, kind?: 'confirm'}>} */
     controls = [],
+    /** Room kept for this many controls, so the widget keeps its size when they change. */
+    slots = 0,
     editor
   } = $props();
 
@@ -77,6 +79,9 @@
         title={control.title}
         onclick={control.onclick}>{control.icon}</button>
     {/each}
+    {#each { length: Math.max(0, slots - controls.length) }, index (index)}
+      <span class="control placeholder m3-icon" aria-hidden="true">check_circle</span>
+    {/each}
 
     {#if editor}
       <button
@@ -99,8 +104,6 @@
 
 <style>
   .widget {
-    --border-idle: #d4d4d4;
-
     box-sizing: border-box;
     width: 100%;
     display: grid;
@@ -109,7 +112,7 @@
     border-radius: 40px;
     border-style: solid;
     border-width: 2.5px;
-    border-color: var(--border-idle);
+    border-color: var(--tone-idle);
     color: #ffffff;
     font-family: "Roboto Slab", serif;
 
@@ -125,11 +128,11 @@
   }
 
   .widget.blue {
-    border-color: #29acdf;
+    border-color: var(--tone-blue);
   }
 
   .widget.orange {
-    border-color: #f7a23f;
+    border-color: var(--tone-orange);
   }
 
   .widget.ring {
@@ -137,8 +140,8 @@
   }
 
   @keyframes ring {
-    0%, 100% { border-color: var(--border-idle); }
-    50% { border-color: #f73f43; }
+    0%, 100% { border-color: var(--tone-idle); }
+    50% { border-color: var(--tone-ring); }
   }
 
   .widget.pressing {
@@ -284,12 +287,25 @@
     color: #1fff50;
   }
 
+  /* Blinks with the ringing border. */
   .control.confirm {
-    color: #29df50;
+    color: var(--tone-ring);
+    animation: confirm-blink 2s ease-in-out infinite;
+  }
+
+  @keyframes confirm-blink {
+    0%, 100% { color: var(--tone-idle); }
+    50% { color: var(--tone-ring); }
   }
 
   .control.confirm:hover {
-    color: #1fff50;
+    animation: none;
+    color: #ff6b6e;
+  }
+
+  .control.placeholder {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .control.remove {
