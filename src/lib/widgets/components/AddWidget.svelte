@@ -59,11 +59,11 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background-color: rgba(0, 0, 0, 0);
+    background-color: transparent;
     padding: 5px 25px;
     border-radius: 40px;
     border-color: #8c8c8c00;
-    color: #aaaaaa;
+    color: var(--text-muted);
     font-family: "Roboto Slab", serif;
     font-size: 18px;
     cursor: pointer;
@@ -89,10 +89,10 @@
     display: flex;
     flex-direction: column;
     padding: 8px;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     border-radius: 26px;
-    border: 2.5px solid #d4d4d4;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    border: 2.5px solid var(--line-strong);
+    box-shadow: 0 12px 40px var(--shadow);
     animation: drop-in 0.2s ease-out;
   }
 
@@ -109,7 +109,7 @@
     background: none;
     border: none;
     border-radius: 20px;
-    color: #dadada;
+    color: var(--text-soft);
     font-family: "Roboto Slab", serif;
     font-size: 17px;
     text-align: left;
@@ -119,7 +119,7 @@
 
   .option:hover {
     color: var(--accent);
-    background-color: #1b1b1b;
+    background-color: var(--surface-active);
   }
 
   .option-icon {

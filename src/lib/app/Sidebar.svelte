@@ -5,6 +5,8 @@
   import { navigation } from './navigation.svelte.js';
   import { pages } from './pages.svelte.js';
   import SidebarPageItem from './SidebarPageItem.svelte';
+  import VolumeControl from './VolumeControl.svelte';
+  import { settings } from './settings.svelte.js';
 
   /** How far the closed drawer is moved past its own width, so its shadow is off screen too. */
   const HIDDEN_OFFSET = 60;
@@ -80,6 +82,14 @@
       <span class="item-name">Add New Page</span>
     </button>
   </div>
+
+  <div class="bottom">
+    <VolumeControl />
+    <button class="item" class:active={settings.dialogOpen} onclick={() => (settings.dialogOpen = true)}>
+      <span class="item-icon m3-icon">settings</span>
+      <span class="item-name">Settings</span>
+    </button>
+  </div>
 </nav>
 
 
@@ -88,7 +98,7 @@
     position: fixed;
     inset: 0;
     z-index: 2999;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--scrim);
     pointer-events: none;
     transition: opacity 0.35s cubic-bezier(0.76, 0, 0.24, 1);
   }
@@ -110,9 +120,9 @@
     gap: 6px;
     padding: 76px 12px 24px;
     overflow-y: auto;
-    background-color: #0c0c0c;
+    background-color: var(--surface-raised);
     border-radius: 0 30px 30px 0;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 40px var(--shadow);
     transition: transform 0.35s cubic-bezier(0.76, 0, 0.24, 1);
   }
 
@@ -128,6 +138,16 @@
     letter-spacing: -0.04em;
     text-transform: uppercase;
     color: var(--task);
+  }
+
+  /* Pushed to the bottom of the drawer. */
+  .bottom {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1.5px solid var(--surface-active);
   }
 
   .pages {
@@ -151,7 +171,7 @@
     background: none;
     border: none;
     border-radius: 20px;
-    color: #dadada;
+    color: var(--text-soft);
     font-family: "Roboto Slab", serif;
     font-size: 17px;
     text-align: left;
@@ -165,11 +185,11 @@
 
   .item.active {
     color: var(--accent);
-    background-color: #1b1b1b;
+    background-color: var(--surface-active);
   }
 
   .item.add {
-    color: #aaaaaa;
+    color: var(--text-muted);
   }
 
   .item.add:hover,

@@ -31,7 +31,7 @@
     background: none;
     border: none;
     border-radius: 50%;
-    color: #cacaca;
+    color: var(--text-soft);
     font-size: 30px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 30;
     cursor: pointer;
@@ -44,7 +44,7 @@
   }
 
   .menu-btn:hover {
-    background-color: #0c0c0c;
+    background-color: var(--surface-raised);
   }
 
   /* Something rings on a page, the sidebar shows which one. */
@@ -53,7 +53,7 @@
   }
 
   @keyframes blink {
-    0%, 100% { color: #cacaca; }
-    50% { color: #f73f43; }
+    0%, 100% { color: var(--text-soft); }
+    50% { color: var(--red); }
   }
 </style>

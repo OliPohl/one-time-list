@@ -21,7 +21,7 @@
   .label {
     font-family: "Roboto Slab", serif;
     font-size: 13px;
-    color: #9a9a9a;
+    color: var(--text-muted);
   }
 
   .content {

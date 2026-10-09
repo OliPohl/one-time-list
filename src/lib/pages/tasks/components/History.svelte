@@ -93,7 +93,7 @@
 
   .item.placeholder {
     border-radius: 40px;
-    outline: 2.5px dashed #494949;
+    outline: 2.5px dashed var(--line);
     outline-offset: -2.5px;
   }
 
@@ -108,7 +108,7 @@
     background: none;
     border: none;
     padding: 5px 10px;
-    color: #8c8c8c;
+    color: var(--text-muted);
     font-family: "Roboto Slab", serif;
     font-size: 16px;
     cursor: pointer;
@@ -120,7 +120,7 @@
   }
 
   .text-btn.clear:hover {
-    color: #f73f43;
+    color: var(--red);
   }
 
   .text-icon {

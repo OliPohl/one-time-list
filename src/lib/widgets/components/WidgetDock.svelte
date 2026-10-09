@@ -31,7 +31,7 @@
     flex-direction: column;
     gap: 15px;
     margin-top: 15px;
-    background-color: #0c0c0c;
+    background-color: var(--surface-raised);
     padding:10px;
     border-radius: 30px;
   }

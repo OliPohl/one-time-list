@@ -36,17 +36,47 @@ export function unlockAudio() {
 
 /** @type {BiquadFilterNode | undefined} */
 let softener;
+/** Volume of the whole app, set from the sidebar. @type {GainNode | undefined} */
+let master;
+/** 0 to 1, as set by the user. */
+let volume = 0.5;
+
+/**
+ * Ears hear loudness roughly logarithmically, a squared gain makes the slider feel even.
+ * Half way (0.5) is the original loudness (gain 1), full is four times as loud (+12 dB).
+ * @param {number} value
+ */
+const gainOf = (value) => 4 * value * value;
 
 /** Low-pass filter shared by all notes, takes the harsh top off the tones. @param {AudioContext} audio */
 function output(audio) {
   if (!softener) {
+    // Loud volumes would clip where notes overlap, the limiter catches the peaks.
+    const limiter = audio.createDynamicsCompressor();
+    limiter.threshold.value = -6;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.003;
+    limiter.release.value = 0.25;
+    limiter.connect(audio.destination);
+
+    master = audio.createGain();
+    master.gain.value = gainOf(volume);
+    master.connect(limiter);
+
     softener = audio.createBiquadFilter();
     softener.type = 'lowpass';
     softener.frequency.value = 2200;
     softener.Q.value = 0.5;
-    softener.connect(audio.destination);
+    softener.connect(master);
   }
   return softener;
+}
+
+/** Sets the volume of every sound, 0 mutes. @param {number} value 0 to 1 */
+export function setVolume(value) {
+  volume = Math.min(1, Math.max(0, value));
+  if (master && context) master.gain.setTargetAtTime(gainOf(volume), context.currentTime, 0.02);
 }
 
 /**
@@ -77,6 +107,15 @@ function note(audio, frequency, start, duration, volume = 0.12, destination = ou
     oscillator.start(time);
     oscillator.stop(time + duration + 0.05);
   }
+}
+
+/** One short note, played while the volume changes so the user hears how loud it is. */
+export function playVolumePreview() {
+  // Called from the slider, a user interaction, so it may create the context.
+  const audio = getContext();
+  if (!audio || !canPlay(audio) || volume === 0) return;
+
+  note(audio, 783.99, 0, 0.45); // G5
 }
 
 /** Gentle rising two-note chime for a completed task. */

@@ -29,7 +29,7 @@
 
 <svelte:window onkeydowncapture={handleKeyDown} />
 
-<div class="dialog-layer" data-confirm-dialog>
+<div class="dialog-layer" data-dialog>
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="scrim" transition:fade={{ duration: 200 }} onclick={() => onAnswer(false)}></div>
@@ -60,7 +60,7 @@
   .scrim {
     position: absolute;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--scrim);
   }
 
   .dialog {
@@ -71,10 +71,10 @@
     flex-direction: column;
     gap: 12px;
     padding: 24px;
-    background-color: rgb(0, 0, 0);
-    border: 2.5px solid #d4d4d4;
+    background-color: var(--surface);
+    border: 2.5px solid var(--line-strong);
     border-radius: 30px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 40px var(--shadow);
   }
 
   .title {
@@ -84,12 +84,12 @@
     font-weight: 900;
     letter-spacing: -0.04em;
     text-transform: uppercase;
-    color: #f73f43;
+    color: var(--red);
   }
 
   .message {
     margin: 0;
-    color: #dadada;
+    color: var(--text-soft);
     font-family: "Roboto Slab", serif;
     font-size: 16px;
     line-height: 1.5;
@@ -116,19 +116,19 @@
 
   .cancel {
     background: none;
-    border-color: #494949;
-    color: #aaaaaa;
+    border-color: var(--line);
+    color: var(--text-muted);
   }
 
   .cancel:hover,
   .cancel:focus-visible {
-    border-color: #8c8c8c;
-    color: #e0e0e0;
+    border-color: var(--text-muted);
+    color: var(--text-soft);
   }
 
   .confirm {
-    background-color: #f73f43;
-    color: #ffffff;
+    background-color: var(--red);
+    color: var(--on-color);
   }
 
   .confirm:hover {

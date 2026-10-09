@@ -149,7 +149,7 @@
     background: none;
     border: none;
     border-radius: 50%;
-    color: #cacaca;
+    color: var(--text-soft);
     font-size: 28px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 28;
     cursor: pointer;
@@ -159,7 +159,7 @@
   .settings-btn:hover,
   .settings-btn.open {
     color: var(--accent);
-    background-color: #0c0c0c;
+    background-color: var(--surface-raised);
   }
 
   .settings-btn.open {
@@ -178,10 +178,10 @@
     flex-direction: column;
     gap: 20px;
     padding: 20px;
-    background-color: rgb(0, 0, 0);
-    border: 2.5px solid #d4d4d4;
+    background-color: var(--surface);
+    border: 2.5px solid var(--line-strong);
     border-radius: 30px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 40px var(--shadow);
     animation: drop-in 0.2s ease-out;
   }
 
@@ -207,17 +207,17 @@
   .label {
     font-family: "Roboto Slab", serif;
     font-size: 16px;
-    color: #aaaaaa;
+    color: var(--text-muted);
   }
 
   .name-input {
     box-sizing: border-box;
     width: 100%;
     padding: 10px 20px;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     border: 2.5px solid var(--accent);
     border-radius: 40px;
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
     font-size: 17px;
   }
@@ -230,7 +230,7 @@
     padding: 5px 10px;
     background: none;
     border: none;
-    color: #8c8c8c;
+    color: var(--text-muted);
     font-family: "Roboto Slab", serif;
     font-size: 16px;
     cursor: pointer;
@@ -238,7 +238,7 @@
   }
 
   .delete-btn:hover {
-    color: #f73f43;
+    color: var(--red);
   }
 
   .delete-icon {

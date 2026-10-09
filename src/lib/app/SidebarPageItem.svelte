@@ -102,13 +102,13 @@
     height: var(--sidebar-item-height);
     padding-right: 8px;
     border-radius: 20px;
-    color: #dadada;
+    color: var(--text-soft);
     transition: color 0.4s, background-color 0.4s;
   }
 
   .row.active,
   .row.editing {
-    background-color: #1b1b1b;
+    background-color: var(--surface-active);
   }
 
   .row.active {
@@ -143,7 +143,7 @@
 
   @keyframes blink {
     0%, 100% { color: inherit; }
-    50% { color: #f73f43; }
+    50% { color: var(--red); }
   }
 
   .type-icon {
@@ -165,7 +165,7 @@
     background: none;
     border: none;
     border-bottom: 2px solid var(--accent);
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
     font-size: 17px;
   }
@@ -175,7 +175,7 @@
     padding: 4px;
     background: none;
     border: none;
-    color: #b7b7b7;
+    color: var(--text-muted);
     font-size: 23px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
     cursor: pointer;
@@ -184,7 +184,7 @@
 
   .edit {
     opacity: 0;
-    color: #dadada;
+    color: var(--text-soft);
   }
 
   .row:hover .edit,
@@ -201,18 +201,18 @@
 
   .delete {
     margin-left: 10px;
-    color: #f73f43;
+    color: var(--red);
   }
 
   .cancel:hover {
-    color: #e0e0e0;
+    color: var(--text-soft);
   }
 
   .save {
-    color: #29df50;
+    color: var(--green);
   }
 
   .save:hover {
-    color: #1fff50;
+    color: var(--green-hover);
   }
 </style>

@@ -12,6 +12,8 @@
   import Sidebar from './Sidebar.svelte';
   import ConfirmDialog from '../ui/ConfirmDialog.svelte';
   import { confirmState } from './confirm.svelte.js';
+  import SettingsDialog from './SettingsDialog.svelte';
+  import { settings } from './settings.svelte.js';
 
   let isLoaded = $state(false);
 
@@ -23,6 +25,7 @@
   );
 
   onMount(() => {
+    settings.load();
     pages.load();
     navigation.load();
     unlockAudio();
@@ -35,19 +38,26 @@
 </svelte:head>
 
 {#if isLoaded}
-  <div class="app" style={pageStyle}>
-    {#if navigation.view.kind === 'dashboard'}
-      <DashboardPage />
-    {:else if navigation.view.kind === 'new-page'}
-      <NewPage />
-    {:else if page && PageComponent}
-      {#key page.id}
-        <PageComponent {page} />
-      {/key}
-    {/if}
+  <div class="app">
+    <!-- Only the page gets its colors (e.g. the Tasks color set), the sidebar and dialogs keep the defaults. -->
+    <div class="page-colors" style={pageStyle}>
+      {#if navigation.view.kind === 'dashboard'}
+        <DashboardPage />
+      {:else if navigation.view.kind === 'new-page'}
+        <NewPage />
+      {:else if page && PageComponent}
+        {#key page.id}
+          <PageComponent {page} />
+        {/key}
+      {/if}
+    </div>
 
     <Sidebar />
     <MenuButton />
+
+    {#if settings.dialogOpen}
+      <SettingsDialog />
+    {/if}
 
     {#if confirmState.request}
       <ConfirmDialog {...confirmState.request} onAnswer={(confirmed) => confirmState.answer(confirmed)} />
@@ -57,8 +67,9 @@
 
 
 <style>
-  /* Only carries the page's custom properties, it doesn't affect the layout. */
-  .app {
+  /* Wrappers only, they don't affect the layout. `.page-colors` carries the page's custom properties. */
+  .app,
+  .page-colors {
     display: contents;
   }
 </style>

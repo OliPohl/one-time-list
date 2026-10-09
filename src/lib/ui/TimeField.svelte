@@ -64,7 +64,7 @@
     gap: 2px;
     padding: 4px 12px;
     border-radius: 40px;
-    border: 1.5px solid #494949;
+    border: 1.5px solid var(--line);
     transition: border-color 0.4s;
   }
 
@@ -77,7 +77,7 @@
     width: 2ch;
     background: transparent;
     border: none;
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
     font-size: 15px;
     font-variant-numeric: tabular-nums;
@@ -87,6 +87,6 @@
   .colon {
     font-family: "Roboto Slab", serif;
     font-size: 15px;
-    color: #9a9a9a;
+    color: var(--text-muted);
   }
 </style>

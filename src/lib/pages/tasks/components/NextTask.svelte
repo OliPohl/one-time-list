@@ -132,7 +132,7 @@
 .button-icon {
   font-size: 25px;
   font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
-  color: white;
+  color: var(--on-color);
 }
 
 @media (max-width: 480px) {

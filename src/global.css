@@ -1,14 +1,78 @@
-/* Default colors (Crimson). Pages can override them, see `PageType.style`. */
+/*
+  Colors. Every hue exists once (the palette), neutrals are named by their role so light mode can swap them.
+  Use these variables instead of raw color values anywhere in the app.
+*/
 :root {
-  --wave: #f73f43;
-  --accent: #d6e550;
-  --task: #7356f4;
+  color-scheme: dark;
+
+  /* Palette */
+  --red: #f73f43;
+  --orange: #f7a23f;
+  --yellow: #d6e550;
+  --green: #29c76a;
+  --teal: #3fd0c9;
+  --blue: #2d6cf6;
+  --purple: #7356f4;
+  --pink: #ff6fae;
+
+  /* Hover shades */
+  --red-hover: color-mix(in srgb, var(--red), white 25%);
+  --green-hover: color-mix(in srgb, var(--green), white 25%);
+
+  /* Neutrals */
+  --bg: #1b1b1b;
+  --surface: #000000;
+  --surface-raised: #0c0c0c;
+  --surface-active: #1b1b1b;
+  --line: #494949;
+  --line-strong: #d4d4d4;
+  --text: #ffffff;
+  --text-soft: #dadada;
+  --text-muted: #9a9a9a;
+  /* Text on a hue (buttons), and on the accent color. */
+  --on-color: #ffffff;
+  --on-accent: #000000;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow: rgba(0, 0, 0, 0.6);
+
+  /* Page colors, Crimson by default. Pages can override them, see `PageType.style`. */
+  --wave: var(--red);
+  --accent: var(--yellow);
+  --task: var(--purple);
 
   /* Widget state colors (`tone` in widgets/views.js), for the widget border and the widget page time. */
-  --tone-idle: #d4d4d4;
-  --tone-blue: #29acdf;
-  --tone-orange: #f7a23f;
-  --tone-ring: #f73f43;
+  --tone-idle: var(--line-strong);
+  --tone-blue: var(--blue);
+  --tone-orange: var(--orange);
+  --tone-ring: var(--red);
+}
+
+/* Light mode, set by the theme setting (see app/settings.svelte.js and app.html). Hues are a bit darker to stay readable. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --red: #e0353a;
+  --orange: #db7f12;
+  --yellow: #8f9c0c;
+  --green: #1d9e55;
+  --teal: #12a19a;
+  --blue: #2459d8;
+  --purple: #5f45e0;
+  --pink: #df4f8f;
+
+  --bg: #f2f0eb;
+  --surface: #ffffff;
+  --surface-raised: #e7e4de;
+  --surface-active: #dbd7d0;
+  --line: #bfbab2;
+  --line-strong: #3d3d3d;
+  --text: #1b1b1b;
+  --text-soft: #353535;
+  --text-muted: #6f6b65;
+  --on-color: #ffffff;
+  --on-accent: #ffffff;
+  --scrim: rgba(0, 0, 0, 0.35);
+  --shadow: rgba(0, 0, 0, 0.18);
 }
 
 html, body {
@@ -17,7 +81,7 @@ html, body {
 
   min-height: 100vh;
 
-  color: #fcfcff;
+  color: var(--text);
 
   -webkit-user-select: none;
   user-select: none;
@@ -26,7 +90,7 @@ html, body {
 
 /* Only on html: a body background would paint over page backgrounds placed behind the content. */
 html {
-  background-color: #1b1b1b;
+  background-color: var(--bg);
 }
 
 /* Only active text fields may be selected */

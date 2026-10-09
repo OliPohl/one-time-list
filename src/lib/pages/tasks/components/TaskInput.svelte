@@ -143,7 +143,7 @@
     display: flex;
     align-items: center;
     justify-content: left;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     padding: 15px 25px;
     border-radius: 40px;
     border-style: solid;
@@ -160,7 +160,7 @@
     border: none;
     resize: none;
     overflow: auto;
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
   }
 
@@ -168,7 +168,7 @@
     font-size: 30px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 30;
     cursor: auto;
-    color: #8c8c8c;
+    color: var(--text-muted);
     margin-left: 5px;
     transition: color 0.4s, font-variation-settings 0.7s;
   }

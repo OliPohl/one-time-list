@@ -63,7 +63,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
   }
 
@@ -106,7 +106,7 @@
     min-height: 1.5em;
     font-size: 20px;
     line-height: 1.5;
-    color: #9a9a9a;
+    color: var(--text-muted);
   }
 
   /* Fixed height: the page is centered, a row that changes height (buttons swapped for "Dismiss") moves everything. */
@@ -123,14 +123,14 @@
     border: none;
     padding: 4px;
     cursor: pointer;
-    color: #dadada;
+    color: var(--text-soft);
     font-size: 44px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 44;
     transition: color 0.4s, font-variation-settings 0.7s;
   }
 
   .control:hover {
-    color: #ffffff;
+    color: var(--text);
   }
 
   .control:active {
@@ -144,7 +144,7 @@
     align-items: center;
     gap: 12px;
     padding: 0 30px 0 24px;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     border: 2.5px solid var(--tone-ring);
     border-radius: 40px;
     color: var(--tone-ring);
@@ -163,8 +163,8 @@
 
   .confirm:hover {
     animation: none;
-    color: #ff6b6e;
-    border-color: #ff6b6e;
+    color: var(--red-hover);
+    border-color: var(--red-hover);
   }
 
   .confirm:active {

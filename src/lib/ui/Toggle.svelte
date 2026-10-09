@@ -17,7 +17,7 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    color: #dadada;
+    color: var(--text-soft);
     font-family: "Roboto Slab", serif;
     font-size: 14px;
     transition: color 0.4s;

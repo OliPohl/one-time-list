@@ -17,7 +17,7 @@
     gap: 6px;
     padding: 4px 12px;
     border-radius: 40px;
-    border: 1.5px solid #494949;
+    border: 1.5px solid var(--line);
     transition: border-color 0.4s;
   }
 
@@ -29,7 +29,7 @@
     width: 3ch;
     background: transparent;
     border: none;
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
     font-size: 15px;
     text-align: right;
@@ -46,6 +46,6 @@
   .unit {
     font-family: "Roboto Slab", serif;
     font-size: 13px;
-    color: #9a9a9a;
+    color: var(--text-muted);
   }
 </style>

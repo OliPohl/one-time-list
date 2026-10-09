@@ -26,8 +26,8 @@ export const confirmState = new ConfirmState();
 /** @param {ConfirmRequest} request */
 export const confirm = (request) => confirmState.ask(request);
 
-/** Marks the dialog, so "click outside" handlers of other elements ignore clicks on it. */
-export const DIALOG_ATTRIBUTE = 'data-confirm-dialog';
+/** Marks dialogs, so "click outside" handlers of other elements ignore clicks on them. */
+export const DIALOG_ATTRIBUTE = 'data-dialog';
 
 /** True if the event happened inside the dialog. @param {Event} event */
 export function isInDialog(event) {

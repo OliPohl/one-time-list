@@ -108,12 +108,12 @@
     width: 100%;
     display: grid;
     align-items: center;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     border-radius: 40px;
     border-style: solid;
     border-width: 2.5px;
     border-color: var(--tone-idle);
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
 
     user-select: none;
@@ -183,7 +183,7 @@
   }
 
   .drag {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 40px var(--shadow);
   }
 
   .head {
@@ -197,12 +197,12 @@
   .type-icon {
     font-size: 30px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 30;
-    color: #cacaca;
+    color: var(--text-soft);
   }
 
   .label {
     font-size: 16px;
-    color: #b7b7b7;
+    color: var(--text-muted);
     white-space: nowrap;
   }
 
@@ -237,7 +237,7 @@
 
   .sub {
     font-size: 14px;
-    color: #9a9a9a;
+    color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -266,12 +266,12 @@
     cursor: pointer;
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
-    color: #dadada;
+    color: var(--text-soft);
     transition: color 0.4s, font-variation-settings 0.7s;
   }
 
   .control:hover {
-    color: #ffffff;
+    color: var(--text);
   }
 
   .control:active {
@@ -280,11 +280,11 @@
   }
 
   .control.active {
-    color: #29df50;
+    color: var(--green);
   }
 
   .control.active:hover {
-    color: #1fff50;
+    color: var(--green-hover);
   }
 
   /* Blinks with the ringing border. */
@@ -300,7 +300,7 @@
 
   .control.confirm:hover {
     animation: none;
-    color: #ff6b6e;
+    color: var(--red-hover);
   }
 
   .control.placeholder {
@@ -309,11 +309,11 @@
   }
 
   .control.remove {
-    color: #b7b7b7;
+    color: var(--text-muted);
   }
 
   .control.remove:hover {
-    color: #f73f43;
+    color: var(--red);
   }
 
   .editor {
@@ -323,7 +323,7 @@
     gap: 14px;
     margin: 6px 0 12px;
     padding-top: 14px;
-    border-top: 1.5px dashed #494949;
+    border-top: 1.5px dashed var(--line);
   }
 
   @media (max-width: 520px) {

@@ -48,7 +48,7 @@
   .option-label {
     font-family: "Roboto Slab", serif;
     font-size: 16px;
-    color: #aaaaaa;
+    color: var(--text-muted);
   }
 
   .color-options {
@@ -62,10 +62,10 @@
     flex-direction: column;
     gap: 8px;
     padding: 8px 8px 10px;
-    background-color: rgb(0, 0, 0);
-    border: 2.5px solid #494949;
+    background-color: var(--surface);
+    border: 2.5px solid var(--line);
     border-radius: 24px;
-    color: #dadada;
+    color: var(--text-soft);
     font-family: "Roboto Slab", serif;
     font-size: 15px;
     cursor: pointer;
@@ -73,7 +73,7 @@
   }
 
   .color-option:hover {
-    border-color: #8c8c8c;
+    border-color: var(--text-muted);
   }
 
   .color-option.selected {
@@ -87,7 +87,7 @@
     height: 56px;
     overflow: hidden;
     border-radius: 16px;
-    background-color: #1b1b1b;
+    background-color: var(--bg);
   }
 
   .preview-accent,
@@ -109,7 +109,7 @@
     z-index: 1;
     bottom: 9px;
     border: 2px solid var(--preview-accent);
-    background-color: #000000;
+    background-color: var(--surface);
     box-sizing: border-box;
   }
 

@@ -132,10 +132,10 @@
     box-sizing: border-box;
     width: 100%;
     padding: 12px 25px;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     border: 2.5px solid var(--accent);
     border-radius: 40px;
-    color: #ffffff;
+    color: var(--text);
     font-family: "Roboto Slab", serif;
     font-size: 18px;
   }
@@ -151,17 +151,17 @@
     align-items: center;
     gap: 16px;
     padding: 14px 22px;
-    background-color: rgb(0, 0, 0);
-    border: 2.5px solid #494949;
+    background-color: var(--surface);
+    border: 2.5px solid var(--line);
     border-radius: 30px;
-    color: #dadada;
+    color: var(--text-soft);
     text-align: left;
     cursor: pointer;
     transition: border-color 0.4s, color 0.4s;
   }
 
   .type:hover {
-    border-color: #8c8c8c;
+    border-color: var(--text-muted);
   }
 
   .type.selected {
@@ -188,7 +188,7 @@
   .type-description {
     font-family: "Roboto Slab", serif;
     font-size: 14px;
-    color: #8c8c8c;
+    color: var(--text-muted);
   }
 
   .actions {
@@ -211,18 +211,18 @@
 
   .cancel {
     background: none;
-    border-color: #494949;
-    color: #aaaaaa;
+    border-color: var(--line);
+    color: var(--text-muted);
   }
 
   .cancel:hover {
-    border-color: #8c8c8c;
-    color: #e0e0e0;
+    border-color: var(--text-muted);
+    color: var(--text-soft);
   }
 
   .confirm {
     background-color: var(--accent);
-    color: #000000;
+    color: var(--on-accent);
   }
 
   .confirm:hover:enabled {

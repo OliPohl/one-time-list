@@ -190,12 +190,12 @@
     display: flex;
     align-items: center;
     justify-content: left;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--surface);
     padding: 5px 25px;
     border-radius: 40px;
     border-style: solid;
     border-width: 2.5px;
-    border-color:#ffffff00;
+    border-color:transparent;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
@@ -210,7 +210,7 @@
     font-size: 30px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 30;
     cursor: pointer ;
-    color: #cacaca;
+    color: var(--text-soft);
     transition: color 0.4s, font-variation-settings 0.7s;
   }
 
@@ -233,17 +233,17 @@
   }
 
   .done-btn.editing {
-    color: #f73f43;
+    color: var(--red);
     transition: none;
   }
 
   .done-btn.editing:hover {
-    color: #f73f43;
+    color: var(--red);
     transition: none;
   }
 
   .done-btn.editing:active {
-    color: #f73f43;
+    color: var(--red);
     transition: none;
   }
 
@@ -252,7 +252,7 @@
     pointer-events: none;
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
-    color: #dadada;
+    color: var(--text-soft);
     transition: opacity 0.3s;
   }
 
@@ -264,30 +264,30 @@
   }
 
   .edit-btn.editing {
-    color: #29df50;
+    color: var(--green);
     transition: none;
   }
 
   .edit-btn.editing:hover {
-    color: #1fff50;
+    color: var(--green-hover);
   }
 
   .delete-btn {
     margin-left: 10px;
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
-    color: #b7b7b7;
+    color: var(--text-muted);
     cursor: pointer;
     transition: color 0.4s;
   }
 
   .delete-btn:hover {
-    color: #f73f43;
+    color: var(--red);
   }
 
   .done-btn.armed,
   .delete-btn.armed {
-    color: #f73f43;
+    color: var(--red);
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30;
   }
 
@@ -299,13 +299,13 @@
     margin-right: 5px;
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
-    color: #b7b7b7;
+    color: var(--text-muted);
     cursor: pointer;
     transition: color 0.4s;
   }
 
   .cancel-btn:hover {
-    color: #e0e0e0;
+    color: var(--text-soft);
   }
 
   .task {
@@ -318,7 +318,7 @@
     resize: none;
     overflow: hidden;
     font-family: "Roboto Slab", serif;
-    color: #ffffff;
+    color: var(--text);
     margin: 0 20px;
   }
 

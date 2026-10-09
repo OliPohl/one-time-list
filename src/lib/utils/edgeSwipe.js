@@ -8,7 +8,7 @@ const LOCK_DISTANCE = 10;
 /** Faster swipes than this (px/ms) open or close the drawer regardless of how far they went. */
 const FLING_VELOCITY = 0.4;
 /** Swipes never start on these, so text can still be selected. */
-const IGNORE = 'input, textarea, [contenteditable="true"], [data-confirm-dialog]';
+const IGNORE = 'input, textarea, [contenteditable="true"], [data-dialog]';
 /**
  * A mouse drag on these moves the element instead. Touch doesn't need this: a touch drag only starts
  * after holding still and then cancels its touchmove events, which ends the swipe.

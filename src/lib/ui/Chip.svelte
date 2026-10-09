@@ -17,8 +17,8 @@
     padding: 5px 14px;
     background-color: transparent;
     border-radius: 40px;
-    border: 1.5px solid #494949;
-    color: #dadada;
+    border: 1.5px solid var(--line);
+    color: var(--text-soft);
     font-family: "Roboto Slab", serif;
     font-size: 14px;
     cursor: pointer;
@@ -31,7 +31,7 @@
   }
 
   .chip.active {
-    color: #000000;
+    color: var(--on-accent);
     background-color: var(--accent);
     border-color: var(--accent);
   }

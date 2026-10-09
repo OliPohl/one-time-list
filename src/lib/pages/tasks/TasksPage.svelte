@@ -267,7 +267,7 @@
 
   .task-item.placeholder {
     border-radius: 40px;
-    outline: 2.5px dashed #494949;
+    outline: 2.5px dashed var(--line);
     outline-offset: -2.5px;
   }
 
@@ -280,7 +280,7 @@
     z-index: 2000;
     pointer-events: none;
     transform: scale(1.02);
-    filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 12px 30px var(--shadow));
   }
 
   .select-next {

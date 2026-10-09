@@ -4,12 +4,12 @@
 
 /** @typedef {{label: string, wave: string, accent: string, task: string}} Colors */
 
-/** @type {Record<string, Colors>} */
+/** Built from the palette in global.css, so they follow light and dark mode. @type {Record<string, Colors>} */
 export const COLORS = {
-  crimson: { label: 'Crimson', wave: '#f73f43', accent: '#d6e550', task: '#7356f4' },
-  cobalt: { label: 'Cobalt', wave: '#2d6cf6', accent: '#ff8a65', task: '#3fd0c9' },
-  amethyst: { label: 'Amethyst', wave: '#8e4bf0', accent: '#6ef0b8', task: '#ff6fae' },
-  emerald: { label: 'Emerald', wave: '#17b26a', accent: '#ffcf4d', task: '#4cc3ff' }
+  crimson: { label: 'Crimson', wave: 'var(--red)', accent: 'var(--yellow)', task: 'var(--purple)' },
+  cobalt: { label: 'Cobalt', wave: 'var(--blue)', accent: 'var(--orange)', task: 'var(--teal)' },
+  amethyst: { label: 'Amethyst', wave: 'var(--purple)', accent: 'var(--teal)', task: 'var(--pink)' },
+  emerald: { label: 'Emerald', wave: 'var(--green)', accent: 'var(--yellow)', task: 'var(--blue)' }
 };
 
 export const DEFAULT_COLORS = 'crimson';
