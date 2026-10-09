@@ -19,8 +19,8 @@ export default {
   component: TasksPage,
   Options: TasksOptions,
   Card: TasksCard,
-  // New lists start with the default colors from the settings.
-  defaultOptions: () => ({ colors: settings.colors, widgets: true }),
+  // New lists start with the default colors from the settings, widgets off.
+  defaultOptions: () => ({ colors: settings.colors, widgets: false }),
   style: (page) => colorsStyle(colorsOf(page.options)),
   // Load every list on startup so its timers and alarms run while another page is open.
   init: (page) => {

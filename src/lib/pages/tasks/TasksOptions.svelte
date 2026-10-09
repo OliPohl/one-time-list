@@ -44,7 +44,7 @@
   <span class="option-label">Widgets</span>
   <!-- Off keeps the widgets but stops them, so nothing rings in the background. -->
   <Toggle checked={widgetsEnabled(options)} onchange={(checked) => (options.widgets = checked)}>
-    Show widgets
+    Enable widgets
   </Toggle>
 </div>
 

@@ -69,8 +69,6 @@
   <!-- Same line as above the volume and settings at the bottom. -->
   <hr class="divider" />
 
-  <h2 class="section">Pages</h2>
-
   <div class="pages">
     {#each pages.list as page (page.id)}
       <SidebarPageItem
@@ -138,19 +136,9 @@
     flex-shrink: 0;
     width: 100%;
     height: 0;
-    margin: 6px 0 0;
+    margin: 6px 0;
     border: none;
     border-top: 1.5px solid var(--surface-active);
-  }
-
-  .section {
-    margin: 12px 16px 6px;
-    font-family: "Stoke", serif;
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    text-transform: uppercase;
-    color: var(--task);
   }
 
   /* Pushed to the bottom of the drawer. */
