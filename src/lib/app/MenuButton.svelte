@@ -9,6 +9,7 @@
   class="menu-btn m3-icon"
   class:open={navigation.sidebarOpen}
   class:ringing={pages.anyRinging && !navigation.sidebarOpen}
+  class:break-end={pages.firstRinging && pages.isBreakEnd(pages.firstRinging)}
   title={navigation.sidebarOpen ? 'Close Menu' : 'Open Menu'}
   aria-expanded={navigation.sidebarOpen}
   onclick={() => (navigation.sidebarOpen = !navigation.sidebarOpen)}
@@ -53,7 +54,7 @@
   }
 
   @keyframes blink {
-    0%, 100% { color: var(--text); }
-    50% { color: var(--wave); }
+    0%, 100% { color: var(--widget-blink-alt); }
+    50% { color: var(--widget-blink); }
   }
 </style>

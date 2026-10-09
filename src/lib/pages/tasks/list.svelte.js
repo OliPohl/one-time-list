@@ -300,6 +300,18 @@ export function deleteListStore(pageId) {
   stores.delete(pageId);
 }
 
+/**
+ * Removes the data of the old single list. It's only read while no page exists, once a list page has loaded
+ * it's a leftover (and the privacy policy promises that deleting a page removes its data).
+ */
+export function removeLegacyList() {
+  try {
+    for (const key of [...Object.values(LEGACY_KEYS), 'otl_sort_mode']) localStorage.removeItem(key);
+  } catch {
+    // Storage is blocked, nothing was saved there either.
+  }
+}
+
 /** Keys used before there were multiple pages. */
 const LEGACY_KEYS = {
   tasks: 'otl_tasks',
@@ -327,7 +339,7 @@ export function importLegacyList(pageId) {
       sortMode: localStorage.getItem('otl_sort_mode') ?? undefined
     });
     saveJSON(widgetsKey(pageId), loadJSON(LEGACY_KEYS.widgets, []));
-    // The old keys are kept as a backup, they are only read while no page exists yet.
+    // The old keys are removed by `removeLegacyList` once the page has loaded its copy.
     return true;
   } catch {
     return false;

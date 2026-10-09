@@ -4,6 +4,7 @@
 import { PAGE_TYPES, DEFAULT_PAGE_TYPE, RENAMED_TYPES } from '../pages/index.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 import { uniqueId } from '../utils/id.js';
+import { isBreakEnd } from '../widgets/views.js';
 
 const STORAGE_KEY = 'otl_pages';
 /** Default names of renamed types, pages still called this get the new default name. */
@@ -45,12 +46,20 @@ class PageList {
     });
   }
 
+  /** The first page with an alarm or timer ringing. */
+  firstRinging = $derived(this.list.find((page) => this.isRinging(page)));
   /** Some page has an alarm or timer ringing. */
-  anyRinging = $derived(this.list.some((page) => this.isRinging(page)));
+  anyRinging = $derived(Boolean(this.firstRinging));
 
   /** @param {Page} page */
   isRinging(page) {
-    return PAGE_TYPES[page.type].isRinging?.(page) ?? false;
+    return (PAGE_TYPES[page.type].ringingWidgets?.(page) ?? []).length > 0;
+  }
+
+  /** Everything ringing on the page is a pomodoro whose break ended, it then blinks in the break colors. @param {Page} page */
+  isBreakEnd(page) {
+    const ringing = PAGE_TYPES[page.type].ringingWidgets?.(page) ?? [];
+    return ringing.length > 0 && ringing.every(isBreakEnd);
   }
 
   /** @param {string | undefined} id */

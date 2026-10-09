@@ -25,7 +25,7 @@
  *   creating a page (without `page`) and in the page settings (with `page`), edits `options` in place
  * @property {() => Record<string, any>} defaultOptions
  * @property {(page: Page) => string} [style] CSS custom properties (e.g. the colors) for the whole app while the page is shown
- * @property {(page: Page) => boolean} [isRinging] true while an alarm or timer of the page rings, the sidebar then blinks it
+ * @property {(page: Page) => any[]} [ringingWidgets] the widgets of the page whose alarm or timer rings, the sidebar then blinks it
  * @property {(page: Page) => void} [init] called once for every page on startup, e.g. to start its timers
  * @property {(page: Page) => void} [destroy] called when a page is deleted, removes its saved data
  * @property {(pageId: string) => boolean} [importLegacy] moves data from before multiple pages existed into `pageId`

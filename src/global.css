@@ -29,6 +29,8 @@
   --text: #ffffff;
   --text-soft: #dadada;
   --text-muted: #9a9a9a;
+  /* "White": white in dark mode, the text color in light mode so it stays visible. Used by the widget colors. */
+  --bright: var(--text);
   /* Text on a hue (buttons), and on the accent color. */
   --on-color: #ffffff;
   --on-accent: #000000;
@@ -40,14 +42,32 @@
   --accent: var(--yellow);
   --task: var(--purple);
 
-  /*
-    Border of a widget that isn't counting down. Counting down and ringing use the page colors directly
-    (`--wave`, `--accent`, `--task`): a variable set to var(--task) here would always resolve to the default colors.
-  */
-  --tone-idle: var(--line-strong);
-
   /* Every alarm blink (widgets, widget pages, sidebar, menu button) takes this long, they all run in step. */
   --blink-duration: 1s;
+}
+
+/*
+  Widget colors, by role. Swap colors here, nothing else needs to change.
+  Declared on the root (default colors: sidebar, menu button, widget pages) and again on the page wrapper
+  (`data-page-colors` in AppShell), so widgets on a Tasks page resolve them with that page's own colors.
+*/
+:root,
+[data-page-colors] {
+  /* Countdowns (widget border, bar on widget pages) */
+  --widget-used: var(--wave);
+  --widget-left: var(--accent);
+  --widget-left-break: var(--task);
+  /* Ringing: blinks between --widget-blink and --widget-blink-alt, when a break ends --widget-blink-break */
+  --widget-blink: var(--wave);
+  --widget-blink-alt: var(--accent);
+  --widget-blink-break: var(--task);
+  /* Border while nothing counts down */
+  --widget-idle: var(--bright);
+}
+
+/* A pomodoro break that just ended blinks in the break colors (class set by the widget, sidebar and menu button). */
+.break-end {
+  --widget-blink-alt: var(--widget-blink-break);
 }
 
 /* Light mode, set by the theme setting (see app/settings.svelte.js and app.html). Hues are a bit darker to stay readable. */

@@ -30,7 +30,7 @@ function widgetPageType(widgetType) {
     defaultOptions: () => ({}),
     // Load every widget page on startup so its timers and alarms run while another page is open.
     init: (page) => void getWidgetPageStore(page),
-    isRinging: (page) => Boolean(findWidgetPageStore(page.id)?.list.some((widget) => widget.ringing)),
+    ringingWidgets: (page) => findWidgetPageStore(page.id)?.list.filter((widget) => widget.ringing) ?? [],
     destroy: (page) => deleteWidgetPageStore(page.id)
   };
 }

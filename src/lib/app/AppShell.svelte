@@ -42,7 +42,7 @@
 {#if isLoaded}
   <div class="app">
     <!-- Only the page gets its colors (e.g. the Tasks color set), the sidebar and dialogs keep the defaults. -->
-    <div class="page-colors" style={pageStyle}>
+    <div class="page-colors" data-page-colors style={pageStyle}>
       {#if navigation.view.kind === 'dashboard'}
         <DashboardPage />
       {:else if navigation.view.kind === 'new-page'}

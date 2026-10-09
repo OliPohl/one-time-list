@@ -16,7 +16,7 @@
 </script>
 
 {#if type}
-  <Widget {widget} {variant} {ghost} icon={type.icon} label={type.label} time={view.time} sub={view.sub} tone={view.tone} controls={view.controls} slots={view.slots} progress={view.progress}>
+  <Widget {widget} {variant} {ghost} icon={type.icon} label={type.label} time={view.time} sub={view.sub} tone={view.tone} controls={view.controls} slots={view.slots} progress={view.progress} breakEnd={view.breakEnd}>
     {#snippet editor()}
       <WidgetEditor {widget} store={widgets} />
     {/snippet}

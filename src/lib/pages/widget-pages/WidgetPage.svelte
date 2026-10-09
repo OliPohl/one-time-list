@@ -29,7 +29,7 @@
 
 <Grain />
 
-<main class="widget-page">
+<main class="widget-page" class:break-end={view?.breakEnd}>
   <PageHeader {page} {icon} centered />
 
   {#if view}
@@ -88,7 +88,7 @@
     font-size: clamp(64px, 20vw, 150px);
     line-height: 1.05;
     white-space: nowrap;
-    color: var(--text);
+    color: var(--bright);
   }
 
   /* Width of the widest digit ("4") in Roboto Slab. */
@@ -122,14 +122,14 @@
     background-color: var(--fill);
   }
 
-  /* Finished: the whole bar blinks between the text color and the primary, like every alarm. */
+  /* Finished: the whole bar blinks like every alarm. */
   .bar.ring {
     animation: ring var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes ring {
-    0%, 100% { background-color: var(--text); }
-    50% { background-color: var(--wave); }
+    0%, 100% { background-color: var(--widget-blink-alt); }
+    50% { background-color: var(--widget-blink); }
   }
 
   /* Keeps its height while empty, so the controls don't jump when a status appears. */
@@ -176,26 +176,26 @@
     gap: 12px;
     padding: 0 30px 0 24px;
     background-color: var(--surface);
-    border: 2.5px solid var(--wave);
+    border: 2.5px solid var(--widget-blink);
     border-radius: 40px;
-    color: var(--wave);
+    color: var(--widget-blink);
     font-family: "Roboto Slab", serif;
     font-size: 20px;
     cursor: pointer;
     transition: transform 0.15s;
-    /* Blinks like every alarm: text color <-> primary, in step with the bar. */
+    /* Blinks like every alarm: --widget-blink-alt <-> --widget-blink, in step with the bar. */
     animation: confirm-blink var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes confirm-blink {
-    0%, 100% { color: var(--text); border-color: var(--text); }
-    50% { color: var(--wave); border-color: var(--wave); }
+    0%, 100% { color: var(--widget-blink-alt); border-color: var(--widget-blink-alt); }
+    50% { color: var(--widget-blink); border-color: var(--widget-blink); }
   }
 
   /* Keeps blinking in the bar's colors, hover only tints the background a little. */
   /* Hover only tints the background a little, the blink keeps going. */
   .confirm:hover {
-    background-color: color-mix(in srgb, var(--wave) 12%, var(--surface));
+    background-color: color-mix(in srgb, var(--widget-blink) 12%, var(--surface));
   }
 
   .confirm:active {

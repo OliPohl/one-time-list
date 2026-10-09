@@ -83,7 +83,12 @@
     <button class="icon-btn cancel m3-icon" title="Cancel" in:fade={swapFade} onclick={cancel}>close</button>
     <button class="icon-btn save m3-icon" title="Save Name" in:fade={swapFade} onclick={save}>check</button>
   {:else}
-    <button class="main" title={ringing ? `${pageType.label}: ringing` : pageType.label} onclick={() => navigation.go({ kind: 'page', id: page.id })}>
+    <!-- While ringing it blinks in the global default colors, like the menu button. -->
+    <button
+      class="main"
+      class:break-end={ringing && pages.isBreakEnd(page)}
+      title={ringing ? `${pageType.label}: ringing` : pageType.label}
+      onclick={() => navigation.go({ kind: 'page', id: page.id })}>
       <span class="type-icon m3-icon" in:fade={swapFade}>{pageType.icon}</span>
       <span class="name">{page.name}</span>
     </button>
@@ -142,8 +147,8 @@
   }
 
   @keyframes blink {
-    0%, 100% { color: var(--text); }
-    50% { color: var(--wave); }
+    0%, 100% { color: var(--widget-blink-alt); }
+    50% { color: var(--widget-blink); }
   }
 
   .type-icon {

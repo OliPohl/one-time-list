@@ -20,7 +20,7 @@
     label,
     time,
     sub = '',
-    /** @type {'idle' | 'blue' | 'orange' | 'ring'} */
+    /** @type {'idle' | 'counting' | 'ring'} */
     tone = 'idle',
     /** @type {Array<{icon: string, title: string, onclick: () => void, kind?: 'confirm'}>} */
     controls = [],
@@ -28,6 +28,8 @@
     slots = 0,
     /** @type {import('../views.js').Progress | null} */
     progress = null,
+    /** Rings because a break ended, blinks in the break colors. */
+    breakEnd = false,
     editor
   } = $props();
 
@@ -64,7 +66,7 @@
   let root;
   let boxWidth = $state(0);
   let boxHeight = $state(0);
-  let showProgress = $derived(progress !== null && tone !== 'ring');
+  let showProgress = $derived(tone === 'counting' && progress !== null);
 
   /** @param {MouseEvent} event */
   function handleClickOutside(event) {
@@ -80,10 +82,10 @@
 
 <div
   class="widget {variant} {tone}"
+  class:break-end={breakEnd}
   class:editing
   class:pressing
   class:placeholder={isPlaceholder}
-  class:progress={showProgress}
   bind:this={root}
   bind:offsetWidth={boxWidth}
   bind:offsetHeight={boxHeight}
@@ -159,7 +161,7 @@
     border-radius: 40px;
     border-style: solid;
     border-width: 2.5px;
-    border-color: var(--tone-idle);
+    border-color: var(--widget-idle);
     color: var(--text);
     font-family: "Roboto Slab", serif;
 
@@ -174,16 +176,8 @@
       transform 0.15s;
   }
 
-  .widget.blue {
-    border-color: var(--accent);
-  }
-
-  .widget.orange {
-    border-color: var(--wave);
-  }
-
   /* The ProgressBorder draws the border while a countdown runs. */
-  .widget.progress {
+  .widget.counting {
     border-color: transparent;
   }
 
@@ -192,8 +186,8 @@
   }
 
   @keyframes ring {
-    0%, 100% { border-color: var(--text); }
-    50% { border-color: var(--wave); }
+    0%, 100% { border-color: var(--widget-blink-alt); }
+    50% { border-color: var(--widget-blink); }
   }
 
   .widget.pressing {
@@ -339,15 +333,15 @@
     color: var(--green-hover);
   }
 
-  /* Blinks like every alarm: text color <-> primary, in step with the border (see utils/syncAnimations.js). */
+  /* Blinks like every alarm: --widget-blink-alt <-> --widget-blink, in step with the border (see utils/syncAnimations.js). */
   .control.confirm {
-    color: var(--wave);
+    color: var(--widget-blink);
     animation: confirm-blink var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes confirm-blink {
-    0%, 100% { color: var(--text); }
-    50% { color: var(--wave); }
+    0%, 100% { color: var(--widget-blink-alt); }
+    50% { color: var(--widget-blink); }
   }
 
   /* Keeps blinking in the border's colors, hover only fills the icon. */

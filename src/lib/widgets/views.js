@@ -13,7 +13,7 @@ import { frameClock } from '../utils/frameClock.svelte.js';
  * length and shows as the used part, `fill` the part that's left.
  * While counting, `elapsedAt(now)` gives the share used (0 to 1) at any moment, so borders and bars can move every
  * frame (see utils/frameClock.svelte.js). Otherwise `elapsed` is fixed.
- * Used time is the page's primary color, time left the secondary color (tertiary during breaks).
+ * The colors are the widget roles of global.css (`--widget-used`, `--widget-left`, `--widget-left-break`).
  * @typedef {{track: string, fill: string, elapsed?: number, elapsedAt?: (now: number) => number}} Progress
  */
 
@@ -29,7 +29,9 @@ export function elapsedNow(progress) {
 /** @param {number} elapsed */
 const clamp01 = (elapsed) => Math.min(1, Math.max(0, elapsed));
 
-const USED = 'var(--wave)';
+const USED = 'var(--widget-used)';
+const LEFT = 'var(--widget-left)';
+const LEFT_BREAK = 'var(--widget-left-break)';
 
 /**
  * `progress` is null while nothing counts down (not started, no alarm set, or ringing).
@@ -37,7 +39,9 @@ const USED = 'var(--wave)';
  * not counting), a clock only while an alarm is set.
  * `slots` is how many controls the widget shows at most. While ringing, play / pause becomes the confirm
  * button, the clock only has controls then, free slots are kept so the widget doesn't change size.
- * @typedef {{time: string, sub: string, tone: 'idle' | 'blue' | 'orange' | 'ring', controls: Control[], slots: number, progress: Progress | null, bar?: Progress}} View
+ * @typedef {{time: string, sub: string, tone: 'idle' | 'counting' | 'ring', controls: Control[], slots: number, progress: Progress | null, bar?: Progress, breakEnd?: boolean}} View
+ * `breakEnd` is true while a pomodoro rings because its break ended, it then blinks in the break colors.
+ * @typedef {Omit<View, 'tone' | 'bar' | 'breakEnd'>} TypeView what each widget type works out, `widgetView` adds the rest
  */
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
@@ -50,7 +54,7 @@ export const PHASE_LABELS = { work: 'Focus', short: 'Break', long: 'Long Break' 
  * @param {any} widget
  * @param {WidgetStore} store
  * @param {{long?: boolean}} [options] `long` spells the status out, for the pages
- * @returns {View}
+ * @returns {TypeView}
  */
 function clockView(widget, store, { long = false } = {}) {
   const hasAlarm = widget.alarmMode !== 'off' && widget.nextAt;
@@ -67,15 +71,14 @@ function clockView(widget, store, { long = false } = {}) {
     time,
     sub,
     slots: 1,
-    progress: counting ? { elapsedAt: (now) => clamp01((now - widget.alarmFrom) / period), track: USED, fill: 'var(--accent)' } : null,
-    tone: widget.ringing ? 'ring' : hasAlarm ? 'orange' : 'blue',
+    progress: counting ? { elapsedAt: (now) => clamp01((now - widget.alarmFrom) / period), track: USED, fill: LEFT } : null,
     controls: widget.ringing
       ? [{ icon: 'alarm_on', title: 'Confirm Alarm', label: 'Dismiss', kind: 'confirm', onclick: () => store.confirmAlarm(widget) }]
       : []
   };
 }
 
-/** @param {any} widget @param {WidgetStore} store @returns {View} */
+/** @param {any} widget @param {WidgetStore} store @returns {TypeView} */
 function timerView(widget, store) {
   const running = widget.endsAt !== null;
 
@@ -85,9 +88,8 @@ function timerView(widget, store) {
     slots: 2,
     // Shown once started, also while paused.
     progress: !widget.ringing && (running || widget.remaining < widget.duration)
-      ? { elapsedAt: (now) => clamp01(1 - remainingOf(widget, now) / widget.duration), track: USED, fill: 'var(--accent)' }
+      ? { elapsedAt: (now) => clamp01(1 - remainingOf(widget, now) / widget.duration), track: USED, fill: LEFT }
       : null,
-    tone: widget.ringing ? 'ring' : running ? 'orange' : 'idle',
     controls: [
       widget.ringing
         ? { icon: 'check_circle', title: 'Confirm', label: 'Dismiss', kind: 'confirm', onclick: () => store.reset(widget) }
@@ -99,7 +101,7 @@ function timerView(widget, store) {
   };
 }
 
-/** @param {any} widget @param {WidgetStore} store @returns {View} */
+/** @param {any} widget @param {WidgetStore} store @returns {TypeView} */
 function pomodoroView(widget, store) {
   const running = widget.endsAt !== null;
   const isWork = widget.phase === 'work';
@@ -116,11 +118,10 @@ function pomodoroView(widget, store) {
       ? {
           elapsedAt: (now) => clamp01(1 - remainingOf(widget, now) / phaseDuration(widget)),
           track: USED,
-          // Breaks show the time left in the tertiary color, so they look different from focus.
-          fill: isWork ? 'var(--accent)' : 'var(--task)'
+          // Breaks show the time left in their own color, so they look different from focus.
+          fill: isWork ? LEFT : LEFT_BREAK
         }
       : null,
-    tone: widget.ringing ? 'ring' : !running ? 'idle' : isWork ? 'orange' : 'blue',
     controls: [
       widget.ringing
         ? {
@@ -143,6 +144,11 @@ function pomodoroView(widget, store) {
 
 const VIEWS = { clock: clockView, timer: timerView, pomodoro: pomodoroView };
 
+/** A pomodoro that rings because its break ended. @param {any} widget */
+export function isBreakEnd(widget) {
+  return widget.type === 'pomodoro' && widget.ringing && widget.phase !== 'work';
+}
+
 /**
  * Call inside `$derived` so it updates with the widget and the store's clock.
  * @param {any} widget
@@ -152,7 +158,9 @@ const VIEWS = { clock: clockView, timer: timerView, pomodoro: pomodoroView };
  */
 export function widgetView(widget, store, options) {
   const view = VIEWS[/** @type {keyof typeof VIEWS} */ (widget.type)](widget, store, options);
+  /** @type {View['tone']} */
+  const tone = widget.ringing ? 'ring' : view.progress ? 'counting' : 'idle';
   const isBreak = widget.type === 'pomodoro' && widget.phase !== 'work';
-  const idleBar = widget.type === 'clock' ? undefined : { elapsed: 0, track: USED, fill: isBreak ? 'var(--task)' : 'var(--accent)' };
-  return { ...view, bar: view.progress ?? idleBar };
+  const idleBar = widget.type === 'clock' ? undefined : { elapsed: 0, track: USED, fill: isBreak ? LEFT_BREAK : LEFT };
+  return { ...view, tone, bar: view.progress ?? idleBar, breakEnd: isBreakEnd(widget) };
 }

@@ -1,7 +1,8 @@
 <!-- src/lib/app/SettingsDialog.svelte -->
 <!-- App settings popup, opened from the bottom of the sidebar. Settings get added here later. -->
 <script>
-  import { fade, scale } from 'svelte/transition';
+  import { fade, scale, slide } from 'svelte/transition';
+  import PrivacyPolicy from './PrivacyPolicy.svelte';
   import { settings, THEMES } from './settings.svelte.js';
   import { COLORS } from '../colors.js';
 
@@ -14,6 +15,7 @@
 
   /** @type {HTMLButtonElement | undefined} */
   let closeButton = $state();
+  let privacyOpen = $state(false);
 
   $effect(() => closeButton?.focus());
 
@@ -93,6 +95,20 @@
           </button>
         {/each}
       </div>
+    </section>
+
+    <!-- At the bottom, opens below so the settings stay short. -->
+    <section class="setting privacy">
+      <!-- Looks like plain text (like "Show History" on Tasks pages), still a button for keyboards and screen readers. -->
+      <button class="privacy-toggle" aria-expanded={privacyOpen} onclick={() => (privacyOpen = !privacyOpen)}>
+        <span>{privacyOpen ? 'Hide Privacy Policy' : 'Privacy Policy'}</span>
+        <span class="chevron m3-icon" class:open={privacyOpen} aria-hidden="true">expand_more</span>
+      </button>
+      {#if privacyOpen}
+        <div transition:slide={{ duration: 250 }}>
+          <PrivacyPolicy />
+        </div>
+      {/if}
     </section>
   </div>
 </div>
@@ -308,6 +324,42 @@
 
   .color-name {
     text-align: center;
+  }
+
+  .privacy {
+    padding-top: 14px;
+    border-top: 1.5px solid var(--surface-active);
+  }
+
+  .privacy-toggle {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: "Roboto Slab", serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.4s;
+  }
+
+  .privacy-toggle:hover,
+  .privacy-toggle:focus-visible {
+    color: var(--accent);
+  }
+
+  /* Points down while closed, turns up when open. */
+  .chevron {
+    font-size: 20px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    transition: transform 0.25s;
+  }
+
+  .chevron.open {
+    transform: rotate(180deg);
   }
 
   .segments {
