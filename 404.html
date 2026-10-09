@@ -4,21 +4,31 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
-		<link href="/one-time-list/_app/immutable/entry/start.BSnPVr4M.js" rel="modulepreload">
-		<link href="/one-time-list/_app/immutable/chunks/5b8dMrVY.js" rel="modulepreload">
-		<link href="/one-time-list/_app/immutable/chunks/zgCMKRor.js" rel="modulepreload">
-		<link href="/one-time-list/_app/immutable/entry/app.BEJ3VV48.js" rel="modulepreload">
+		<script>
+			// Apply the saved theme and default colors before the first paint, so nothing flashes (see app/settings.svelte.js).
+			try {
+				var saved = JSON.parse(localStorage.getItem('otl_settings')) || {};
+				var theme = saved.theme;
+				if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+				document.documentElement.dataset.theme = theme;
+				if (typeof saved.colorsCss === 'string') document.documentElement.style.cssText = saved.colorsCss;
+			} catch (error) {}
+		</script>
+		<link href="/one-time-list/_app/immutable/entry/start.zp16L1JL.js" rel="modulepreload">
+		<link href="/one-time-list/_app/immutable/chunks/BHtWe39B.js" rel="modulepreload">
+		<link href="/one-time-list/_app/immutable/chunks/Deww_4Cu.js" rel="modulepreload">
+		<link href="/one-time-list/_app/immutable/entry/app.Dv3kaFWw.js" rel="modulepreload">
 		<link href="/one-time-list/_app/immutable/chunks/kNaey6uv.js" rel="modulepreload">
 		<link href="/one-time-list/_app/immutable/chunks/xihTtKlq.js" rel="modulepreload">
-		<link href="/one-time-list/_app/immutable/nodes/0.B5gRBJU0.js" rel="modulepreload">
+		<link href="/one-time-list/_app/immutable/nodes/0.CiB_oZpD.js" rel="modulepreload">
 		
-		<link href="/one-time-list/_app/immutable/assets/0.CC9Cleqr.css" rel="stylesheet">
+		<link href="/one-time-list/_app/immutable/assets/0.CgSBYOXI.css" rel="stylesheet">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_1vb7daw = {
+					__sveltekit_rh8wv3 = {
 						base: "/one-time-list",
 						assets: "/one-time-list"
 					};
@@ -26,8 +36,8 @@
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("/one-time-list/_app/immutable/entry/start.BSnPVr4M.js"),
-						import("/one-time-list/_app/immutable/entry/app.BEJ3VV48.js")
+						import("/one-time-list/_app/immutable/entry/start.zp16L1JL.js"),
+						import("/one-time-list/_app/immutable/entry/app.Dv3kaFWw.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element);
 					});
