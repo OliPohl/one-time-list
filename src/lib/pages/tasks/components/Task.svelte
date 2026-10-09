@@ -322,7 +322,10 @@
 
   .task {
     height: auto;
+    /* Fills the space next to the buttons, without the textarea's built-in minimum width (about 20 characters). */
     flex-grow: 1;
+    width: 0;
+    min-width: 0;
     font-size: 18px;
     line-height: 1.5;
     background-color: transparent;

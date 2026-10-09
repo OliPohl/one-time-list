@@ -24,6 +24,8 @@
   --surface: #000000;
   --surface-raised: #0c0c0c;
   --surface-active: #1b1b1b;
+  /* Light gray boxes on the page background, e.g. the dashboard slots. */
+  --surface-card: #262626;
   --line: #494949;
   --line-strong: #d4d4d4;
   --text: #ffffff;
@@ -87,6 +89,7 @@
   --surface: #ffffff;
   --surface-raised: #e7e4de;
   --surface-active: #dbd7d0;
+  --surface-card: #e8e5df;
   --line: #bfbab2;
   --line-strong: #3d3d3d;
   --text: #1b1b1b;

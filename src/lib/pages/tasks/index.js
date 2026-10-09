@@ -2,6 +2,7 @@
 
 import TasksPage from './TasksPage.svelte';
 import TasksOptions from './TasksOptions.svelte';
+import TasksCard from './TasksCard.svelte';
 import { getListStore, findListStore, deleteListStore, importLegacyList, removeLegacyList } from './list.svelte.js';
 import { colorsOf, colorsStyle } from '../../colors.js';
 import { settings } from '../../app/settings.svelte.js';
@@ -17,6 +18,7 @@ export default {
   defaultName: 'Tasks',
   component: TasksPage,
   Options: TasksOptions,
+  Card: TasksCard,
   // New lists start with the default colors from the settings.
   defaultOptions: () => ({ colors: settings.colors }),
   style: (page) => colorsStyle(colorsOf(page.options)),

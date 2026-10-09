@@ -14,6 +14,8 @@
   import ConfirmDialog from '../ui/ConfirmDialog.svelte';
   import { confirmState } from './confirm.svelte.js';
   import SettingsDialog from './SettingsDialog.svelte';
+  import Grain from '../ui/Grain.svelte';
+  import { dashboard } from './dashboard.svelte.js';
   import { settings } from './settings.svelte.js';
 
   let isLoaded = $state(false);
@@ -28,6 +30,7 @@
   onMount(() => {
     settings.load();
     pages.load();
+    dashboard.load();
     navigation.load();
     unlockAudio();
     isLoaded = true;
@@ -43,6 +46,8 @@
   <div class="app">
     <!-- Only the page gets its colors (e.g. the Tasks color set), the sidebar and dialogs keep the defaults. -->
     <div class="page-colors" data-page-colors style={pageStyle}>
+      <!-- Behind every page, tinted with the page's accent. -->
+      <Grain />
       {#if navigation.view.kind === 'dashboard'}
         <DashboardPage />
       {:else if navigation.view.kind === 'new-page'}

@@ -4,6 +4,7 @@
 
 import WidgetPage from './WidgetPage.svelte';
 import WidgetPageOptions from './WidgetPageOptions.svelte';
+import WidgetCard from './WidgetCard.svelte';
 import { getWidgetPageStore, findWidgetPageStore, deleteWidgetPageStore } from './store.svelte.js';
 import { WIDGET_TYPES } from '../../widgets/store.svelte.js';
 
@@ -27,6 +28,7 @@ function widgetPageType(widgetType) {
     defaultName: label,
     component: WidgetPage,
     Options: WidgetPageOptions,
+    Card: WidgetCard,
     defaultOptions: () => ({}),
     // Load every widget page on startup so its timers and alarms run while another page is open.
     init: (page) => void getWidgetPageStore(page),

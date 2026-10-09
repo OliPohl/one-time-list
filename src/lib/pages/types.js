@@ -23,6 +23,7 @@
  * @property {import('svelte').Component<{page: Page}>} component the full page
  * @property {import('svelte').Component<{options: Record<string, any>, type: string, page?: Page}>} [Options] customization shown when
  *   creating a page (without `page`) and in the page settings (with `page`), edits `options` in place
+ * @property {import('svelte').Component<{page: Page}>} [Card] the page on the dashboard, works on the page's own data
  * @property {() => Record<string, any>} defaultOptions
  * @property {(page: Page) => string} [style] CSS custom properties (e.g. the colors) for the whole app while the page is shown
  * @property {(page: Page) => any[]} [ringingWidgets] the widgets of the page whose alarm or timer rings, the sidebar then blinks it

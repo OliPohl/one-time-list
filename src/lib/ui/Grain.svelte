@@ -1,5 +1,5 @@
 <!-- src/lib/ui/Grain.svelte -->
-<!-- Subtle grain behind the whole page, tinted with the accent color. -->
+<!-- Subtle grain behind the whole page, tinted with the accent color. Rendered once by AppShell for every page. -->
 <script>
   import { grainUrl, GRAIN_SIZE } from '../utils/grain.js';
 

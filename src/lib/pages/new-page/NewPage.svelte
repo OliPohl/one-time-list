@@ -5,8 +5,13 @@
   import { PAGE_TYPES } from '../index.js';
   import { pages } from '../../app/pages.svelte.js';
   import { navigation } from '../../app/navigation.svelte.js';
+  import { dashboard } from '../../app/dashboard.svelte.js';
 
   const DEFAULT_NAME = 'New Page';
+
+  // Opened from a dashboard slot: the new page goes onto the dashboard.
+  const linkToDashboard = dashboard.linkNextPage;
+  dashboard.linkNextPage = false;
 
   let name = $state(DEFAULT_NAME);
   /** Once the user typed a name, picking a type no longer replaces it. */
@@ -33,7 +38,12 @@
       name: name.trim() || pageType.defaultName,
       options: $state.snapshot(options)
     });
-    navigation.go({ kind: 'page', id: page.id });
+    if (linkToDashboard) {
+      dashboard.link(page.id);
+      navigation.go({ kind: 'dashboard' });
+    } else {
+      navigation.go({ kind: 'page', id: page.id });
+    }
   }
 
   /** @param {KeyboardEvent} event */
