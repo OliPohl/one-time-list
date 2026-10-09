@@ -9,17 +9,6 @@
 
   /** Space at the top and bottom of the window where dragging scrolls the page. */
   const SCROLL_EDGE = 70;
-  /** Keep in sync with `.slots` below: smallest column width and the gap. */
-  const MIN_COLUMN = 320;
-  const GAP = 16;
-
-  let gridWidth = $state(0);
-  // Width of one grid column, like CSS works it out for `repeat(auto-fill, minmax(min(100%, 320px), 1fr))`.
-  // The centered first slot uses it, so it's as wide as the boxes will be.
-  let columnWidth = $derived.by(() => {
-    const columns = Math.max(1, Math.floor((gridWidth + GAP) / (Math.min(gridWidth, MIN_COLUMN) + GAP)));
-    return (gridWidth - GAP * (columns - 1)) / columns;
-  });
 
   /** @type {{id: string, x: number, y: number, offsetX: number, offsetY: number, width: number, height: number} | null} */
   let drag = $state(null);
@@ -87,15 +76,10 @@
 </script>
 
 <main class="dashboard">
+  <!-- On the same line as the menu button, like the title of a Tasks page. -->
   <h1 class="heading">Dashboard</h1>
 
-  <!-- Nothing linked yet: the empty slot sits in the middle of the page. -->
-  <div
-    class="slots"
-    class:only-empty={dashboard.linked.length === 0}
-    style:--column-width="{columnWidth}px"
-    bind:this={grid}
-    bind:clientWidth={gridWidth}>
+  <div class="slots" bind:this={grid}>
     {#each dashboard.linked as page (page.id)}
       <!-- Drag a card by its empty space or header to move it, its buttons and controls keep working. -->
       <div
@@ -133,17 +117,30 @@
     max-width: 1100px;
     min-height: 100vh;
     margin: auto;
-    padding: 80px 16px 40px;
+    /* The title row lines up with the menu button: 14px from the top, 46px tall. */
+    padding: 14px 16px 40px;
   }
 
   .heading {
-    margin: 0 0 24px;
+    min-height: 46px;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
     font-family: "Stoke", serif;
-    font-size: 40px;
+    font-size: 30px;
     font-weight: 900;
     letter-spacing: -0.04em;
     text-transform: uppercase;
     color: var(--accent);
+  }
+
+  /*
+    Keeps the title clear of the menu button (14px from the left, 46px wide, plus space = 80px): the content
+    starts at max(0, (100vw - 1100px) / 2) + 16px, the title gets whatever is missing to 80px. It grows smoothly
+    as the window narrows, the boxes below keep the full width.
+  */
+  .heading {
+    padding-left: max(0px, calc(80px - max(0px, (100vw - 1100px) / 2) - 16px));
   }
 
   /* Positioned, so the cards' offsets are measured from the grid (see `reorder`). */
@@ -152,17 +149,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
     gap: 16px;
-  }
-
-  .slots.only-empty {
-    min-height: calc(100vh - 220px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .slots.only-empty :global(.slot) {
-    width: var(--column-width);
   }
 
   /* A card fills its grid cell and never gets wider: long names or task text shrink instead. */
@@ -180,9 +166,11 @@
     visibility: hidden;
   }
 
+  /* An outline, not a border: it takes no space, so the placeholder stays exactly the card's size. */
   .slot-item.placeholder {
-    border: 2.5px dashed var(--line);
     border-radius: 30px;
+    outline: 2.5px dashed var(--line);
+    outline-offset: -2.5px;
   }
 
   .ghost {
