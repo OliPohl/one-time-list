@@ -11,6 +11,7 @@
   import Wave from './components/Wave.svelte';
   import { WidgetDock, WidgetSideLayer, setWidgets } from '$lib/widgets';
   import PageHeader from '$lib/app/PageHeader.svelte';
+  import Grain from './components/Grain.svelte';
 
   /** @type {{page: import('../types.js').Page}} */
   let { page } = $props();
@@ -127,6 +128,8 @@
   }
 </script>
 
+
+<Grain />
 
 <main class="page-layout">
   <Wave bottom={list.hasTasks}/>

@@ -11,12 +11,16 @@ html, body {
 
   min-height: 100vh;
 
-  background-color: #1b1b1b;
   color: #fcfcff;
 
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Only on html: a body background would paint over page backgrounds placed behind the content. */
+html {
+  background-color: #1b1b1b;
 }
 
 /* Only active text fields may be selected */
