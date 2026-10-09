@@ -123,6 +123,8 @@ export class WidgetStore {
   /** @type {any[]} */
   list = $state([]);
   now = $state(Date.now());
+  /** Turned off (a Tasks page with widgets disabled): kept and saved, but nothing ticks, rings or starts. */
+  suspended = $state(false);
   /** @type {ReturnType<typeof setInterval> | undefined} */
   #interval;
   #lastAlarmAt = 0;
@@ -137,18 +139,68 @@ export class WidgetStore {
     this.#storageKey = storageKey;
   }
 
-  /** Loads the saved widgets, starts ticking and saves every change from then on. */
-  load() {
+  /**
+   * Loads the saved widgets, starts ticking and saves every change from then on.
+   * @param {{suspended?: boolean}} [options] start turned off, nothing ticks (so nothing rings) until `resume()`
+   */
+  load({ suspended = false } = {}) {
     this.list = loadJSON(this.#storageKey, []).map(migrate);
+    this.suspended = suspended;
 
-    this.tick();
-    clearInterval(this.#interval);
-    this.#interval = setInterval(() => this.tick(), 250);
+    if (!suspended) this.#startTicking();
 
     this.#stopSaving?.();
     this.#stopSaving = $effect.root(() => {
       $effect(() => saveJSON(this.#storageKey, this.list));
     });
+  }
+
+  #startTicking() {
+    this.tick();
+    clearInterval(this.#interval);
+    this.#interval = setInterval(() => this.tick(), 250);
+  }
+
+  /**
+   * Turns the widgets off: they stay saved, but stop ticking. Running timers and pomodoros pause, anything that
+   * rings is dismissed, so nothing can play a sound in the background.
+   */
+  suspend() {
+    if (this.suspended) return;
+    this.suspended = true;
+    clearInterval(this.#interval);
+
+    for (const widget of this.list) {
+      if (widget.ringing) {
+        if (widget.type === 'clock') this.confirmAlarm(widget);
+        else if (widget.type === 'pomodoro') this.advance(widget, false);
+        else this.reset(widget);
+      }
+      if (widget.endsAt) this.pause(widget);
+    }
+    for (const stop of this.#playingChimes) stop();
+    this.#playingChimes = [];
+  }
+
+  /** Turns the widgets back on. Paused timers stay paused, clock alarms count from now. */
+  resume() {
+    if (!this.suspended) return;
+    this.suspended = false;
+
+    const now = Date.now();
+    for (const widget of this.list) {
+      if (widget.type !== 'clock' || widget.alarmMode === 'off') continue;
+      // An alarm that would have rung while turned off doesn't go off all at once.
+      widget.nextAt = nextAlarm(widget.alarmMode, widget.alarmTime, now);
+      widget.alarmFrom = widget.nextAt ? now : null;
+    }
+    this.#startTicking();
+  }
+
+  /** @param {boolean} enabled */
+  setEnabled(enabled) {
+    if (enabled) this.resume();
+    else this.suspend();
   }
 
   /** Stops ticking and saving and deletes the saved widgets. */
@@ -325,6 +377,7 @@ export class WidgetStore {
 
   /** Called when the current task is completed. */
   taskCompleted() {
+    if (this.suspended) return;
     for (const widget of this.list) {
       if (widget.type === 'timer' && widget.autoStart && !widget.ringing) this.#restart(widget);
     }
@@ -332,6 +385,7 @@ export class WidgetStore {
 
   /** Called when a task becomes the current task. */
   taskSelected() {
+    if (this.suspended) return;
     for (const widget of this.list) {
       if (!widget.startOnSelect || widget.ringing) continue;
 

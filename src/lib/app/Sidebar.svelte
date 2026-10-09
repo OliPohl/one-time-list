@@ -204,6 +204,7 @@
 
   .item:hover {
     color: var(--accent);
+    background-color: var(--surface-active);
   }
 
   .item.active {

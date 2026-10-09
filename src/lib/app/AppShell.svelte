@@ -22,7 +22,8 @@
 
   let page = $derived(navigation.page);
   let PageComponent = $derived(page && PAGE_TYPES[page.type].component);
-  let pageStyle = $derived(page && PAGE_TYPES[page.type].style?.(page));
+  // The New Page screen previews the colors picked for the new page.
+  let pageStyle = $derived(navigation.view.kind === 'new-page' ? navigation.draftStyle : page && PAGE_TYPES[page.type].style?.(page));
   let title = $derived(
     navigation.view.kind === 'dashboard' ? 'Dashboard' : navigation.view.kind === 'new-page' ? 'New Page' : page?.name
   );

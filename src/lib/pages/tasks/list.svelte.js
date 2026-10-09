@@ -63,7 +63,8 @@ export class ListStore {
     this.widgets = new WidgetStore(widgetsKey(pageId));
   }
 
-  load() {
+  /** @param {{widgetsEnabled?: boolean}} [options] */
+  load({ widgetsEnabled = true } = {}) {
     const saved = loadJSON(listKey(this.#pageId), /** @type {any} */ ({}));
 
     // Older saves have no createdAt, keep their stored order.
@@ -88,7 +89,7 @@ export class ListStore {
       if (!this.customOrder.includes(task.id)) this.customOrder.push(task.id);
     }
 
-    this.widgets.load();
+    this.widgets.load({ suspended: !widgetsEnabled });
 
     this.#stopEffects?.();
     this.#stopEffects = $effect.root(() => {
@@ -278,13 +279,36 @@ export class ListStore {
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a cache, the stores themselves are reactive
 const stores = new Map();
 
-/** The loaded store of a page, created on first use. @param {string} pageId */
-export function getListStore(pageId) {
+/** Widgets are on unless the page turned them off. @param {Record<string, any>} options */
+export const widgetsEnabled = (options) => options.widgets !== false;
+
+/** Stops following a page's widget option, per page id. @type {Map<string, () => void>} */
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, not state
+const optionWatchers = new Map();
+
+/**
+ * The loaded store of a page, created on first use. With `page`, its widgets follow the page's "Widgets"
+ * option: turned off they are kept but don't tick, so nothing rings in the background.
+ * @param {string} pageId
+ * @param {import('../types.js').Page} [page]
+ */
+export function getListStore(pageId, page) {
   let store = stores.get(pageId);
   if (!store) {
     store = new ListStore(pageId);
-    store.load();
+    // Already turned off while loading, so a timer that ended while the app was closed doesn't ring.
+    store.load({ widgetsEnabled: page ? widgetsEnabled(page.options) : true });
     stores.set(pageId, store);
+  }
+  if (page && !optionWatchers.has(pageId)) {
+    const widgets = store.widgets;
+    optionWatchers.set(pageId, $effect.root(() => {
+      $effect(() => {
+        const enabled = widgetsEnabled(page.options);
+        // Only the option is followed, not the widgets that suspending or resuming touches.
+        untrack(() => widgets.setEnabled(enabled));
+      });
+    }));
   }
   return store;
 }
@@ -296,6 +320,8 @@ export function findListStore(pageId) {
 
 /** @param {string} pageId */
 export function deleteListStore(pageId) {
+  optionWatchers.get(pageId)?.();
+  optionWatchers.delete(pageId);
   (stores.get(pageId) ?? new ListStore(pageId)).destroy();
   stores.delete(pageId);
 }

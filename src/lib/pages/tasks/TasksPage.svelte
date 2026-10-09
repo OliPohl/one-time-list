@@ -3,7 +3,7 @@
 <script>
 // @ts-nocheck
   import { flip } from 'svelte/animate';
-  import { getListStore } from './list.svelte.js';
+  import { getListStore, widgetsEnabled } from './list.svelte.js';
   import Task from './components/Task.svelte';
   import TaskInput from './components/TaskInput.svelte';
   import NextTask from './components/NextTask.svelte';
@@ -159,7 +159,9 @@
       {/if}
     </NextTask>
 
-    <WidgetDock />
+    {#if widgetsEnabled(page.options)}
+      <WidgetDock />
+    {/if}
 
     <div class="task-layout" bind:this={taskListEl}>
       {#each displayTasks as task (task.id)}
@@ -195,7 +197,9 @@
   </div>
 </main>
 
-<WidgetSideLayer visible={list.hasTasks} />
+{#if widgetsEnabled(page.options)}
+  <WidgetSideLayer visible={list.hasTasks} />
+{/if}
 
 {#if taskDrag && draggedTask}
   <div

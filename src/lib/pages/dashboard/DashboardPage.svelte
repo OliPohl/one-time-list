@@ -148,6 +148,8 @@
     position: relative;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    /* Every row as tall as the tallest card, so a card keeps its height whichever row it moves to. */
+    grid-auto-rows: 1fr;
     gap: 16px;
   }
 

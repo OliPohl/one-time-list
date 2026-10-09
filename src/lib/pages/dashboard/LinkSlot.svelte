@@ -102,7 +102,6 @@
     flex-direction: column;
     padding: 8px;
     background-color: var(--surface);
-    border: 2.5px solid var(--line-strong);
     border-radius: 26px;
     box-shadow: 0 12px 40px var(--shadow);
     translate: -50% 0;

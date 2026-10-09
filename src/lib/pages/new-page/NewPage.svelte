@@ -23,6 +23,13 @@
 
   let pageType = $derived(selectedType ? PAGE_TYPES[selectedType] : null);
 
+  // Preview the new page's colors on this screen. Leaving clears it, the next New Page starts with the global colors.
+  $effect(() => {
+    const draft = { id: '', type: selectedType ?? '', name, options, createdAt: 0 };
+    navigation.draftStyle = (pageType?.style?.(draft)) ?? '';
+  });
+  $effect(() => () => (navigation.draftStyle = ''));
+
   /** @param {string} type */
   function selectType(type) {
     if (type === selectedType) return;

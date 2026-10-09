@@ -14,6 +14,8 @@ class Navigation {
   /** @type {View} */
   view = $state({ kind: 'dashboard' });
   sidebarOpen = $state(false);
+  /** Colors of the page being set up on the "New Page" screen, shown as a preview while it's open. */
+  draftStyle = $state('');
 
   /** The page shown right now, if the view is a page. */
   page = $derived(this.view.kind === 'page' ? pages.get(this.view.id) : undefined);

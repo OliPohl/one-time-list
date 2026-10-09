@@ -2,6 +2,8 @@
 <!-- Customization of a Tasks page, shown on the "New Page" screen and in the page settings. Edits `options` in place. -->
 <script>
   import { COLORS, colorsKey } from '../../colors.js';
+  import { widgetsEnabled } from './list.svelte.js';
+  import Toggle from '../../ui/Toggle.svelte';
 
   /** @type {{options: Record<string, any>}} */
   let { options } = $props();
@@ -38,7 +40,19 @@
 </div>
 
 
+<div class="option">
+  <span class="option-label">Widgets</span>
+  <!-- Off keeps the widgets but stops them, so nothing rings in the background. -->
+  <Toggle checked={widgetsEnabled(options)} onchange={(checked) => (options.widgets = checked)}>
+    Show widgets
+  </Toggle>
+</div>
+
 <style>
+  .option + .option {
+    margin-top: 20px;
+  }
+
   .option {
     display: flex;
     flex-direction: column;

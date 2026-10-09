@@ -20,11 +20,11 @@ export default {
   Options: TasksOptions,
   Card: TasksCard,
   // New lists start with the default colors from the settings.
-  defaultOptions: () => ({ colors: settings.colors }),
+  defaultOptions: () => ({ colors: settings.colors, widgets: true }),
   style: (page) => colorsStyle(colorsOf(page.options)),
   // Load every list on startup so its timers and alarms run while another page is open.
   init: (page) => {
-    getListStore(page.id);
+    getListStore(page.id, page);
     removeLegacyList();
   },
   ringingWidgets: (page) => findListStore(page.id)?.widgets.list.filter((widget) => widget.ringing) ?? [],

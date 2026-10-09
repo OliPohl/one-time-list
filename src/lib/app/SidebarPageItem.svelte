@@ -139,6 +139,7 @@
 
   .row:not(.editing):hover {
     color: var(--accent);
+    background-color: var(--surface-active);
   }
 
   /* An alarm or timer of this page rings: blink until it's confirmed. */
