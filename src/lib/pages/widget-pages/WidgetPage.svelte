@@ -182,9 +182,7 @@
     font-family: "Roboto Slab", serif;
     font-size: 20px;
     cursor: pointer;
-    transition:
-      transform 0.25s ease,
-      background-color 0.3s ease;
+    transition: transform 0.15s;
     /* Blinks like every alarm: text color <-> primary, in step with the bar. */
     animation: confirm-blink var(--blink-duration) ease-in-out infinite;
   }
@@ -195,36 +193,17 @@
   }
 
   /* Keeps blinking in the bar's colors, hover only tints the background a little. */
-  /* Hover: grows a little and the tint fades in, the blink keeps going. */
+  /* Hover only tints the background a little, the blink keeps going. */
   .confirm:hover {
-    transform: scale(1.04);
     background-color: color-mix(in srgb, var(--wave) 12%, var(--surface));
   }
 
   .confirm:active {
     transform: scale(0.97);
-    transition-duration: 0.1s;
   }
 
   .confirm-icon {
     font-size: 30px;
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 30;
-    transition: transform 0.25s ease;
-  }
-
-  .confirm:hover .confirm-icon {
-    transform: scale(1.12);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .confirm,
-    .confirm-icon {
-      transition: background-color 0.3s ease;
-    }
-
-    .confirm:hover,
-    .confirm:hover .confirm-icon {
-      transform: none;
-    }
   }
 </style>
