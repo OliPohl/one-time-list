@@ -49,11 +49,11 @@
 
   /* Something rings on a page, the sidebar shows which one. */
   .menu-btn.ringing {
-    animation: blink 1s ease-in-out infinite;
+    animation: blink var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes blink {
-    0%, 100% { color: var(--text-soft); }
-    50% { color: var(--red); }
+    0%, 100% { color: var(--text); }
+    50% { color: var(--wave); }
   }
 </style>

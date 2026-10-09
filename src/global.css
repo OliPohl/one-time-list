@@ -40,11 +40,14 @@
   --accent: var(--yellow);
   --task: var(--purple);
 
-  /* Widget state colors (`tone` in widgets/views.js), for the widget border and the widget page time. */
+  /*
+    Border of a widget that isn't counting down. Counting down and ringing use the page colors directly
+    (`--wave`, `--accent`, `--task`): a variable set to var(--task) here would always resolve to the default colors.
+  */
   --tone-idle: var(--line-strong);
-  --tone-blue: var(--blue);
-  --tone-orange: var(--orange);
-  --tone-ring: var(--red);
+
+  /* Every alarm blink (widgets, widget pages, sidebar, menu button) takes this long, they all run in step. */
+  --blink-duration: 1s;
 }
 
 /* Light mode, set by the theme setting (see app/settings.svelte.js and app.html). Hues are a bit darker to stay readable. */

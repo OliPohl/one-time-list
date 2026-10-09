@@ -5,6 +5,10 @@
   import { layout } from '../layout.svelte.js';
   import { getWidgets } from '../context.js';
   import { pressDrag } from '../../utils/pressDrag.js';
+  import ProgressBorder from './ProgressBorder.svelte';
+
+  /** Corner radius per variant, the progress border follows it. Keep in sync with the CSS below. */
+  const RADIUS = { dock: 30, side: 26, drag: 26 };
 
   const widgets = getWidgets();
 
@@ -22,6 +26,8 @@
     controls = [],
     /** Room kept for this many controls, so the widget keeps its size when they change. */
     slots = 0,
+    /** @type {import('../views.js').Progress | null} */
+    progress = null,
     editor
   } = $props();
 
@@ -56,6 +62,9 @@
 
   /** @type {HTMLDivElement} */
   let root;
+  let boxWidth = $state(0);
+  let boxHeight = $state(0);
+  let showProgress = $derived(progress !== null && tone !== 'ring');
 
   /** @param {MouseEvent} event */
   function handleClickOutside(event) {
@@ -74,7 +83,10 @@
   class:editing
   class:pressing
   class:placeholder={isPlaceholder}
+  class:progress={showProgress}
   bind:this={root}
+  bind:offsetWidth={boxWidth}
+  bind:offsetHeight={boxHeight}
   {@attach pressDrag({
     enabled: () => !isGhost,
     // Only empty space starts a drag, never buttons, inputs or the edit panel.
@@ -87,6 +99,10 @@
     }
   })}
 >
+  {#if showProgress && progress}
+    <ProgressBorder {progress} width={boxWidth} height={boxHeight} radius={RADIUS[/** @type {keyof typeof RADIUS} */ (variant)] ?? 30} />
+  {/if}
+
   <div class="head">
     <span class="type-icon m3-icon">{icon}</span>
     <span class="label">{label}</span>
@@ -134,6 +150,7 @@
 
 <style>
   .widget {
+    position: relative;
     box-sizing: border-box;
     width: 100%;
     display: grid;
@@ -158,20 +175,25 @@
   }
 
   .widget.blue {
-    border-color: var(--tone-blue);
+    border-color: var(--accent);
   }
 
   .widget.orange {
-    border-color: var(--tone-orange);
+    border-color: var(--wave);
+  }
+
+  /* The ProgressBorder draws the border while a countdown runs. */
+  .widget.progress {
+    border-color: transparent;
   }
 
   .widget.ring {
-    animation: ring 2s ease-in-out infinite;
+    animation: ring var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes ring {
-    0%, 100% { border-color: var(--tone-idle); }
-    50% { border-color: var(--tone-ring); }
+    0%, 100% { border-color: var(--text); }
+    50% { border-color: var(--wave); }
   }
 
   .widget.pressing {
@@ -317,24 +339,20 @@
     color: var(--green-hover);
   }
 
-  /* Blinks with the ringing border. */
-  /* Blinks between two colors, hovering swaps them for brighter ones without restarting the blink. */
+  /* Blinks like every alarm: text color <-> primary, in step with the border (see utils/syncAnimations.js). */
   .control.confirm {
-    --blink-from: var(--tone-idle);
-    --blink-to: var(--tone-ring);
-
-    color: var(--tone-ring);
-    animation: confirm-blink 2s ease-in-out infinite;
+    color: var(--wave);
+    animation: confirm-blink var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes confirm-blink {
-    0%, 100% { color: var(--blink-from); }
-    50% { color: var(--blink-to); }
+    0%, 100% { color: var(--text); }
+    50% { color: var(--wave); }
   }
 
+  /* Keeps blinking in the border's colors, hover only fills the icon. */
   .control.confirm:hover {
-    --blink-from: var(--text);
-    --blink-to: var(--red-hover);
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 25;
   }
 
   .control.placeholder {

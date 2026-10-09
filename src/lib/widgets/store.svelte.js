@@ -27,7 +27,8 @@ export const POMODORO_PRESETS = [
 /** @param {string} type @param {string} id */
 function createWidget(type, id) {
   if (type === 'clock') {
-    return { id, type, pos: null, alarmMode: 'off', alarmTime: '07:00', nextAt: null, ringing: false, showSeconds: false };
+    // `alarmFrom` is when the countdown to `nextAt` began, for the progress border.
+    return { id, type, pos: null, alarmMode: 'off', alarmTime: '07:00', nextAt: null, alarmFrom: null, ringing: false, showSeconds: false };
   }
 
   if (type === 'timer') {
@@ -67,6 +68,11 @@ export function nextAlarm(mode, time, from) {
   return date.getTime();
 }
 
+/** How long a repeating alarm counts down, a set time counts at most a day. @param {string} mode */
+function alarmPeriod(mode) {
+  return ({ hour: 60, half: 30, quarter: 15 }[mode] ?? 24 * 60) * MINUTE;
+}
+
 /** @param {any} widget */
 export function phaseDuration(widget) {
   return widget[widget.phase];
@@ -103,8 +109,12 @@ function migrate(widget) {
   if (widget.type === 'timer' && !('startOnSelect' in widget)) {
     return { ...widget, startOnSelect: false };
   }
-  if (widget.type === 'clock' && !('showSeconds' in widget)) {
-    return { ...widget, showSeconds: false };
+  if (widget.type === 'clock') {
+    let clock = widget;
+    if (!('showSeconds' in clock)) clock = { ...clock, showSeconds: false };
+    // Older alarms don't know when they were set: assume one interval (or a day) before they ring.
+    if (!('alarmFrom' in clock)) clock = { ...clock, alarmFrom: clock.nextAt ? clock.nextAt - alarmPeriod(clock.alarmMode) : null };
+    return clock;
   }
   return widget;
 }
@@ -216,6 +226,7 @@ export class WidgetStore {
     widget.alarmTime = time;
     widget.ringing = false;
     widget.nextAt = nextAlarm(mode, time, Date.now());
+    widget.alarmFrom = widget.nextAt ? Date.now() : null;
     this.#silenceIfQuiet();
   }
 
@@ -223,6 +234,7 @@ export class WidgetStore {
   confirmAlarm(widget) {
     widget.ringing = false;
     widget.nextAt = nextAlarm(widget.alarmMode, widget.alarmTime, Date.now());
+    widget.alarmFrom = widget.nextAt ? Date.now() : null;
     this.#silenceIfQuiet();
   }
 

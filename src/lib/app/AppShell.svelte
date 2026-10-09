@@ -6,6 +6,7 @@
   import DashboardPage from '../pages/dashboard/DashboardPage.svelte';
   import NewPage from '../pages/new-page/NewPage.svelte';
   import { unlockAudio } from '../utils/sounds.js';
+  import { syncAnimations } from '../utils/syncAnimations.js';
   import { pages } from './pages.svelte.js';
   import { navigation } from './navigation.svelte.js';
   import MenuButton from './MenuButton.svelte';
@@ -30,6 +31,7 @@
     navigation.load();
     unlockAudio();
     isLoaded = true;
+    return syncAnimations();
   });
 </script>
 

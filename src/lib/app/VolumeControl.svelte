@@ -3,10 +3,6 @@
 <script>
   import { settings } from './settings.svelte.js';
   import { playVolumePreview } from '../utils/sounds.js';
-  import { COLORS } from '../colors.js';
-
-  /** Icon and slider turn crimson red while there is no sound. */
-  const SILENT_COLOR = COLORS.crimson.wave;
 
   /** Dragging fires many input events, the preview note plays at most this often. */
   const PREVIEW_INTERVAL = 150;
@@ -35,7 +31,7 @@
   }
 </script>
 
-<div class="volume" class:silent={shown === 0} style:--silent={SILENT_COLOR}>
+<div class="volume" class:silent={shown === 0}>
   <button class="mute-btn m3-icon" title={settings.muted ? 'Unmute' : 'Mute'} aria-pressed={settings.muted} onclick={toggleMute}>{icon}</button>
   <input
     class="slider"
@@ -78,12 +74,13 @@
     color: var(--accent);
   }
 
+  /* No sound: icon and slider in the primary of the default colors. */
   .volume.silent {
-    --slider-color: var(--silent);
+    --slider-color: var(--wave);
   }
 
   .silent .mute-btn {
-    color: var(--silent);
+    color: var(--wave);
   }
 
   .slider {

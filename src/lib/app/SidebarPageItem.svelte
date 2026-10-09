@@ -138,12 +138,12 @@
 
   /* An alarm or timer of this page rings: blink until it's confirmed. */
   .row.ringing:not(.editing) .main {
-    animation: blink 1s ease-in-out infinite;
+    animation: blink var(--blink-duration) ease-in-out infinite;
   }
 
   @keyframes blink {
-    0%, 100% { color: inherit; }
-    50% { color: var(--red); }
+    0%, 100% { color: var(--text); }
+    50% { color: var(--wave); }
   }
 
   .type-icon {
