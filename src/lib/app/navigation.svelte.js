@@ -21,13 +21,13 @@ class Navigation {
   /** Where "Cancel" on the new page screen goes back to. @type {View} */
   #previous = { kind: 'dashboard' };
 
-  /** Restores the last view. Call after `pages.load()`. */
+  /** Restores the last view, or the dashboard. Call after `pages.load()`. */
   load() {
     const saved = /** @type {View | null} */ (loadJSON(STORAGE_KEY, null));
     const isValid = saved?.kind === 'dashboard' || (saved?.kind === 'page' && pages.get(saved.id));
-    const firstPage = pages.list[0];
 
-    this.view = isValid && saved ? saved : firstPage ? { kind: 'page', id: firstPage.id } : { kind: 'dashboard' };
+    // The last page that was open. A first visit (or after "Clear Cache") starts on the dashboard.
+    this.view = isValid && saved ? saved : { kind: 'dashboard' };
   }
 
   /** @param {View} view */
