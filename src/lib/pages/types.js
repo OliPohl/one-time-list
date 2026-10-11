@@ -16,7 +16,8 @@
  * under `src/lib/pages/` and registers itself in `src/lib/pages/index.js`.
  * @typedef {object} PageType
  * @property {string} type unique key, saved with every page
- * @property {string} label shown in the "New Page" type list
+ * @property {'page' | 'widget'} group the tab of the "Add New" screen it's listed under
+ * @property {string} label shown in the "Add New" type list
  * @property {string} description one line under the label
  * @property {string} icon Material Symbols name, shown in the sidebar
  * @property {string} defaultName name given to new pages of this type
@@ -25,7 +26,7 @@
  *   creating a page (without `page`) and in the page settings (with `page`), edits `options` in place
  * @property {import('svelte').Component<{page: Page}>} [Card] the page on the dashboard, works on the page's own data
  * @property {() => Record<string, any>} defaultOptions
- * @property {(page: Page) => string} [style] CSS custom properties (e.g. the colors) for the whole app while the page is shown
+ * @property {(page: Page) => string | undefined} [style] CSS custom properties (e.g. the colors) for the whole app while the page is shown
  * @property {(page: Page) => any[]} [ringingWidgets] the widgets of the page whose alarm or timer rings, the sidebar then blinks it
  * @property {(page: Page) => void} [init] called once for every page on startup, e.g. to start its timers
  * @property {(page: Page) => void} [destroy] called when a page is deleted, removes its saved data

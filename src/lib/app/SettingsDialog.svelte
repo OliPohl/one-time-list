@@ -7,6 +7,8 @@
   import { clearAppData } from '../utils/storage.js';
   import { settings, THEMES } from './settings.svelte.js';
   import { COLORS } from '../colors.js';
+  import NumberField from '../ui/NumberField.svelte';
+  import { frameClock } from '../utils/frameClock.svelte.js';
 
   /** @type {Record<typeof THEMES[number], {label: string, icon: string}>} */
   const THEME_OPTIONS = {
@@ -14,6 +16,34 @@
     light: { label: 'Light', icon: 'light_mode' },
     dark: { label: 'Dark', icon: 'dark_mode' }
   };
+
+  const clockFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+  // The offset as the fields show it: a sign, hours and minutes. The sign stays as picked while the offset is 0.
+  let offsetNegative = $state(settings.clockOffset < 0);
+  let offsetHours = $state(Math.floor(Math.abs(settings.clockOffset) / 60));
+  let offsetMinutes = $state(Math.abs(settings.clockOffset) % 60);
+
+  let clockNow = $derived(clockFormat.format(frameClock.now + settings.clockOffset * 60 * 1000));
+
+  // Applied while typing, the fields are tidied up once a value is done (see `tidyOffset`).
+  $effect(() => {
+    const hours = Math.min(23, Math.max(0, Math.floor(offsetHours) || 0));
+    const minutes = Math.min(59, Math.max(0, Math.floor(offsetMinutes) || 0));
+    settings.setClockOffset((offsetNegative ? -1 : 1) * (hours * 60 + minutes));
+  });
+
+  function tidyOffset() {
+    const total = Math.abs(settings.clockOffset);
+    offsetHours = Math.floor(total / 60);
+    offsetMinutes = total % 60;
+  }
+
+  function resetOffset() {
+    offsetNegative = false;
+    offsetHours = 0;
+    offsetMinutes = 0;
+  }
 
   /** @type {HTMLButtonElement | undefined} */
   let closeButton = $state();
@@ -110,6 +140,22 @@
           </button>
         {/each}
       </div>
+    </section>
+
+    <section class="setting">
+      <h3 class="setting-label" id="offset-label">Clock Offset</h3>
+      <div class="offset" role="group" aria-labelledby="offset-label">
+        <button
+          class="sign-btn m3-icon"
+          title={offsetNegative ? 'Behind (click for ahead)' : 'Ahead (click for behind)'}
+          onclick={() => (offsetNegative = !offsetNegative)}>{offsetNegative ? 'remove' : 'add'}</button>
+        <NumberField bind:value={offsetHours} unit="h" min={0} max={23} onchange={tidyOffset} />
+        <NumberField bind:value={offsetMinutes} unit="min" min={0} max={59} onchange={tidyOffset} />
+        {#if settings.clockOffset !== 0}
+          <button class="reset-btn" transition:fade={{ duration: 150 }} onclick={resetOffset}>Reset</button>
+        {/if}
+      </div>
+      <p class="hint">Clocks show {clockNow} and their alarms go by it.</p>
     </section>
 
     <!-- At the bottom, opens below so the settings stay short. -->
@@ -383,6 +429,49 @@
     font-family: "Roboto Slab", serif;
     font-size: 13px;
     color: var(--text-muted);
+  }
+
+  .offset {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Round, like the number fields next to it. */
+  .sign-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: none;
+    border: 1.5px solid var(--line);
+    border-radius: 50%;
+    color: var(--accent);
+    font-size: 20px;
+    font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+    cursor: pointer;
+    transition: border-color 0.4s;
+  }
+
+  .sign-btn:hover,
+  .sign-btn:focus-visible {
+    border-color: var(--accent);
+  }
+
+  .reset-btn {
+    padding: 4px 8px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: "Roboto Slab", serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.4s;
+  }
+
+  .reset-btn:hover,
+  .reset-btn:focus-visible {
+    color: var(--accent);
   }
 
   .privacy {

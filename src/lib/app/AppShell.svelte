@@ -16,6 +16,7 @@
   import SettingsDialog from './SettingsDialog.svelte';
   import Grain from '../ui/Grain.svelte';
   import { dashboard } from './dashboard.svelte.js';
+  import { folders } from './folders.svelte.js';
   import { settings } from './settings.svelte.js';
 
   let isLoaded = $state(false);
@@ -25,12 +26,13 @@
   // The New Page screen previews the colors picked for the new page.
   let pageStyle = $derived(navigation.view.kind === 'new-page' ? navigation.draftStyle : page && PAGE_TYPES[page.type].style?.(page));
   let title = $derived(
-    navigation.view.kind === 'dashboard' ? 'Dashboard' : navigation.view.kind === 'new-page' ? 'New Page' : page?.name
+    navigation.view.kind === 'dashboard' ? 'Dashboard' : navigation.view.kind === 'new-page' ? 'Add New' : page?.name
   );
 
   onMount(() => {
     settings.load();
     pages.load();
+    folders.load();
     dashboard.load();
     navigation.load();
     unlockAudio();

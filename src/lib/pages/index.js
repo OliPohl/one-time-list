@@ -3,11 +3,13 @@
 // `dashboard/` and `new-page/` are built-in views of the app, not page types.
 
 import tasks from './tasks/index.js';
+import notes from './notes/index.js';
 import { clock, timer, pomodoro } from './widget-pages/index.js';
 
 /** @type {Record<string, import('./types.js').PageType>} */
 export const PAGE_TYPES = {
   [tasks.type]: tasks,
+  [notes.type]: notes,
   [clock.type]: clock,
   [timer.type]: timer,
   [pomodoro.type]: pomodoro
@@ -19,5 +21,5 @@ export const RENAMED_TYPES = {
   'task-list': tasks.type
 };
 
-/** The type a fresh install starts with. */
+/** The type of the page that data from before multiple pages existed is moved into. */
 export const DEFAULT_PAGE_TYPE = tasks.type;

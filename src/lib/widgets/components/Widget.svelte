@@ -22,7 +22,7 @@
     sub = '',
     /** @type {'idle' | 'counting' | 'ring'} */
     tone = 'idle',
-    /** @type {Array<{icon: string, title: string, onclick: () => void, kind?: 'confirm'}>} */
+    /** @type {import('../views.js').Control[]} */
     controls = [],
     /** Room kept for this many controls, so the widget keeps its size when they change. */
     slots = 0,

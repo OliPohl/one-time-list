@@ -23,12 +23,17 @@ class Navigation {
   /** Where "Cancel" on the new page screen goes back to. @type {View} */
   #previous = { kind: 'dashboard' };
 
-  /** Restores the last view, or the dashboard. Call after `pages.load()`. */
+  /** Restores the last view, or the dashboard. Without any pages, the New Page screen. Call after `pages.load()`. */
   load() {
+    if (pages.list.length === 0) {
+      this.view = { kind: 'new-page' };
+      return;
+    }
+
     const saved = /** @type {View | null} */ (loadJSON(STORAGE_KEY, null));
     const isValid = saved?.kind === 'dashboard' || (saved?.kind === 'page' && pages.get(saved.id));
 
-    // The last page that was open. A first visit (or after "Clear Cache") starts on the dashboard.
+    // The last page that was open, or the dashboard.
     this.view = isValid && saved ? saved : { kind: 'dashboard' };
   }
 
@@ -42,7 +47,8 @@ class Navigation {
   }
 
   /**
-   * Asks first, then deletes a page. If it is shown, the first remaining page (or the dashboard) is shown instead.
+   * Asks first, then deletes a page. If it is shown, the first remaining page is shown instead.
+   * Without pages left, the New Page screen.
    * @param {string} id
    * @returns {Promise<boolean>} true if the page was deleted
    */
@@ -58,10 +64,9 @@ class Navigation {
     if (!confirmed) return false;
 
     pages.remove(id);
-    if (this.view.kind === 'page' && this.view.id === id) {
-      const next = pages.list[0];
-      this.go(next ? { kind: 'page', id: next.id } : { kind: 'dashboard' });
-    }
+    const next = pages.list[0];
+    if (!next) this.go({ kind: 'new-page' });
+    else if (this.view.kind === 'page' && this.view.id === id) this.go({ kind: 'page', id: next.id });
     return true;
   }
 

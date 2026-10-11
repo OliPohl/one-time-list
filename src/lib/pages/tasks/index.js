@@ -12,6 +12,7 @@ export { getListStore };
 /** @type {import('../types.js').PageType} */
 export default {
   type: 'tasks',
+  group: 'page',
   label: 'Tasks',
   description: 'Tasks you do once, one at a time.',
   icon: 'checklist',

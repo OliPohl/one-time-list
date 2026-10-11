@@ -4,6 +4,7 @@
   import Chip from '../../../ui/Chip.svelte';
   import NumberField from '../../../ui/NumberField.svelte';
   import Toggle from '../../../ui/Toggle.svelte';
+  import { SNOOZE_OPTIONS } from '../../store.svelte.js';
 
   /** @type {{widget: any, store: import('../../store.svelte.js').WidgetStore, taskOptions?: boolean}} */
   let { widget, store, taskOptions = true } = $props();
@@ -31,6 +32,12 @@
     <Chip active={widget.duration === quick * MINUTE} onclick={() => store.setDuration(widget, quick * MINUTE)}>
       {quick === 60 ? '1 hour' : `${quick} min`}
     </Chip>
+  {/each}
+</EditorRow>
+
+<EditorRow label="Snooze">
+  {#each SNOOZE_OPTIONS as minutes (minutes)}
+    <Chip active={widget.snooze === minutes} onclick={() => store.setSnooze(widget, minutes)}>{minutes === 0 ? 'Off' : `${minutes} min`}</Chip>
   {/each}
 </EditorRow>
 

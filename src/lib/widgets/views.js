@@ -4,10 +4,12 @@
 
 import { formatCountdown, formatRemaining, remainingOf, phaseDuration } from './store.svelte.js';
 import { frameClock } from '../utils/frameClock.svelte.js';
+import { settings } from '../app/settings.svelte.js';
 
 /** @typedef {import('./store.svelte.js').WidgetStore} WidgetStore */
 /** `label` is shown next to the icon where there is room (widget pages). */
-/** @typedef {{icon: string, title: string, onclick: () => void, kind?: 'confirm', label?: string}} Control */
+/** `snooze` only shows while an alarm rings, next to the `confirm` button. */
+/** @typedef {{icon: string, title: string, onclick: () => void, kind?: 'confirm' | 'snooze', label?: string}} Control */
 /**
  * How far a countdown has run, drawn as the widget border and the bar on widget pages: `track` is the full
  * length and shows as the used part, `fill` the part that's left.
@@ -58,10 +60,12 @@ export const PHASE_LABELS = { work: 'Focus', short: 'Break', long: 'Long Break' 
  */
 function clockView(widget, store, { long = false } = {}) {
   const hasAlarm = widget.alarmMode !== 'off' && widget.nextAt;
-  const time = (widget.showSeconds ? timeFormatSeconds : timeFormat).format(store.now);
+  // The clock shows the time moved by the clock offset from the settings.
+  const time = (widget.showSeconds ? timeFormatSeconds : timeFormat).format(store.now + settings.clockOffset * 60 * 1000);
 
   let sub = '';
   if (widget.ringing) sub = 'Alarm!';
+  else if (hasAlarm && widget.snoozed) sub = `${long ? 'Snoozed,' : 'Snooze'} ${formatRemaining(widget.nextAt - store.now)}`;
   else if (hasAlarm) sub = `${long ? 'Alarm in' : 'in'} ${formatRemaining(widget.nextAt - store.now)}`;
 
   const counting = hasAlarm && !widget.ringing && widget.alarmFrom;
@@ -70,10 +74,13 @@ function clockView(widget, store, { long = false } = {}) {
   return {
     time,
     sub,
-    slots: 1,
+    // Room for snooze too when it's turned on, so the widget keeps its size when the alarm rings.
+    slots: widget.snooze > 0 ? 2 : 1,
     progress: counting ? { elapsedAt: (now) => clamp01((now - widget.alarmFrom) / period), track: USED, fill: LEFT } : null,
     controls: widget.ringing
-      ? [{ icon: 'alarm_on', title: 'Confirm Alarm', label: 'Dismiss', kind: 'confirm', onclick: () => store.confirmAlarm(widget) }]
+      ? withSnooze(widget, store, [
+          { icon: 'alarm_on', title: 'Confirm Alarm', label: 'Dismiss', kind: 'confirm', onclick: () => store.confirmAlarm(widget) }
+        ])
       : []
   };
 }
@@ -81,24 +88,40 @@ function clockView(widget, store, { long = false } = {}) {
 /** @param {any} widget @param {WidgetStore} store @returns {TypeView} */
 function timerView(widget, store) {
   const running = widget.endsAt !== null;
+  // While snoozed the timer counts down the snooze.
+  const total = widget.snoozed || widget.duration;
+  const status = running ? 'Running' : widget.remaining < total ? 'Paused' : '';
 
   return {
     time: formatCountdown(remainingOf(widget, store.now)),
-    sub: widget.ringing ? "Time's up!" : running ? 'Running' : widget.remaining < widget.duration ? 'Paused' : '',
-    slots: 2,
+    sub: widget.ringing ? "Time's up!" : widget.snoozed ? `Snoozed${running ? '' : ', paused'}` : status,
+    // Room for snooze too when it's turned on, so the widget keeps its size when the timer rings.
+    slots: widget.snooze > 0 ? 3 : 2,
     // Shown once started, also while paused.
-    progress: !widget.ringing && (running || widget.remaining < widget.duration)
-      ? { elapsedAt: (now) => clamp01(1 - remainingOf(widget, now) / widget.duration), track: USED, fill: LEFT }
+    progress: !widget.ringing && (running || widget.remaining < total)
+      ? { elapsedAt: (now) => clamp01(1 - remainingOf(widget, now) / total), track: USED, fill: LEFT }
       : null,
     controls: [
-      widget.ringing
-        ? { icon: 'check_circle', title: 'Confirm', label: 'Dismiss', kind: 'confirm', onclick: () => store.reset(widget) }
+      ...(widget.ringing
+        ? withSnooze(widget, store, [{ icon: 'check_circle', title: 'Confirm', label: 'Dismiss', kind: 'confirm', onclick: () => store.reset(widget) }])
         : running
-          ? { icon: 'pause', title: 'Pause', onclick: () => store.pause(widget) }
-          : { icon: 'play_arrow', title: 'Start', onclick: () => store.start(widget) },
+          ? [{ icon: 'pause', title: 'Pause', onclick: () => store.pause(widget) }]
+          : [{ icon: 'play_arrow', title: 'Start', onclick: () => store.start(widget) }]),
       { icon: 'restart_alt', title: 'Reset', onclick: () => store.reset(widget) }
     ]
   };
+}
+
+/**
+ * Puts a snooze button before the controls of a ringing clock or timer, if its snooze is turned on.
+ * @param {any} widget
+ * @param {WidgetStore} store
+ * @param {Control[]} controls
+ * @returns {Control[]}
+ */
+function withSnooze(widget, store, controls) {
+  if (!(widget.snooze > 0)) return controls;
+  return [{ icon: 'snooze', title: `Snooze ${widget.snooze} min`, label: 'Snooze', kind: 'snooze', onclick: () => store.snooze(widget) }, ...controls];
 }
 
 /** @param {any} widget @param {WidgetStore} store @returns {TypeView} */

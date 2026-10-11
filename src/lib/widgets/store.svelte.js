@@ -2,9 +2,11 @@
 // Widget state of one page: the widget list, a ticking clock and the timer logic.
 // Each page that shows widgets owns its own store, see `context.js`.
 
+import { untrack } from 'svelte';
 import { playAlarm } from '../utils/sounds.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 import { uniqueId } from '../utils/id.js';
+import { settings } from '../app/settings.svelte.js';
 
 /** The alarm sound repeats this often (ms) while a widget rings, until it's confirmed. */
 const ALARM_INTERVAL = 5000;
@@ -17,6 +19,9 @@ export const WIDGET_TYPES = {
   pomodoro: { label: 'Pomodoro', icon: 'nutrition' }
 };
 
+/** Snooze lengths a clock or timer can be set to, in minutes. 0 is off: no snooze button while it rings. */
+export const SNOOZE_OPTIONS = [0, 5, 10, 15, 30];
+
 export const POMODORO_PRESETS = [
   { name: 'Classic', work: 25, short: 5, long: 15, every: 4 },
   { name: 'Long Focus', work: 45, short: 15, long: 30, every: 3 },
@@ -28,12 +33,15 @@ export const POMODORO_PRESETS = [
 function createWidget(type, id) {
   if (type === 'clock') {
     // `alarmFrom` is when the countdown to `nextAt` began, for the progress border.
-    return { id, type, pos: null, alarmMode: 'off', alarmTime: '07:00', nextAt: null, alarmFrom: null, ringing: false, showSeconds: false };
+    // `snooze` is the snooze length in minutes (0 = off). `snoozed` is how long the current snooze lasts (ms),
+    // or false: while snoozed, `nextAt` is the snoozed alarm instead of the next regular one.
+    return { id, type, pos: null, alarmMode: 'off', alarmTime: '07:00', nextAt: null, alarmFrom: null, ringing: false, snooze: 0, snoozed: false, showSeconds: false };
   }
 
   if (type === 'timer') {
     const duration = 15 * MINUTE;
-    return { id, type, pos: null, duration, remaining: duration, endsAt: null, ringing: false, autoStart: false, startOnSelect: false };
+    // While snoozed (`snoozed` is its length in ms) the timer counts down the snooze instead of `duration`.
+    return { id, type, pos: null, duration, remaining: duration, endsAt: null, ringing: false, snooze: 0, snoozed: false, autoStart: false, startOnSelect: false };
   }
 
   const { work, short, long, every } = POMODORO_PRESETS[0];
@@ -46,26 +54,29 @@ function createWidget(type, id) {
 }
 
 /**
- * Next alarm timestamp for a clock after `from`.
+ * Next alarm timestamp for a clock after `from`. The alarm time is on the clock, which shows the time moved by
+ * the clock offset from the settings.
  * @param {string} mode
  * @param {string} time "HH:MM"
  * @param {number} from
  */
 export function nextAlarm(mode, time, from) {
+  const offset = settings.clockOffset * MINUTE;
+  const shown = from + offset;
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local scratch value, not state
-  const date = new Date(from);
+  const date = new Date(shown);
 
   if (mode === 'time') {
     const [hours, minutes] = time.split(':').map(Number);
     date.setHours(hours, minutes, 0, 0);
-    if (date.getTime() <= from) date.setDate(date.getDate() + 1);
-    return date.getTime();
+    if (date.getTime() <= shown) date.setDate(date.getDate() + 1);
+    return date.getTime() - offset;
   }
 
   const step = { hour: 60, half: 30, quarter: 15 }[mode];
   if (!step) return null;
   date.setMinutes(Math.floor(date.getMinutes() / step) * step + step, 0, 0);
-  return date.getTime();
+  return date.getTime() - offset;
 }
 
 /** How long a repeating alarm counts down, a set time counts at most a day. @param {string} mode */
@@ -106,12 +117,16 @@ function migrate(widget) {
     const { autoStart, ...rest } = widget;
     return { ...rest, startOnSelect: autoStart };
   }
-  if (widget.type === 'timer' && !('startOnSelect' in widget)) {
-    return { ...widget, startOnSelect: false };
+  if (widget.type === 'timer') {
+    let timer = widget;
+    if (!('startOnSelect' in timer)) timer = { ...timer, startOnSelect: false };
+    if (!('snooze' in timer)) timer = { ...timer, snooze: 0, snoozed: false };
+    return timer;
   }
   if (widget.type === 'clock') {
     let clock = widget;
     if (!('showSeconds' in clock)) clock = { ...clock, showSeconds: false };
+    if (!('snooze' in clock)) clock = { ...clock, snooze: 0, snoozed: false };
     // Older alarms don't know when they were set: assume one interval (or a day) before they ring.
     if (!('alarmFrom' in clock)) clock = { ...clock, alarmFrom: clock.nextAt ? clock.nextAt - alarmPeriod(clock.alarmMode) : null };
     return clock;
@@ -152,6 +167,14 @@ export class WidgetStore {
     this.#stopSaving?.();
     this.#stopSaving = $effect.root(() => {
       $effect(() => saveJSON(this.#storageKey, this.list));
+
+      // A new clock offset moves the clock, alarms count again from now to the time it shows.
+      let offset = settings.clockOffset;
+      $effect(() => {
+        if (settings.clockOffset === offset) return;
+        offset = settings.clockOffset;
+        if (!this.suspended) untrack(() => this.#rescheduleAlarms());
+      });
     });
   }
 
@@ -187,14 +210,20 @@ export class WidgetStore {
     if (!this.suspended) return;
     this.suspended = false;
 
+    // An alarm that would have rung while turned off doesn't go off all at once.
+    this.#rescheduleAlarms();
+    this.#startTicking();
+  }
+
+  /** Clock alarms that are set and not ringing count from now to their next time. */
+  #rescheduleAlarms() {
     const now = Date.now();
     for (const widget of this.list) {
-      if (widget.type !== 'clock' || widget.alarmMode === 'off') continue;
-      // An alarm that would have rung while turned off doesn't go off all at once.
+      if (widget.type !== 'clock' || widget.alarmMode === 'off' || widget.ringing) continue;
+      widget.snoozed = false;
       widget.nextAt = nextAlarm(widget.alarmMode, widget.alarmTime, now);
       widget.alarmFrom = widget.nextAt ? now : null;
     }
-    this.#startTicking();
   }
 
   /** @param {boolean} enabled */
@@ -277,6 +306,7 @@ export class WidgetStore {
     widget.alarmMode = mode;
     widget.alarmTime = time;
     widget.ringing = false;
+    widget.snoozed = false;
     widget.nextAt = nextAlarm(mode, time, Date.now());
     widget.alarmFrom = widget.nextAt ? Date.now() : null;
     this.#silenceIfQuiet();
@@ -285,9 +315,33 @@ export class WidgetStore {
   /** @param {any} widget */
   confirmAlarm(widget) {
     widget.ringing = false;
+    widget.snoozed = false;
     widget.nextAt = nextAlarm(widget.alarmMode, widget.alarmTime, Date.now());
     widget.alarmFrom = widget.nextAt ? Date.now() : null;
     this.#silenceIfQuiet();
+  }
+
+  /** Stops a ringing clock or timer, it rings again after its snooze time. @param {any} widget */
+  snooze(widget) {
+    if (!widget.ringing || !(widget.snooze > 0)) return;
+    const now = Date.now();
+    const length = widget.snooze * MINUTE;
+    widget.ringing = false;
+    widget.snoozed = length;
+
+    if (widget.type === 'clock') {
+      widget.nextAt = now + length;
+      widget.alarmFrom = now;
+    } else {
+      widget.remaining = length;
+      widget.endsAt = now + length;
+    }
+    this.#silenceIfQuiet();
+  }
+
+  /** @param {any} widget @param {number} minutes one of SNOOZE_OPTIONS */
+  setSnooze(widget, minutes) {
+    widget.snooze = minutes;
   }
 
   // Timer & Pomodoro
@@ -312,6 +366,7 @@ export class WidgetStore {
   reset(widget) {
     widget.endsAt = null;
     widget.ringing = false;
+    widget.snoozed = false;
 
     if (widget.type === 'pomodoro') {
       widget.phase = 'work';

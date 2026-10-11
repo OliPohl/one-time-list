@@ -7,6 +7,8 @@ import WidgetPageOptions from './WidgetPageOptions.svelte';
 import WidgetCard from './WidgetCard.svelte';
 import { getWidgetPageStore, findWidgetPageStore, deleteWidgetPageStore } from './store.svelte.js';
 import { WIDGET_TYPES } from '../../widgets/store.svelte.js';
+import { pageColorsStyle } from '../../colors.js';
+import { settings } from '../../app/settings.svelte.js';
 
 const DESCRIPTIONS = {
   clock: 'The time, with an alarm.',
@@ -22,6 +24,7 @@ function widgetPageType(widgetType) {
   const { label, icon } = WIDGET_TYPES[widgetType];
   return {
     type: widgetType,
+    group: 'widget',
     label,
     description: DESCRIPTIONS[widgetType],
     icon,
@@ -29,7 +32,9 @@ function widgetPageType(widgetType) {
     component: WidgetPage,
     Options: WidgetPageOptions,
     Card: WidgetCard,
-    defaultOptions: () => ({}),
+    // New widget pages start with the default colors from the settings.
+    defaultOptions: () => ({ colors: settings.colors }),
+    style: (page) => pageColorsStyle(page.options),
     // Load every widget page on startup so its timers and alarms run while another page is open.
     init: (page) => void getWidgetPageStore(page),
     ringingWidgets: (page) => findWidgetPageStore(page.id)?.list.filter((widget) => widget.ringing) ?? [],

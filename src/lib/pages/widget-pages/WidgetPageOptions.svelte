@@ -1,9 +1,10 @@
 <!-- src/lib/pages/widget-pages/WidgetPageOptions.svelte -->
-<!-- The widget's own settings, the same ones its edit panel shows in the dock.
+<!-- The page's colors and the widget's own settings, the same ones its edit panel shows in the dock.
      On the "New Page" screen there is no page yet, so a draft widget is edited and saved in `options.widget`. -->
 <script>
   import { WidgetStore } from '../../widgets/store.svelte.js';
   import WidgetEditor from '../../widgets/components/editors/WidgetEditor.svelte';
+  import ColorOptions from '../ColorOptions.svelte';
   import { getWidgetPageStore } from './store.svelte.js';
 
   /** @type {{options: Record<string, any>, type: string, page?: import('../types.js').Page}} */
@@ -24,6 +25,8 @@
   let widget = $derived(store.list.find((item) => item.type === type));
 </script>
 
+<ColorOptions {options} />
+
 {#if widget}
   <div class="widget-options">
     <WidgetEditor {widget} {store} taskOptions={false} />
@@ -33,6 +36,7 @@
 
 <style>
   .widget-options {
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
     gap: 14px;

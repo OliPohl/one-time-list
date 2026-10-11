@@ -11,6 +11,8 @@ const STORAGE_KEY = 'otl_settings';
 export const THEMES = /** @type {const} */ (['auto', 'light', 'dark']);
 /** Volume used when unmuting after the slider was dragged all the way down. */
 const UNMUTE_VOLUME = 0.5;
+/** The clock offset goes up to a day either way, in minutes. */
+export const MAX_CLOCK_OFFSET = 24 * 60 - 1;
 
 class AppSettings {
   /** 0 to 1, kept while muted so unmuting returns to it. */
@@ -20,6 +22,8 @@ class AppSettings {
   theme = $state('auto');
   /** Default colors: everything that has no colors of its own (sidebar, dialogs, widget pages, new Tasks pages). */
   colors = $state(DEFAULT_COLORS);
+  /** Minutes added to the time the clocks show and their alarms go by. Timers and pomodoros don't use it. */
+  clockOffset = $state(0);
   /** The system prefers light mode, followed while `theme` is `auto`. */
   systemLight = $state(false);
   dialogOpen = $state(false);
@@ -31,11 +35,12 @@ class AppSettings {
   effectiveVolume = $derived(this.muted ? 0 : this.volume);
 
   load() {
-    const saved = loadJSON(STORAGE_KEY, /** @type {{volume?: number, muted?: boolean, theme?: string, colors?: string}} */ ({}));
+    const saved = loadJSON(STORAGE_KEY, /** @type {{volume?: number, muted?: boolean, theme?: string, colors?: string, clockOffset?: number}} */ ({}));
     if (typeof saved.volume === 'number') this.volume = Math.min(1, Math.max(0, saved.volume));
     this.muted = saved.muted === true;
     this.theme = THEMES.find((theme) => theme === saved.theme) ?? 'auto';
     this.colors = saved.colors && saved.colors in COLORS ? saved.colors : DEFAULT_COLORS;
+    if (typeof saved.clockOffset === 'number') this.setClockOffset(saved.clockOffset);
 
     const lightQuery = window.matchMedia('(prefers-color-scheme: light)');
     this.systemLight = lightQuery.matches;
@@ -45,7 +50,7 @@ class AppSettings {
       $effect(() => {
         // `colorsCss` lets app.html apply the colors before the app has loaded.
         const colorsCss = colorsStyle(COLORS[this.colors]);
-        saveJSON(STORAGE_KEY, { volume: this.volume, muted: this.muted, theme: this.theme, colors: this.colors, colorsCss });
+        saveJSON(STORAGE_KEY, { volume: this.volume, muted: this.muted, theme: this.theme, colors: this.colors, clockOffset: this.clockOffset, colorsCss });
         applyVolume(this.effectiveVolume);
       });
 
@@ -67,6 +72,11 @@ class AppSettings {
     this.muted = value === 0;
     // Right away, not only in the effect, so a preview note played next already uses it.
     applyVolume(this.effectiveVolume);
+  }
+
+  /** @param {number} minutes rounded and kept within a day either way */
+  setClockOffset(minutes) {
+    this.clockOffset = Math.min(MAX_CLOCK_OFFSET, Math.max(-MAX_CLOCK_OFFSET, Math.round(minutes) || 0));
   }
 
   toggleMute() {

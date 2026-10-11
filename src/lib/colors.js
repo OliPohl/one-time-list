@@ -30,6 +30,15 @@ export function colorsOf(options) {
   return COLORS[colorsKey(options)];
 }
 
+/**
+ * The colors of a page that picked its own, as CSS custom properties. Pages from before they could pick
+ * (Notes and widget pages) have none and keep the default colors from the settings.
+ * @param {Record<string, any>} options
+ */
+export function pageColorsStyle(options) {
+  return options.colors || options.colorScheme ? colorsStyle(colorsOf(options)) : undefined;
+}
+
 /** CSS custom properties for the colors, set on the page root. @param {Colors} colors */
 export function colorsStyle(colors) {
   return `--wave: ${colors.wave}; --accent: ${colors.accent}; --task: ${colors.task};`;

@@ -26,17 +26,18 @@ class PageList {
   /** @type {Page[]} */
   list = $state([]);
 
-  /** Loads the pages, creates the first one on a fresh install and starts every page. */
+  /** Loads the pages, moves data from before multiple pages existed into a new page and starts every page. */
   load() {
     const saved = loadJSON(STORAGE_KEY, /** @type {Page[]} */ ([])).map(migrate);
     // Pages of types that no longer exist are kept in storage but not shown.
     this.list = saved.filter((page) => PAGE_TYPES[page.type]);
 
+    // A fresh install starts without pages, on the New Page screen. Only old data gets a page of its own.
     if (saved.length === 0) {
       const type = PAGE_TYPES[DEFAULT_PAGE_TYPE];
       // Not started yet, the old data has to be in place before the page loads it.
       const page = this.#add({ type: type.type, name: type.defaultName, options: type.defaultOptions() });
-      type.importLegacy?.(page.id);
+      if (!type.importLegacy?.(page.id)) this.list = this.list.filter((item) => item.id !== page.id);
     }
 
     for (const page of this.list) PAGE_TYPES[page.type].init?.(page);

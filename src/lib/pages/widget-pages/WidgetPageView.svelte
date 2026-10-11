@@ -17,8 +17,8 @@
   let view = $derived(widget && widgetView(widget, store, { long: true }));
   // Every frame while counting, so the bar moves smoothly.
   let barElapsed = $derived(view?.bar ? elapsedNow(view.bar) : 0);
-  // While it rings the page only offers the confirm button, the widget cards keep all their controls.
-  let controls = $derived(view?.tone === 'ring' ? view.controls.filter((control) => control.kind === 'confirm') : (view?.controls ?? []));
+  // While it rings the page only offers the confirm (and snooze) button, the widget cards keep all their controls.
+  let controls = $derived(view?.tone === 'ring' ? view.controls.filter((control) => control.kind) : (view?.controls ?? []));
   // Roboto Slab has no equal width digits, so every digit gets a slot as wide as the widest one.
   // Otherwise the centered time wiggles whenever a digit changes.
   let timeChars = $derived(view ? [...view.time] : []);
@@ -48,9 +48,13 @@
 
     <div class="controls" class:empty={controls.length === 0}>
       {#each controls as control (control.title)}
-        {#if control.kind === 'confirm'}
-          <!-- No tooltip, the label already says what it does. -->
-          <button class="confirm" onclick={control.onclick}>
+        {#if control.kind}
+          <!-- No tooltip on Dismiss, the label already says what it does. Snooze tells how long. -->
+          <button
+            class="confirm"
+            class:snooze={control.kind === 'snooze'}
+            title={control.kind === 'snooze' ? control.title : undefined}
+            onclick={control.onclick}>
             <span class="confirm-icon m3-icon">{control.icon}</span>
             <span>{control.label ?? control.title}</span>
           </button>
@@ -188,6 +192,18 @@
 
   .confirm:active {
     transform: scale(0.97);
+  }
+
+  /* Snooze sits next to Dismiss without blinking, so Dismiss stays the main button. */
+  .confirm.snooze {
+    border-color: var(--line);
+    color: var(--text-soft);
+    animation: none;
+  }
+
+  .confirm.snooze:hover {
+    border-color: var(--text-muted);
+    background-color: var(--surface);
   }
 
   .confirm-icon {
