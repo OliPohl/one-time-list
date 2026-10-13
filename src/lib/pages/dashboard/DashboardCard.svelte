@@ -86,11 +86,14 @@
     color: var(--text);
   }
 
+  /* Content taller than the card is cut off at the bottom: centered while it fits, from the top once it doesn't. */
   .body {
     flex: 1;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: safe center;
   }
 
   .open {

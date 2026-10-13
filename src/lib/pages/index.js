@@ -3,12 +3,14 @@
 // `dashboard/` and `new-page/` are built-in views of the app, not page types.
 
 import tasks from './tasks/index.js';
+import kanban from './kanban/index.js';
 import notes from './notes/index.js';
 import { clock, timer, pomodoro, calculator } from './widget-pages/index.js';
 
 /** @type {Record<string, import('./types.js').PageType>} */
 export const PAGE_TYPES = {
   [tasks.type]: tasks,
+  [kanban.type]: kanban,
   [notes.type]: notes,
   [clock.type]: clock,
   [timer.type]: timer,

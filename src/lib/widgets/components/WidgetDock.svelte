@@ -9,10 +9,10 @@
 
   const widgets = getWidgets();
 
-  let docked = $derived(widgets.list.filter((widget) => layout.isDocked(widget, widgets.list)));
+  let docked = $derived(widgets.list.filter((widget) => layout.isDocked(widget)));
 </script>
 
-<div class="dock">
+<div class="dock" data-widget-dock>
   {#each docked as widget (widget.id)}
     <div class="item" data-dock-widget={widget.id} animate:flip={{ duration: 300 }}>
       <WidgetView {widget} />

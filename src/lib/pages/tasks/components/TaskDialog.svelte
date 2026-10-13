@@ -13,7 +13,7 @@
   /**
    * @type {{
    *   task: import('../list.svelte.js').TaskItem,
-   *   list: import('../list.svelte.js').ListStore,
+   *   list: import('../list.svelte.js').LabelOwner,
    *   onClose: () => void,
    *   onDelete: () => void
    * }}
@@ -25,7 +25,7 @@
   let title = $state(task.text);
   /** @type {HTMLElement} */
   let editorParent;
-  /** @type {HTMLInputElement | undefined} */
+  /** @type {HTMLTextAreaElement | undefined} */
   let titleInput = $state();
 
   /** Editing the labels: clicking one changes it instead of tagging the task. */
@@ -39,6 +39,20 @@
   function updateTitle() {
     if (title.trim()) task.text = title;
   }
+
+  /** The title grows with its lines, Enter adds a new line. */
+  function fitTitle() {
+    if (!titleInput) return;
+    titleInput.style.height = 'auto';
+    // scrollHeight leaves out the 2px border on each side.
+    titleInput.style.height = `${titleInput.scrollHeight + 4}px`;
+  }
+
+  // Fitted again when the title changes (typing, or set back on blur).
+  $effect(() => {
+    void title;
+    fitTitle();
+  });
 
   /** @param {import('../list.svelte.js').Priority} key */
   function togglePriority(key) {
@@ -163,17 +177,16 @@
 
   <div class="dialog" role="dialog" aria-modal="true" aria-label="Task" transition:scale={{ duration: 200, start: 0.94 }}>
     <div class="head">
-      <input
+      <textarea
         class="title"
-        type="text"
+        rows="1"
         maxlength="500"
         spellcheck="false"
         aria-label="Task"
         bind:value={title}
         bind:this={titleInput}
         oninput={updateTitle}
-        onblur={() => (title = task.text)}
-        onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()} />
+        onblur={() => (title = task.text)}></textarea>
       <button class="close-btn m3-icon" title="Close" onclick={onClose}>close</button>
     </div>
 
@@ -350,11 +363,12 @@
 
   .head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
   }
 
   .title {
+    box-sizing: border-box;
     flex: 1;
     min-width: 0;
     padding: 6px 12px;
@@ -365,6 +379,9 @@
     color: var(--text);
     font-family: "Roboto Slab", serif;
     font-size: 22px;
+    line-height: 1.4;
+    resize: none;
+    overflow: hidden;
     outline: none;
     transition: border-color 0.2s, background-color 0.2s;
   }

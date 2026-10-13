@@ -188,7 +188,8 @@
   .slots :global(.slot),
   .ghost :global(.slot) {
     box-sizing: border-box;
-    min-height: 280px;
+    /* Every card has the same fixed height, whatever its content. */
+    height: 320px;
     padding: 18px 20px 14px;
     background-color: var(--surface-card);
     border-radius: 30px;

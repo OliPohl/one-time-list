@@ -3,14 +3,14 @@
 <script>
 // @ts-nocheck
   import { flip } from 'svelte/animate';
-  import { getListStore, widgetsEnabled, advancedTasks, priorityOf } from './list.svelte.js';
+  import { getListStore, widgetsEnabled, priorityOf } from './list.svelte.js';
   import TaskDialog from './components/TaskDialog.svelte';
   import Task from './components/Task.svelte';
   import TaskInput from './components/TaskInput.svelte';
   import NextTask from './components/NextTask.svelte';
   import History from './components/History.svelte';
   import Wave from './components/Wave.svelte';
-  import { WidgetDock, WidgetSideLayer, WidgetHeaderArea, setWidgets } from '$lib/widgets';
+  import { WidgetDock, WidgetSideLayer, setWidgets } from '$lib/widgets';
   import PageHeader from '$lib/app/PageHeader.svelte';
   import { layout } from '$lib/widgets/layout.svelte.js';
 
@@ -31,15 +31,12 @@
   let taskListEl;
   let currentTaskEl = $state();
 
-  /** Advanced tasks: tags, description and the task popup. */
-  let advanced = $derived(advancedTasks(page.options));
   /** The task open in the popup. @type {string | null} */
   let openTaskId = $state(null);
   let openTask = $derived(openTaskId === null ? null : list.findTask(openTaskId));
 
-  /** What a task shows as an advanced task, spread on <Task>. Nothing for plain tasks. @param {import('./list.svelte.js').TaskItem} task */
+  /** What a task shows as a card (tags, description, the task popup), spread on <Task>. @param {import('./list.svelte.js').TaskItem} task */
   function advancedProps(task) {
-    if (!advanced) return {};
     return {
       advanced: true,
       description: task.description,
@@ -234,12 +231,12 @@
   bottom={list.hasTasks} />
 
   <div class="task-warpper" class:bottom={list.hasTasks} bind:this={wrapperEl}>
-    <PageHeader {page} visible={list.hasTasks} aside={widgetsEnabled(page.options) ? headerWidgets : undefined} />
+    <PageHeader {page} visible={list.hasTasks} />
 
     <NextTask
     onShuffle={() => list.sortTasks('random')}
     onSortAlphanumeric={() => list.sortTasks('alphanumeric')}
-    onSortPriority={advanced ? () => list.sortTasks('priority') : undefined}
+    onSortPriority={() => list.sortTasks('priority')}
     onCustomOrder={() => list.restoreCustomOrder()}
     onUnselect ={() => list.unselectTask()}
     isDropTarget={taskDrag?.overCurrent ?? false}
@@ -311,10 +308,6 @@
   <TaskDialog task={openTask} {list} onClose={closeTask} onDelete={deleteOpenTask} />
 {/if}
 
-{#snippet headerWidgets()}
-  <WidgetHeaderArea />
-{/snippet}
-
 {#if widgetsEnabled(page.options)}
   <WidgetSideLayer visible={list.hasTasks} />
 {/if}
@@ -345,6 +338,10 @@
 
     max-width: 600px;
     max-height: 100vh;
+
+    /* Shape of a task card and the space between tasks, also used by NextTask and History. */
+    --task-radius: 22px;
+    --task-gap: 14px;
   }
 
   .task-warpper {
@@ -380,7 +377,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 25px;
+    gap: var(--task-gap);
   }
 
   .task-item {
@@ -388,7 +385,7 @@
   }
 
   .task-item.placeholder {
-    border-radius: 40px;
+    border-radius: var(--task-radius);
     outline: 2.5px dashed var(--line);
     outline-offset: -2.5px;
   }

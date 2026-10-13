@@ -10,7 +10,7 @@
 
   let { visible = true } = $props();
 
-  let freeWidgets = $derived(widgets.list.filter((widget) => widget.pos?.area === 'free' && !layout.isDocked(widget, widgets.list)));
+  let freeWidgets = $derived(widgets.list.filter((widget) => widget.pos?.area === 'free' && !layout.isDocked(widget)));
 </script>
 
 <svelte:window bind:innerWidth={layout.width} bind:innerHeight={layout.height} />

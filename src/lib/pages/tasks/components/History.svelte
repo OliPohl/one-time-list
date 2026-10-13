@@ -87,8 +87,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 25px;
-    padding-top: 25px;
+    gap: var(--task-gap, 25px);
+    padding-top: var(--task-gap, 25px);
   }
 
   .item {
@@ -96,7 +96,7 @@
   }
 
   .item.placeholder {
-    border-radius: 40px;
+    border-radius: var(--task-radius, 40px);
     outline: 2.5px dashed var(--line);
     outline-offset: -2.5px;
   }

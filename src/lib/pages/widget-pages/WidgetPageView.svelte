@@ -1,7 +1,7 @@
 <!-- src/lib/pages/widget-pages/WidgetPageView.svelte -->
 <!-- The body of a widget page: the time in big, the bar, the status and the controls.
      Used by the widget page and, smaller (`compact`), by its card on the dashboard.
-     A calculator shows its number with the calculation above it, and its keys on the page (not on the card). -->
+     A calculator shows its number with the calculation above it and its keys: large on the page, small on the card. -->
 <script>
   import { widgetOf, getWidgetPageStore } from './store.svelte.js';
   import { widgetView, elapsedNow } from '$lib/widgets/views.js';
@@ -24,17 +24,21 @@
   // Roboto Slab has no equal width digits, so every digit gets a slot as wide as the widest one.
   // Otherwise the centered time wiggles whenever a digit changes.
   let timeChars = $derived(view ? [...view.time] : []);
+  /** The card's calculator takes the keyboard (after a click on it), its screen shows it. */
+  let calcActive = $state(false);
 </script>
 
 <div class="widget-view" class:compact class:calculator={widget?.type === 'calculator'} class:break-end={view?.breakEnd}>
   {#if view && widget?.type === 'calculator'}
-    <!-- On the page: a calculator's body, the number in its screen, the keys below. The card only shows the number. -->
+    <!-- A calculator's body, the number in its screen, the keys below. On the card a click on it turns the keyboard on. -->
     <div class="calc-body">
-      <div class="calc-display" style:--chars={Math.max(1, view.time.length)}>
+      <div class="calc-display" class:active={calcActive} style:--chars={Math.max(1, view.time.length)}>
         <div class="calc-expression">{view.sub}</div>
         <div class="calc-number">{view.time}</div>
       </div>
-      {#if !compact}
+      {#if compact}
+        <CalculatorPad {widget} bind:active={calcActive} small />
+      {:else}
         <CalculatorPad {widget} always large />
       {/if}
     </div>
@@ -137,27 +141,43 @@
     color: var(--bright);
   }
 
-  /* On the card: only the number, no body or screen. */
+  /* On the card: no body, the calculation and the number on one line. The screen is only outlined while the
+     keyboard types into it. */
   .compact .calc-body {
     width: 100%;
-    margin: 4px 0 0;
+    margin: 0;
     padding: 0;
+    gap: 6px;
     background: none;
     box-shadow: none;
   }
 
   .compact .calc-display {
-    padding: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0 10px;
     background: none;
     box-shadow: none;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .compact .calc-display.active {
+    border-color: var(--accent);
   }
 
   .compact .calc-expression {
-    font-size: 15px;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    font-size: 13px;
   }
 
   .compact .calc-number {
-    font-size: min(56px, calc(170cqi / var(--chars)));
+    flex-shrink: 0;
+    font-size: min(30px, calc(110cqi / var(--chars)));
   }
 
   .time {

@@ -1,12 +1,13 @@
 <!-- src/lib/widgets/components/CalculatorPad.svelte -->
-<!-- The keys of the calculator widget. Clicking the widget makes it `active`: the keyboard types into it (digits,
+<!-- The keys of the calculator widget. Clicking the widget (or its dashboard card) makes it `active`: the keyboard types into it (digits,
      + - * / x, Enter or =, Backspace, Esc, %, r for the square root, ^ to square) until something else is clicked.
-     With `always` (its own page) it takes the keyboard right away. `large` for the page, bigger keys. -->
+     With `always` (its own page) it takes the keyboard right away. `large` for the page, bigger keys, `small` for
+     the dashboard card. -->
 <script>
   import { press, keyFromKeyboard } from '../calculator.js';
 
-  /** @type {{widget: any, active?: boolean, ghost?: boolean, always?: boolean, large?: boolean}} */
-  let { widget, active = $bindable(false), ghost = false, always = false, large = false } = $props();
+  /** @type {{widget: any, active?: boolean, ghost?: boolean, always?: boolean, large?: boolean, small?: boolean}} */
+  let { widget, active = $bindable(false), ghost = false, always = false, large = false, small = false } = $props();
 
   $effect(() => {
     if (always) active = true;
@@ -46,10 +47,10 @@
   /** @type {ReturnType<typeof setTimeout> | undefined} */
   let flashTimer;
 
-  /** Clicking the widget turns the keyboard on, clicking anywhere else off. @param {PointerEvent} event */
+  /** Clicking the widget (on the dashboard: the calculator's body) turns the keyboard on, clicking anywhere else off. @param {PointerEvent} event */
   function handlePointerDown(event) {
     if (ghost || always) return;
-    const card = root?.closest('.widget');
+    const card = root?.closest('.widget, .calc-body');
     active = Boolean(card?.contains(/** @type {Node} */ (event.target)));
   }
 
@@ -75,7 +76,7 @@
 
 <svelte:window onpointerdowncapture={handlePointerDown} onkeydown={handleKeyDown} />
 
-<div class="pad" class:large bind:this={root}>
+<div class="pad" class:large class:small bind:this={root}>
   {#each KEYS as item (item.key)}
     <!-- Not focusable: Enter on a focused key would press it again, Enter is "=" here. -->
     <button
@@ -160,6 +161,21 @@
 
   .large .key.equals {
     background-color: var(--accent);
+  }
+
+  /* On the dashboard card, where the height is limited. */
+  .small {
+    gap: 4px;
+  }
+
+  .small .key {
+    height: 24px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .small .key.function {
+    font-size: 12px;
   }
 
   .key.wide {

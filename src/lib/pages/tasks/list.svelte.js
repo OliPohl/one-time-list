@@ -2,6 +2,7 @@
 // State of one Tasks page: its tasks, the current task, the history, sorting and its widgets.
 // Lives outside the page component so it keeps running (timers, alarms) while another page is shown
 // and so other views, like the dashboard, can read it.
+// `TaskList` is one list without labels, widgets or saving: a Tasks page has one, a Kanban board one per column.
 
 import { untrack } from 'svelte';
 import { WidgetStore } from '../../widgets/store.svelte.js';
@@ -11,7 +12,7 @@ import { uniqueId } from '../../utils/id.js';
 import { withGameJamIcons } from '../../icons.js';
 
 /**
- * `description`, `priority` and `labels` (ids of the page's labels) are set in the task popup of advanced tasks.
+ * `description`, `priority` and `labels` (ids of the page's labels) are set in the task popup.
  * @typedef {{id: string, text: string, createdAt: number, completedAt?: number, description?: string, priority?: Priority, labels?: string[]}} TaskItem
  */
 /** @typedef {'critical' | 'important' | 'medium' | 'nice'} Priority */
@@ -72,9 +73,7 @@ export function descriptionPreview(description) {
     .trim();
 }
 
-/** Advanced tasks: the edit button opens the task popup (description, priority, labels). @param {Record<string, any>} options */
-export const advancedTasks = (options) => options.advanced === true;
-/** `priority`: most urgent first (advanced tasks), the custom order within a priority. @typedef {'custom' | 'alphanumeric' | 'random' | 'priority'} SortMode */
+/** `priority`: most urgent first, the custom order within a priority. @typedef {'custom' | 'alphanumeric' | 'random' | 'priority'} SortMode */
 
 /** @param {string} pageId */
 const listKey = (pageId) => `otl_list_${pageId}`;
@@ -103,7 +102,13 @@ export function withoutCompletion(task) {
   return rest;
 }
 
-export class ListStore {
+/**
+ * Tasks, the current task and the history of one list, with sorting.
+ * `onSelected` and `onCompleted` tell the page's widgets, `isTaken` checks a new task id against every list of the
+ * page (tasks move between the columns of a board).
+ * @typedef {{onSelected?: () => void, onCompleted?: () => void, isTaken?: (id: string) => boolean}} TaskListHooks
+ */
+export class TaskList {
   /** @type {TaskItem[]} */
   tasks = $state([]);
   /** @type {TaskItem | null} */
@@ -114,25 +119,19 @@ export class ListStore {
   customOrder = $state([]);
   /** @type {SortMode} */
   sortMode = $state('custom');
-  /** The page's labels, for advanced tasks. @type {Label[]} */
-  labels = $state([]);
 
   hasTasks = $derived(this.tasks.length > 0 || this.currentTask !== null);
 
-  #pageId;
-  /** @type {(() => void) | undefined} */
-  #stopEffects;
+  /** @type {TaskListHooks} */
+  #hooks;
 
-  /** @param {string} pageId */
-  constructor(pageId) {
-    this.#pageId = pageId;
-    this.widgets = new WidgetStore(widgetsKey(pageId));
+  /** @param {TaskListHooks} [hooks] */
+  constructor(hooks = {}) {
+    this.#hooks = hooks;
   }
 
-  /** @param {{widgetsEnabled?: boolean}} [options] */
-  load({ widgetsEnabled = true } = {}) {
-    const saved = loadJSON(listKey(this.#pageId), /** @type {any} */ ({}));
-
+  /** Fills the list from saved data (`toSaved`). @param {any} saved */
+  restore(saved) {
     // Older saves have no createdAt, keep their stored order.
     const now = Date.now();
     this.tasks = (saved.tasks ?? []).map((/** @type {TaskItem} */ task, /** @type {number} */ index, /** @type {TaskItem[]} */ list) => ({
@@ -144,7 +143,6 @@ export class ListStore {
     if (this.currentTask && this.currentTask.createdAt === undefined) this.currentTask.createdAt = now;
 
     this.history = saved.history ?? [];
-    this.labels = Array.isArray(saved.labels) ? saved.labels : [];
 
     const mode = saved.sortMode;
     this.sortMode = mode === 'alphanumeric' || mode === 'random' || mode === 'priority' ? mode : 'custom';
@@ -155,39 +153,31 @@ export class ListStore {
     for (const task of allTasks) {
       if (!this.customOrder.includes(task.id)) this.customOrder.push(task.id);
     }
-
-    this.widgets.load({ suspended: !widgetsEnabled });
-
-    this.#stopEffects?.();
-    this.#stopEffects = $effect.root(() => {
-      $effect(() => {
-        saveJSON(listKey(this.#pageId), {
-          tasks: this.tasks,
-          currentTask: this.currentTask,
-          history: this.history,
-          customOrder: this.customOrder,
-          sortMode: this.sortMode,
-          labels: this.labels
-        });
-      });
-
-      // Reset all widgets once the list is empty.
-      $effect(() => {
-        if (!this.hasTasks) untrack(() => this.widgets.resetAll());
-      });
-    });
   }
 
-  /** Stops the store and deletes everything it saved. */
-  destroy() {
-    this.#stopEffects?.();
-    this.widgets.destroy();
-    localStorage.removeItem(listKey(this.#pageId));
+  /** What's saved of the list. */
+  toSaved() {
+    return {
+      tasks: this.tasks,
+      currentTask: this.currentTask,
+      history: this.history,
+      customOrder: this.customOrder,
+      sortMode: this.sortMode
+    };
+  }
+
+  /** Whether a task in the list, the current one or one in the history has this id. @param {string} id */
+  hasId(id) {
+    return this.tasks.some((task) => task.id === id) || this.currentTask?.id === id || this.history.some((task) => task.id === id);
   }
 
   /** @param {string} id */
-  #isTaken = (id) =>
-    this.tasks.some((task) => task.id === id) || this.currentTask?.id === id || this.history.some((task) => task.id === id);
+  #isTaken = (id) => (this.#hooks.isTaken ?? ((other) => this.hasId(other)))(id);
+
+  /** Every task: the list, the current one and the history. */
+  allTasks() {
+    return [...this.tasks, ...(this.currentTask ? [this.currentTask] : []), ...this.history];
+  }
 
   /** @param {TaskItem} task */
   #customIndex(task) {
@@ -199,26 +189,6 @@ export class ListStore {
   findTask(id) {
     if (this.currentTask?.id === id) return this.currentTask;
     return this.tasks.find((task) => task.id === id) ?? this.history.find((task) => task.id === id) ?? null;
-  }
-
-  /** @param {string} name @param {string} color @param {string} icon @returns {Label} */
-  addLabel(name, color, icon) {
-    const label = { id: uniqueId((id) => this.labels.some((item) => item.id === id)), name, color, icon };
-    this.labels.push(label);
-    return /** @type {Label} */ (this.labels.at(-1));
-  }
-
-  /** Deletes a label, also from every task tagged with it. @param {string} id */
-  removeLabel(id) {
-    this.labels = this.labels.filter((label) => label.id !== id);
-    for (const task of [...this.tasks, ...this.history, ...(this.currentTask ? [this.currentTask] : [])]) {
-      if (task.labels?.includes(id)) task.labels = task.labels.filter((labelId) => labelId !== id);
-    }
-  }
-
-  /** The labels of a task, in the page's order. @param {TaskItem} task */
-  labelsOf(task) {
-    return task.labels?.length ? this.labels.filter((label) => task.labels?.includes(label.id)) : [];
   }
 
   /** @param {string} text */
@@ -357,7 +327,7 @@ export class ListStore {
     if (task) {
       this.currentTask = task;
       this.tasks = this.tasks.filter((item) => item.id !== id);
-      this.widgets.taskSelected();
+      this.#hooks.onSelected?.();
     }
   }
 
@@ -375,7 +345,7 @@ export class ListStore {
     }
 
     playComplete();
-    this.widgets.taskCompleted();
+    this.#hooks.onCompleted?.();
   }
 
   unselectTask() {
@@ -383,6 +353,114 @@ export class ListStore {
       this.returnToList(this.currentTask);
       this.currentTask = null;
     }
+  }
+
+  /**
+   * Takes a task out of the list, wherever it is (list, current task, history), to move it to another list.
+   * @param {string} id
+   * @returns {TaskItem | null} the task, without its completion
+   */
+  take(id) {
+    const task = this.findTask(id);
+    if (!task) return null;
+    if (this.history.includes(task)) this.deleteFromHistory(id);
+    else this.removeTask(id);
+    return withoutCompletion(task);
+  }
+
+  /** Puts a task from another list in at `index` of the list. @param {TaskItem} task @param {number} index */
+  insert(task, index) {
+    this.tasks = this.tasks.toSpliced(index, 0, task);
+    this.saveCustomOrder();
+  }
+}
+
+/**
+ * Labels of a page, shared by all its tasks. Used by the task popup.
+ * @typedef {{labels: Label[], addLabel: (name: string, color: string, icon: string) => Label, removeLabel: (id: string) => void, labelsOf: (task: TaskItem) => Label[]}} LabelOwner
+ */
+
+/**
+ * A new label added to `labels`, the one in the list (state) is returned.
+ * @param {Label[]} labels @param {string} name @param {string} color @param {string} icon
+ * @returns {Label}
+ */
+export function addLabelTo(labels, name, color, icon) {
+  labels.push({ id: uniqueId((id) => labels.some((item) => item.id === id)), name, color, icon });
+  return /** @type {Label} */ (labels.at(-1));
+}
+
+/** Removes a deleted label from every task tagged with it. @param {TaskItem[]} tasks @param {string} id */
+export function untagLabel(tasks, id) {
+  for (const task of tasks) {
+    if (task.labels?.includes(id)) task.labels = task.labels.filter((labelId) => labelId !== id);
+  }
+}
+
+/** The labels of a task, in the page's order. @param {Label[]} labels @param {TaskItem} task */
+export function labelsOfTask(labels, task) {
+  return task.labels?.length ? labels.filter((label) => task.labels?.includes(label.id)) : [];
+}
+
+/** A Tasks page: one list with the page's labels and widgets, saved. @implements {LabelOwner} */
+export class ListStore extends TaskList {
+  /** The page's labels, tasks are tagged with them. @type {Label[]} */
+  labels = $state([]);
+
+  #pageId;
+  /** @type {(() => void) | undefined} */
+  #stopEffects;
+
+  /** @param {string} pageId */
+  constructor(pageId) {
+    const widgets = new WidgetStore(widgetsKey(pageId));
+    super({ onSelected: () => widgets.taskSelected(), onCompleted: () => widgets.taskCompleted() });
+    this.#pageId = pageId;
+    this.widgets = widgets;
+  }
+
+  /** @param {{widgetsEnabled?: boolean}} [options] */
+  load({ widgetsEnabled = true } = {}) {
+    const saved = loadJSON(listKey(this.#pageId), /** @type {any} */ ({}));
+    this.restore(saved);
+    this.labels = Array.isArray(saved.labels) ? saved.labels : [];
+
+    this.widgets.load({ suspended: !widgetsEnabled });
+
+    this.#stopEffects?.();
+    this.#stopEffects = $effect.root(() => {
+      $effect(() => {
+        saveJSON(listKey(this.#pageId), { ...this.toSaved(), labels: this.labels });
+      });
+
+      // Reset all widgets once the list is empty.
+      $effect(() => {
+        if (!this.hasTasks) untrack(() => this.widgets.resetAll());
+      });
+    });
+  }
+
+  /** Stops the store and deletes everything it saved. */
+  destroy() {
+    this.#stopEffects?.();
+    this.widgets.destroy();
+    localStorage.removeItem(listKey(this.#pageId));
+  }
+
+  /** @param {string} name @param {string} color @param {string} icon */
+  addLabel(name, color, icon) {
+    return addLabelTo(this.labels, name, color, icon);
+  }
+
+  /** Deletes a label, also from every task tagged with it. @param {string} id */
+  removeLabel(id) {
+    this.labels = this.labels.filter((label) => label.id !== id);
+    untagLabel(this.allTasks(), id);
+  }
+
+  /** @param {TaskItem} task */
+  labelsOf(task) {
+    return labelsOfTask(this.labels, task);
   }
 }
 

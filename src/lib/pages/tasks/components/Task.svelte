@@ -31,7 +31,6 @@
   } = $props();
 
   let preview = $derived(advanced ? descriptionPreview(description) : '');
-  let hasTags = $derived(advanced && (priority !== null || labels.length > 0));
 
   let currentText = $derived(text);
   let isEditing = $state(false)
@@ -150,9 +149,12 @@
 
 <svelte:window onclick={(event) => { disarmOnClick(event); handleClickOutside(event); }} />
 
+<!-- Advanced tasks are cards: the priority is the stripe on the left edge, the labels are below the text. -->
 <label
   class="container"
+  class:card={advanced}
   class:pressing
+  style:--priority={advanced && priority ? `var(--${priority.color})` : null}
   bind:this={componentRef}
   {@attach pressDrag({
     enabled: () => Boolean(onDragStart) && !isEditing,
@@ -162,6 +164,10 @@
     onStart: (point, rect) => onDragStart(point, rect)
   })}
 >
+  {#if advanced && priority}
+    <span class="stripe" title="Priority: {priority.label}"></span>
+  {/if}
+
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   {#key doneIcon}
@@ -176,20 +182,6 @@
   {/key}
   
   <div class="body">
-    <!-- Priority on the left, labels on the right. -->
-    {#if hasTags}
-      <div class="tags">
-        {#if priority}
-          <TaskTag name={priority.label} color={priority.color} icon="flag" title="Priority" />
-        {/if}
-        <span class="labels">
-          {#each labels as label (label.id)}
-            <TaskTag name={label.name} color={label.color} icon={labelIcon(label)} />
-          {/each}
-        </span>
-      </div>
-    {/if}
-
     <textarea 
       name="text" 
       wrap="soft" 
@@ -205,6 +197,14 @@
 
     {#if preview}
       <span class="description">{preview}</span>
+    {/if}
+
+    {#if advanced && labels.length > 0}
+      <div class="labels">
+        {#each labels as label (label.id)}
+          <TaskTag name={label.name} color={label.color} icon={labelIcon(label)} />
+        {/each}
+      </div>
     {/if}
   </div>
 
@@ -368,25 +368,15 @@
     flex-direction: column;
   }
 
-  .tags {
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-
   .labels {
-    flex: 1;
+    margin: 6px 0 4px;
     min-width: 0;
     display: flex;
-    justify-content: flex-end;
-    gap: 6px;
-    overflow: hidden;
+    flex-wrap: wrap;
+    gap: 5px;
   }
 
   .description {
-    margin-bottom: 4px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -420,5 +410,43 @@
   .task:enabled {
     -webkit-user-select: text;
     user-select: text;
+  }
+
+  /* Advanced tasks: a smaller card, the buttons at the top next to the first line of the text. */
+  .container.card {
+    position: relative;
+    overflow: hidden;
+    align-items: flex-start;
+    padding: 9px 16px 9px 20px;
+    border-radius: 22px;
+  }
+
+  .card .body {
+    margin: 0 12px;
+  }
+
+  .card .task {
+    font-size: 16px;
+  }
+
+  .card .done-btn {
+    font-size: 26px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 26;
+  }
+
+  .card .edit-btn,
+  .card .delete-btn,
+  .card .cancel-btn {
+    font-size: 22px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 22;
+  }
+
+  .stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background-color: var(--priority);
   }
 </style>

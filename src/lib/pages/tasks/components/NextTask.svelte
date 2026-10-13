@@ -2,26 +2,28 @@
 <script>
   import { COLORS } from '../../../colors.js';
 
-  // The buttons always use the wave colors of the color sets, whichever set the page uses. Priority (advanced tasks
-  // only) is orange, like the "Important" priority.
+  // The buttons always use the wave colors of the color sets, whichever set the page uses. Priority is orange,
+  // like the "Important" priority.
   const buttonColors = `--button-custom: ${COLORS.amethyst.wave}; --button-alpha: ${COLORS.cobalt.wave}; --button-priority: var(--orange); --button-random: ${COLORS.emerald.wave}; --button-unselect: ${COLORS.crimson.wave};`;
 
   let { 
     onShuffle,
     onSortAlphanumeric,
-    /** Advanced tasks only, without it there's no priority button. */
+    /** Without it there's no priority button. */
     onSortPriority = undefined,
     onCustomOrder,
     onUnselect,
     // A dragged task is held over the current task box, dropping it there selects it.
     isDropTarget = false,
     taskContainer = $bindable(),
+    /** Smaller heading and buttons, for a column of a Kanban board. */
+    compact = false,
     children
   } = $props();
 </script>
 
 
-<div class="wrapper">
+<div class="wrapper" class:compact>
   <div class="heading-container">
     <h2 class="heading">Current Task</h2>
 
@@ -87,7 +89,7 @@
 .task-container {
   width: 100%;
   min-height: 50px;
-  border-radius: 40px;
+  border-radius: var(--task-radius, 40px);
   border-style: dashed;
   border-width: 2.5px;
   border-color:var(--task);
@@ -155,6 +157,33 @@
   font-size: 25px;
   font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
   color: var(--on-color);
+}
+
+/* A Kanban column. */
+.compact .heading-container {
+  padding: 6px 0 8px;
+}
+
+.compact .heading-container {
+  gap: 8px;
+}
+
+.compact .heading {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.compact .button-container {
+  gap: 5px;
+}
+
+.compact .button {
+  padding: 4px;
+}
+
+.compact .button-icon {
+  font-size: 18px;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 18;
 }
 
 @media (max-width: 480px) {
