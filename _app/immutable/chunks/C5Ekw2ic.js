@@ -1,0 +1,1 @@
+import{a as e}from"../nodes/2.BjG04hex.js";export{e as markdown};
