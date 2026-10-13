@@ -30,7 +30,13 @@
     progress = null,
     /** Rings because a break ended, blinks in the break colors. */
     breakEnd = false,
-    editor
+    /** Takes the keyboard (the calculator after it was clicked), the border shows it. */
+    focused = false,
+    /** Long values (calculator numbers) get smaller to fit, instead of being cut off. */
+    fitTime = false,
+    editor,
+    /** Shown under the display, always (the calculator's keys). @type {import('svelte').Snippet | undefined} */
+    body
   } = $props();
 
   /** After the first click on remove, a second click within this time removes the widget. */
@@ -83,6 +89,9 @@
 <div
   class="widget {variant} {tone}"
   class:break-end={breakEnd}
+  class:focused
+  class:fit-time={fitTime}
+  style:--time-chars={fitTime ? Math.max(1, time.length) : undefined}
   class:editing
   class:pressing
   class:placeholder={isPlaceholder}
@@ -91,8 +100,8 @@
   bind:offsetHeight={boxHeight}
   {@attach pressDrag({
     enabled: () => !isGhost,
-    // Only empty space starts a drag, never buttons, inputs or the edit panel.
-    ignore: 'button, input, label, .editor',
+    // Only empty space starts a drag, never buttons, inputs, the edit panel or the body (calculator keys).
+    ignore: 'button, input, label, .editor, .body',
     isDragging: () => layout.drag?.id === widget.id,
     onPressChange: (value) => (pressing = value),
     onStart: (point, rect) => {
@@ -142,6 +151,12 @@
       onclick={requestRemove}>{removeArmed ? 'delete_forever' : 'delete'}</button>
   </div>
 
+  {#if body}
+    <div class="body">
+      {@render body()}
+    </div>
+  {/if}
+
   {#if editing && editor}
     <div class="editor" transition:slide={{ duration: 250 }}>
       {@render editor()}
@@ -176,6 +191,11 @@
       transform 0.15s;
   }
 
+  /* Takes the keyboard (the calculator after it was clicked): the border in the wave color. */
+  .widget.focused {
+    border-color: var(--wave);
+  }
+
   /* The ProgressBorder draws the border while a countdown runs. */
   .widget.counting {
     border-color: transparent;
@@ -204,6 +224,7 @@
     grid-template-columns: auto 1fr auto;
     grid-template-areas:
       "head display controls"
+      "body body body"
       "editor editor editor";
     column-gap: 16px;
     padding: 5px 20px 5px 25px;
@@ -216,10 +237,11 @@
   .side,
   .drag {
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr auto auto;
     grid-template-areas:
       "head controls"
       "display controls"
+      "body body"
       "editor editor";
     column-gap: 10px;
     align-items: start;
@@ -279,6 +301,23 @@
   .drag .time {
     font-size: 32px;
     line-height: 1.2;
+  }
+
+  /* Smaller the more characters: about as wide as the room beside the controls, never bigger than usual. */
+  .side.fit-time .time,
+  .drag.fit-time .time {
+    font-size: min(32px, calc(260px / var(--time-chars)));
+  }
+
+  /* Numbers on the right, the calculation before them, like on a calculator. */
+  .dock.fit-time .display {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+  }
+
+  .side.fit-time .display,
+  .drag.fit-time .display {
+    align-items: flex-end;
   }
 
   .sub {
@@ -365,6 +404,11 @@
   .control.remove.armed {
     color: var(--red);
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 25;
+  }
+
+  .body {
+    grid-area: body;
+    margin: 10px 0 8px;
   }
 
   .editor {

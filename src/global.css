@@ -15,6 +15,11 @@
   --purple: #7356f4;
   --pink: #ff6fae;
 
+  /* Wave colors of the color sets. The same in light and dark mode, light mode doesn't override them. */
+  --wave-red: #e0353a;
+  --wave-blue: #2d6cf6;
+  --wave-green: #1d9e55;
+
   /* Hover shades */
   --red-hover: color-mix(in srgb, var(--red), white 25%);
   --green-hover: color-mix(in srgb, var(--green), white 25%);
@@ -40,7 +45,7 @@
   --shadow: rgba(0, 0, 0, 0.6);
 
   /* Page colors, Crimson by default. Pages can override them, see `PageType.style`. */
-  --wave: var(--red);
+  --wave: var(--wave-red);
   --accent: var(--yellow);
   --task: var(--purple);
 
@@ -82,7 +87,7 @@
   --green: #1d9e55;
   --teal: #12a19a;
   --blue: #2459d8;
-  --purple: #5f45e0;
+  /* --purple stays the dark mode one, it's the Amethyst wave. */
   --pink: #df4f8f;
 
   --bg: #f2f0eb;

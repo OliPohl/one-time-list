@@ -2,14 +2,20 @@
 <script>
   import { COLORS } from '../../../colors.js';
 
-  // The buttons always use the wave colors of the color sets, whichever set the page uses.
-  const buttonColors = `--button-custom: ${COLORS.amethyst.wave}; --button-alpha: ${COLORS.cobalt.wave}; --button-random: ${COLORS.emerald.wave}; --button-unselect: ${COLORS.crimson.wave};`;
+  // The buttons always use the wave colors of the color sets, whichever set the page uses. Priority (advanced tasks
+  // only) is orange, like the "Important" priority.
+  const buttonColors = `--button-custom: ${COLORS.amethyst.wave}; --button-alpha: ${COLORS.cobalt.wave}; --button-priority: var(--orange); --button-random: ${COLORS.emerald.wave}; --button-unselect: ${COLORS.crimson.wave};`;
 
   let { 
     onShuffle,
     onSortAlphanumeric,
+    /** Advanced tasks only, without it there's no priority button. */
+    onSortPriority = undefined,
     onCustomOrder,
     onUnselect,
+    // A dragged task is held over the current task box, dropping it there selects it.
+    isDropTarget = false,
+    taskContainer = $bindable(),
     children
   } = $props();
 </script>
@@ -28,6 +34,12 @@
         <span class="button-icon m3-icon">sort_by_alpha</span>
       </button>
 
+      {#if onSortPriority}
+        <button class="button button-priority" title="Sort by Priority" onclick={onSortPriority}>
+          <span class="button-icon m3-icon">flag</span>
+        </button>
+      {/if}
+
       <button class="button button-random" title="Shuffle Tasks" onclick={onShuffle}>
         <span class="button-icon m3-icon">shuffle</span>
       </button>
@@ -38,7 +50,7 @@
     </div>
   </div>
 
-  <div class="task-container">
+  <div class="task-container" class:drop-target={isDropTarget} bind:this={taskContainer}>
       {@render children?.()}
   </div>
 </div>
@@ -79,10 +91,16 @@
   border-style: dashed;
   border-width: 2.5px;
   border-color:var(--task);
+  transition: background-color 0.2s;
 
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.task-container.drop-target {
+  border-style: solid;
+  background-color: color-mix(in srgb, var(--task), transparent 85%);
 }
 
 .button-container {
@@ -119,6 +137,10 @@
 
 .button-alpha {
     background-color: var(--button-alpha);
+}
+
+.button-priority {
+    background-color: var(--button-priority);
 }
 
 .button-random {

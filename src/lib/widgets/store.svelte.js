@@ -7,6 +7,7 @@ import { playAlarm } from '../utils/sounds.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 import { uniqueId } from '../utils/id.js';
 import { settings } from '../app/settings.svelte.js';
+import { calculatorState } from './calculator.js';
 
 /** The alarm sound repeats this often (ms) while a widget rings, until it's confirmed. */
 const ALARM_INTERVAL = 5000;
@@ -16,7 +17,8 @@ const MINUTE = 60 * 1000;
 export const WIDGET_TYPES = {
   clock: { label: 'Clock', icon: 'schedule' },
   timer: { label: 'Timer', icon: 'timer' },
-  pomodoro: { label: 'Pomodoro', icon: 'nutrition' }
+  pomodoro: { label: 'Pomodoro', icon: 'nutrition' },
+  calculator: { label: 'Calculator', icon: 'calculate' }
 };
 
 /** Snooze lengths a clock or timer can be set to, in minutes. 0 is off: no snooze button while it rings. */
@@ -42,6 +44,11 @@ function createWidget(type, id) {
     const duration = 15 * MINUTE;
     // While snoozed (`snoozed` is its length in ms) the timer counts down the snooze instead of `duration`.
     return { id, type, pos: null, duration, remaining: duration, endsAt: null, ringing: false, snooze: 0, snoozed: false, autoStart: false, startOnSelect: false };
+  }
+
+  if (type === 'calculator') {
+    // See calculator.js.
+    return { id, type, pos: null, ...calculatorState() };
   }
 
   const { work, short, long, every } = POMODORO_PRESETS[0];
@@ -110,8 +117,22 @@ export function formatRemaining(ms) {
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
 }
 
+/**
+ * Old places of widgets as a free position (see layout.svelte.js): beside the task column (`side`, `dx` from the
+ * column, which was 620px wide with 24px gaps), or below the tasks (`area: 'list'`, inside the task list, which
+ * started about 260px from the top).
+ * @param {any} pos
+ */
+function migratePos(pos) {
+  if (pos?.side === 'left') return { area: 'free', x: -310 - 24 - 230 - (pos.dx ?? 0), y: pos.y ?? 0 };
+  if (pos?.side === 'right') return { area: 'free', x: 310 + 24 + (pos.dx ?? 0), y: pos.y ?? 0 };
+  if (pos?.area === 'list') return { area: 'free', x: -300 + (pos.x ?? 0), y: 260 + (pos.y ?? 0) };
+  return pos ?? null;
+}
+
 /** Updates widgets saved by older versions. @param {any} widget */
 function migrate(widget) {
+  widget = { ...widget, pos: migratePos(widget.pos) };
   // Pomodoros used to start when a task was completed, now they start when one is selected.
   if (widget.type === 'pomodoro' && 'autoStart' in widget) {
     const { autoStart, ...rest } = widget;

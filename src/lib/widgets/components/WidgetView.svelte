@@ -2,7 +2,8 @@
 <!-- A widget card: the shared Widget shell filled with the widget's view and editor. -->
 <script>
   import Widget from './Widget.svelte';
-  import WidgetEditor from './editors/WidgetEditor.svelte';
+  import WidgetEditor, { EDITORS } from './editors/WidgetEditor.svelte';
+  import CalculatorPad from './CalculatorPad.svelte';
   import { WIDGET_TYPES } from '../store.svelte.js';
   import { widgetView } from '../views.js';
   import { getWidgets } from '../context.js';
@@ -13,12 +14,35 @@
 
   let type = $derived(WIDGET_TYPES[/** @type {keyof typeof WIDGET_TYPES} */ (widget.type)]);
   let view = $derived(widgetView(widget, widgets));
+  let isCalculator = $derived(widget.type === 'calculator');
+  /** The calculator takes the keyboard after it was clicked. */
+  let active = $state(false);
 </script>
 
+{#snippet editor()}
+  <WidgetEditor {widget} store={widgets} />
+{/snippet}
+
+{#snippet keypad()}
+  <CalculatorPad {widget} {ghost} bind:active />
+{/snippet}
+
 {#if type}
-  <Widget {widget} {variant} {ghost} icon={type.icon} label={type.label} time={view.time} sub={view.sub} tone={view.tone} controls={view.controls} slots={view.slots} progress={view.progress} breakEnd={view.breakEnd}>
-    {#snippet editor()}
-      <WidgetEditor {widget} store={widgets} />
-    {/snippet}
-  </Widget>
+  <Widget
+    {widget}
+    {variant}
+    {ghost}
+    icon={type.icon}
+    label={type.label}
+    time={view.time}
+    sub={view.sub}
+    tone={view.tone}
+    controls={view.controls}
+    slots={view.slots}
+    progress={view.progress}
+    breakEnd={view.breakEnd}
+    focused={active}
+    fitTime={isCalculator}
+    editor={EDITORS[widget.type] ? editor : undefined}
+    body={isCalculator ? keypad : undefined} />
 {/if}

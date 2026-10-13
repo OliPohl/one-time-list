@@ -3,7 +3,7 @@
 <script>
   import { onMount } from 'svelte';
   import WidgetView from './WidgetView.svelte';
-  import { SIDE_WIDTH } from '../layout.svelte.js';
+  import { layout, SIDE_WIDTH } from '../layout.svelte.js';
 
   let { widget, drag } = $props();
 
@@ -21,6 +21,7 @@
   style:top="{drag.y - drag.offsetY}px"
   style:width="{morphed ? SIDE_WIDTH : drag.startWidth}px"
   style:transform="translateX({-drag.ratioX * 100}%)"
+  bind:offsetHeight={layout.ghostHeight}
 >
   <WidgetView {widget} variant={morphed ? 'drag' : 'dock'} ghost />
 </div>

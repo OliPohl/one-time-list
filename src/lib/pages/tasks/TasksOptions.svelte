@@ -2,7 +2,7 @@
 <!-- Customization of a Tasks page, shown on the "New Page" screen and in the page settings. Edits `options` in place. -->
 <script>
   import ColorOptions from '../ColorOptions.svelte';
-  import { widgetsEnabled } from './list.svelte.js';
+  import { widgetsEnabled, advancedTasks } from './list.svelte.js';
   import Toggle from '../../ui/Toggle.svelte';
 
   /** @type {{options: Record<string, any>}} */
@@ -16,6 +16,14 @@
   <!-- Off keeps the widgets but stops them, so nothing rings in the background. -->
   <Toggle checked={widgetsEnabled(options)} onchange={(checked) => (options.widgets = checked)}>
     Enable widgets
+  </Toggle>
+</div>
+
+<div class="option">
+  <span class="option-label">Tasks</span>
+  <!-- Off keeps descriptions, priorities and labels, they show again when it's turned back on. -->
+  <Toggle checked={advancedTasks(options)} onchange={(checked) => (options.advanced = checked)}>
+    Advanced tasks: description, priority and labels
   </Toggle>
 </div>
 

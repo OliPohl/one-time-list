@@ -2,6 +2,8 @@
 <script>
   import { fade } from 'svelte/transition';
   import { pressDrag } from '../../../utils/pressDrag.js';
+  import TaskTag from './TaskTag.svelte';
+  import { descriptionPreview, labelIcon } from '../list.svelte.js';
 
   const swapFade = { duration: 250 };
   /** After the first click on delete, a second click within this time deletes the task. */
@@ -17,8 +19,19 @@
     isHistory = false,
     /** Enables reordering by dragging the task. */
     onDragStart = undefined,
-    isDragging = false
+    isDragging = false,
+    /** Advanced task: edit opens the task popup (`onOpen`), its tags and the start of its description show. */
+    advanced = false,
+    onOpen = undefined,
+    description = '',
+    /** @type {{label: string, color: string} | null} */
+    priority = null,
+    /** @type {import('../list.svelte.js').Label[]} */
+    labels = []
   } = $props();
+
+  let preview = $derived(advanced ? descriptionPreview(description) : '');
+  let hasTags = $derived(advanced && (priority !== null || labels.length > 0));
 
   let currentText = $derived(text);
   let isEditing = $state(false)
@@ -162,18 +175,38 @@
     onclick={isEditing ? requestDelete : onAction}>{doneIcon}</span>
   {/key}
   
-  <textarea 
-    name="text" 
-    wrap="soft" 
-    maxlength="500"
-    spellcheck="false"
-    class="task"
-    disabled
-    bind:value={currentText}
-    bind:this={textarea}
-    oninput={handleInput}
-    rows={1}
-  >{text}</textarea>
+  <div class="body">
+    <!-- Priority on the left, labels on the right. -->
+    {#if hasTags}
+      <div class="tags">
+        {#if priority}
+          <TaskTag name={priority.label} color={priority.color} icon="flag" title="Priority" />
+        {/if}
+        <span class="labels">
+          {#each labels as label (label.id)}
+            <TaskTag name={label.name} color={label.color} icon={labelIcon(label)} />
+          {/each}
+        </span>
+      </div>
+    {/if}
+
+    <textarea 
+      name="text" 
+      wrap="soft" 
+      maxlength="500"
+      spellcheck="false"
+      class="task"
+      disabled
+      bind:value={currentText}
+      bind:this={textarea}
+      oninput={handleInput}
+      rows={1}
+    >{text}</textarea>
+
+    {#if preview}
+      <span class="description">{preview}</span>
+    {/if}
+  </div>
 
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -183,7 +216,12 @@
   {#key isEditing}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <span class="edit-btn m3-icon" class:editing={isEditing} in:fade={swapFade} onclick={handleEdit}>{isEditing ? "check" : "edit_square"}</span>
+    <span
+      class="edit-btn m3-icon"
+      class:editing={isEditing}
+      title={advanced ? "Open Task" : undefined}
+      in:fade={swapFade}
+      onclick={advanced && onOpen ? (/** @type {MouseEvent} */ event) => (event.preventDefault(), onOpen()) : handleEdit}>{advanced ? "open_in_new" : isEditing ? "check" : "edit_square"}</span>
   {/key}
   {#if isHistory && !isEditing}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -320,11 +358,48 @@
     color: var(--text-soft);
   }
 
-  .task {
-    height: auto;
-    /* Fills the space next to the buttons, without the textarea's built-in minimum width (about 20 characters). */
+  /* Fills the space next to the buttons. The text, and on advanced tasks its tags and description. */
+  .body {
     flex-grow: 1;
     width: 0;
+    min-width: 0;
+    margin: 0 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tags {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .labels {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .description {
+    margin-bottom: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-family: "Roboto Slab", serif;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-muted);
+  }
+
+  .task {
+    height: auto;
+    /* Without the textarea's built-in minimum width (about 20 characters). */
+    width: 100%;
     min-width: 0;
     font-size: 18px;
     line-height: 1.5;
@@ -334,7 +409,7 @@
     overflow: hidden;
     font-family: "Roboto Slab", serif;
     color: var(--text);
-    margin: 0 20px;
+    margin: 0;
   }
 
   /* Let presses reach the container so the task can be dragged */

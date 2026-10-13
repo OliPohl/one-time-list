@@ -165,7 +165,12 @@ function pomodoroView(widget, store) {
   };
 }
 
-const VIEWS = { clock: clockView, timer: timerView, pomodoro: pomodoroView };
+/** The number on the calculator, the calculation (or the error) above it. Its keys are the keypad, no controls. @param {any} widget @returns {TypeView} */
+function calculatorView(widget) {
+  return { time: widget.entry, sub: widget.error || widget.expression, slots: 0, progress: null, controls: [] };
+}
+
+const VIEWS = { clock: clockView, timer: timerView, pomodoro: pomodoroView, calculator: calculatorView };
 
 /** A pomodoro that rings because its break ended. @param {any} widget */
 export function isBreakEnd(widget) {
@@ -184,6 +189,7 @@ export function widgetView(widget, store, options) {
   /** @type {View['tone']} */
   const tone = widget.ringing ? 'ring' : view.progress ? 'counting' : 'idle';
   const isBreak = widget.type === 'pomodoro' && widget.phase !== 'work';
-  const idleBar = widget.type === 'clock' ? undefined : { elapsed: 0, track: USED, fill: isBreak ? LEFT_BREAK : LEFT };
+  const counts = widget.type === 'timer' || widget.type === 'pomodoro';
+  const idleBar = counts ? { elapsed: 0, track: USED, fill: isBreak ? LEFT_BREAK : LEFT } : undefined;
   return { ...view, tone, bar: view.progress ?? idleBar, breakEnd: isBreakEnd(widget) };
 }

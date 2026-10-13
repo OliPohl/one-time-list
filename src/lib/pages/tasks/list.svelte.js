@@ -8,9 +8,73 @@ import { WidgetStore } from '../../widgets/store.svelte.js';
 import { playComplete } from '../../utils/sounds.js';
 import { loadJSON, saveJSON } from '../../utils/storage.js';
 import { uniqueId } from '../../utils/id.js';
+import { withGameJamIcons } from '../../icons.js';
 
-/** @typedef {{id: string, text: string, createdAt: number, completedAt?: number}} TaskItem */
-/** @typedef {'custom' | 'alphanumeric' | 'random'} SortMode */
+/**
+ * `description`, `priority` and `labels` (ids of the page's labels) are set in the task popup of advanced tasks.
+ * @typedef {{id: string, text: string, createdAt: number, completedAt?: number, description?: string, priority?: Priority, labels?: string[]}} TaskItem
+ */
+/** @typedef {'critical' | 'important' | 'medium' | 'nice'} Priority */
+/**
+ * A label of the page, tasks can be tagged with it. `color` is a palette key (`red` for `--red`, ...), `icon` one of
+ * LABEL_ICONS (missing on labels from before they had one: `label`).
+ * @typedef {{id: string, name: string, color: string, icon?: string}} Label
+ */
+
+/** The priorities, most urgent first, in their colors. */
+export const PRIORITIES = /** @type {const} */ ([
+  { key: 'critical', label: 'Critical', color: 'red' },
+  { key: 'important', label: 'Important', color: 'orange' },
+  { key: 'medium', label: 'Medium', color: 'blue' },
+  { key: 'nice', label: 'Nice to have', color: 'green' }
+]);
+
+/** Colors a label can have, from the palette in global.css. */
+export const LABEL_COLORS = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink'];
+
+/** Icons a label can have, Material Symbols names: general ones, then game jam ones. `label` is the default. */
+export const LABEL_ICONS = withGameJamIcons([
+  'label', 'bookmark', 'star', 'favorite', 'bolt', 'warning', 'bug_report', 'build',
+  'code', 'design_services', 'description', 'science', 'lightbulb', 'rocket_launch', 'schedule', 'event',
+  'group', 'person', 'mail', 'call', 'payments', 'shopping_cart', 'home', 'work'
+]);
+
+/** @param {Label} label */
+export const labelIcon = (label) => label.icon ?? 'label';
+
+/** @param {Priority | undefined} key */
+export const priorityOf = (key) => PRIORITIES.find((priority) => priority.key === key) ?? null;
+
+/** 0 for the most urgent priority, tasks without one after all others. @param {TaskItem} task */
+function priorityRank(task) {
+  const index = PRIORITIES.findIndex((priority) => priority.key === task.priority);
+  return index === -1 ? PRIORITIES.length : index;
+}
+
+/**
+ * The first line of a description as plain text, shown under the task: Markdown signs, task boxes and link
+ * addresses left out.
+ * @param {string | undefined} description
+ */
+export function descriptionPreview(description) {
+  let inCode = false;
+  const line = (description ?? '').split('\n').find((text) => {
+    if (/^\s*(```|~~~)/.test(text)) {
+      inCode = !inCode;
+      return false;
+    }
+    return !inCode && text.trim() !== '' && !/^\s*-{3,}\s*$/.test(text);
+  }) ?? '';
+  return line
+    .replace(/^\s*(#{1,6}\s+|>\s*|[-*+]\s+(\[[ xX]\]\s+)?|\d+[.)]\s+)/, '')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/(\*\*|__|~~|\*|_|`)/g, '')
+    .trim();
+}
+
+/** Advanced tasks: the edit button opens the task popup (description, priority, labels). @param {Record<string, any>} options */
+export const advancedTasks = (options) => options.advanced === true;
+/** `priority`: most urgent first (advanced tasks), the custom order within a priority. @typedef {'custom' | 'alphanumeric' | 'random' | 'priority'} SortMode */
 
 /** @param {string} pageId */
 const listKey = (pageId) => `otl_list_${pageId}`;
@@ -50,6 +114,8 @@ export class ListStore {
   customOrder = $state([]);
   /** @type {SortMode} */
   sortMode = $state('custom');
+  /** The page's labels, for advanced tasks. @type {Label[]} */
+  labels = $state([]);
 
   hasTasks = $derived(this.tasks.length > 0 || this.currentTask !== null);
 
@@ -78,9 +144,10 @@ export class ListStore {
     if (this.currentTask && this.currentTask.createdAt === undefined) this.currentTask.createdAt = now;
 
     this.history = saved.history ?? [];
+    this.labels = Array.isArray(saved.labels) ? saved.labels : [];
 
     const mode = saved.sortMode;
-    this.sortMode = mode === 'alphanumeric' || mode === 'random' ? mode : 'custom';
+    this.sortMode = mode === 'alphanumeric' || mode === 'random' || mode === 'priority' ? mode : 'custom';
 
     // Without a saved custom order fall back to the order the tasks were added.
     const allTasks = this.currentTask ? [...this.tasks, this.currentTask] : this.tasks;
@@ -99,7 +166,8 @@ export class ListStore {
           currentTask: this.currentTask,
           history: this.history,
           customOrder: this.customOrder,
-          sortMode: this.sortMode
+          sortMode: this.sortMode,
+          labels: this.labels
         });
       });
 
@@ -127,6 +195,32 @@ export class ListStore {
     return index === -1 ? Infinity : index;
   }
 
+  /** A task in the list, the current one or one in the history. @param {string} id */
+  findTask(id) {
+    if (this.currentTask?.id === id) return this.currentTask;
+    return this.tasks.find((task) => task.id === id) ?? this.history.find((task) => task.id === id) ?? null;
+  }
+
+  /** @param {string} name @param {string} color @param {string} icon @returns {Label} */
+  addLabel(name, color, icon) {
+    const label = { id: uniqueId((id) => this.labels.some((item) => item.id === id)), name, color, icon };
+    this.labels.push(label);
+    return /** @type {Label} */ (this.labels.at(-1));
+  }
+
+  /** Deletes a label, also from every task tagged with it. @param {string} id */
+  removeLabel(id) {
+    this.labels = this.labels.filter((label) => label.id !== id);
+    for (const task of [...this.tasks, ...this.history, ...(this.currentTask ? [this.currentTask] : [])]) {
+      if (task.labels?.includes(id)) task.labels = task.labels.filter((labelId) => labelId !== id);
+    }
+  }
+
+  /** The labels of a task, in the page's order. @param {TaskItem} task */
+  labelsOf(task) {
+    return task.labels?.length ? this.labels.filter((label) => task.labels?.includes(label.id)) : [];
+  }
+
   /** @param {string} text */
   addTask(text) {
     const task = { id: uniqueId(this.#isTaken), text, createdAt: Date.now() };
@@ -134,10 +228,15 @@ export class ListStore {
     this.customOrder = [...this.customOrder, task.id];
   }
 
+  /** Most urgent first, tasks without a priority last. The custom order within a priority. @param {TaskItem} a @param {TaskItem} b */
+  #comparePriority = (a, b) => priorityRank(a) - priorityRank(b) || this.#customIndex(a) - this.#customIndex(b);
+
   /** Puts a task back into the list at the spot matching the current sort mode. @param {TaskItem} task */
   returnToList(task) {
     let index;
-    if (this.sortMode === 'alphanumeric') {
+    if (this.sortMode === 'priority') {
+      index = this.tasks.findIndex((other) => this.#comparePriority(task, other) < 0);
+    } else if (this.sortMode === 'alphanumeric') {
       index = this.tasks.findIndex((other) => compareAlphanumeric(task, other) < 0);
     } else if (this.sortMode === 'random') {
       index = Math.floor(Math.random() * (this.tasks.length + 1));
@@ -149,10 +248,12 @@ export class ListStore {
     this.tasks = this.tasks.toSpliced(index, 0, task);
   }
 
-  /** @param {'alphanumeric' | 'random'} mode */
+  /** @param {'alphanumeric' | 'random' | 'priority'} mode */
   sortTasks(mode) {
     this.sortMode = mode;
-    this.tasks = mode === 'alphanumeric' ? this.tasks.toSorted(compareAlphanumeric) : shuffle(this.tasks);
+    if (mode === 'priority') this.tasks = this.tasks.toSorted(this.#comparePriority);
+    else if (mode === 'alphanumeric') this.tasks = this.tasks.toSorted(compareAlphanumeric);
+    else this.tasks = shuffle(this.tasks);
   }
 
   restoreCustomOrder() {
@@ -190,6 +291,16 @@ export class ListStore {
 
     this.history = this.history.filter((item) => item.id !== id);
     this.tasks = this.tasks.toSpliced(index, 0, withoutCompletion(task));
+    this.saveCustomOrder();
+  }
+
+  /** Moves the current task back into the list at `index`. @param {number} index */
+  insertCurrent(index) {
+    const task = this.currentTask;
+    if (!task) return;
+
+    this.currentTask = null;
+    this.tasks = this.tasks.toSpliced(index, 0, task);
     this.saveCustomOrder();
   }
 

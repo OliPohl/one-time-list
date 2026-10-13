@@ -1,9 +1,11 @@
 <!-- src/lib/pages/widget-pages/WidgetPageView.svelte -->
 <!-- The body of a widget page: the time in big, the bar, the status and the controls.
-     Used by the widget page and, smaller (`compact`), by its card on the dashboard. -->
+     Used by the widget page and, smaller (`compact`), by its card on the dashboard.
+     A calculator shows its number with the calculation above it, and its keys on the page (not on the card). -->
 <script>
   import { widgetOf, getWidgetPageStore } from './store.svelte.js';
   import { widgetView, elapsedNow } from '$lib/widgets/views.js';
+  import CalculatorPad from '$lib/widgets/components/CalculatorPad.svelte';
 
   /** @type {{page: import('../types.js').Page, compact?: boolean}} */
   let { page, compact = false } = $props();
@@ -24,8 +26,19 @@
   let timeChars = $derived(view ? [...view.time] : []);
 </script>
 
-<div class="widget-view" class:compact class:break-end={view?.breakEnd}>
-  {#if view}
+<div class="widget-view" class:compact class:calculator={widget?.type === 'calculator'} class:break-end={view?.breakEnd}>
+  {#if view && widget?.type === 'calculator'}
+    <!-- On the page: a calculator's body, the number in its screen, the keys below. The card only shows the number. -->
+    <div class="calc-body">
+      <div class="calc-display" style:--chars={Math.max(1, view.time.length)}>
+        <div class="calc-expression">{view.sub}</div>
+        <div class="calc-number">{view.time}</div>
+      </div>
+      {#if !compact}
+        <CalculatorPad {widget} always large />
+      {/if}
+    </div>
+  {:else if view}
     <div class="time" aria-label={view.time}>
       {#each timeChars as char, index (index)}
         <span class:digit={char >= '0' && char <= '9'} aria-hidden="true">{char}</span>
@@ -74,6 +87,77 @@
     align-items: center;
     color: var(--text);
     font-family: "Roboto Slab", serif;
+  }
+
+  /* The full width, the calculator takes up to 480px of it. */
+  .calculator {
+    width: 100%;
+  }
+
+  .calc-body {
+    box-sizing: border-box;
+    width: min(100%, 480px);
+    margin-top: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: var(--surface);
+    border-radius: 34px;
+    box-shadow: 0 12px 40px var(--shadow);
+  }
+
+  /* The screen, set into the body. Right-aligned like on a calculator. The number gets smaller the longer it is,
+     so it always fits. */
+  .calc-display {
+    container-type: inline-size;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px 18px 10px;
+    text-align: right;
+    background-color: var(--bg);
+    border-radius: 20px;
+    box-shadow: inset 0 2px 6px var(--shadow);
+  }
+
+  .calc-expression {
+    min-height: 1.5em;
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .calc-number {
+    font-size: min(96px, calc(170cqi / var(--chars)));
+    line-height: 1.15;
+    white-space: nowrap;
+    color: var(--bright);
+  }
+
+  /* On the card: only the number, no body or screen. */
+  .compact .calc-body {
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .compact .calc-display {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .compact .calc-expression {
+    font-size: 15px;
+  }
+
+  .compact .calc-number {
+    font-size: min(56px, calc(170cqi / var(--chars)));
   }
 
   .time {

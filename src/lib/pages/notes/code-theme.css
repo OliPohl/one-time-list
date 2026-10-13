@@ -1,6 +1,6 @@
 /* src/lib/pages/notes/code-theme.css */
 /* Colors of highlighted code (highlight.js classes) in the notes. Built from the palette in global.css, so they
-   follow light and dark mode. Used by the formatted note, the signs view and the code editor. */
+   follow light and dark mode. Used by the formatted note on the dashboard card, the editor has its own (editor/editor.js). */
 
 .hljs-keyword,
 .hljs-selector-tag,

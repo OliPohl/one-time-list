@@ -7,14 +7,15 @@
 
   /**
    * @type {{
-   *   items?: Array<{id: string, text: string}>,
+   *   items?: import('../list.svelte.js').TaskItem[],
    *   draggingId?: string | null,
    *   visible?: boolean,
    *   onReturn: (id: string) => void,
    *   onDelete: (id: string) => void,
    *   onEdit: (id: string, text: string) => void,
    *   onClear: () => void,
-   *   onDragStart: (id: string, point: {clientX: number, clientY: number}, rect: DOMRect) => void
+   *   onDragStart: (id: string, point: {clientX: number, clientY: number}, rect: DOMRect) => void,
+   *   taskProps?: (item: import('../list.svelte.js').TaskItem) => Record<string, any>
    * }}
    */
   let {
@@ -26,7 +27,9 @@
     onDelete,
     onEdit,
     onClear,
-    onDragStart
+    onDragStart,
+    /** More props for each item's <Task> (advanced tasks: tags, description, popup). */
+    taskProps = () => ({})
   } = $props();
 
   let open = $state(false);
@@ -56,7 +59,8 @@
               onDelete={() => onDelete(item.id)}
               onEdit={(/** @type {{message: string}} */ event) => onEdit(item.id, event.message)}
               onDragStart={(/** @type {{clientX: number, clientY: number}} */ point, /** @type {DOMRect} */ rect) => onDragStart(item.id, point, rect)}
-              isDragging={draggingId === item.id} />
+              isDragging={draggingId === item.id}
+              {...taskProps(item)} />
           </div>
         {/each}
 

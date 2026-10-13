@@ -1,6 +1,7 @@
 <!-- src/lib/app/Sidebar.svelte -->
 <!-- Drawer with the dashboard, every page and folder and "Add New" (pages, widgets and folders). Opens from the menu
-     button or a swipe from the left edge. Pages are dragged into and out of folders, folders are dragged to reorder them. -->
+     button or a swipe from the left edge. Pages and folders are dragged to reorder them, into and out of folders.
+     Folders can hold folders, a dragged folder takes everything in it along. -->
 <script>
   import { slide } from 'svelte/transition';
   import { edgeSwipe } from '../utils/edgeSwipe.js';
@@ -18,10 +19,12 @@
 
   /** Space at the top and bottom of the page list where dragging scrolls it. */
   const SCROLL_EDGE = 40;
-  /** The top part of a folder that drops a page before the folder instead of into it. */
+  /** The top part of a folder that drops before the folder instead of into it. */
   const FOLDER_BEFORE = 0.3;
   /** Half the gap between rows, where the drop line is drawn. */
   const HALF_GAP = 3;
+  /** How far each folder level is indented (margin and padding of .folder-pages). */
+  const INDENT = 34;
 
   /** 0 (closed) to 1 (open) while a finger drags the drawer, otherwise null. @type {number | null} */
   let dragProgress = $state(null);
@@ -37,9 +40,10 @@
   /**
    * The page or folder being dragged and where it would be dropped: into `folder` (null for the top level) at
    * `index`. `line` is where the drop line is drawn inside the list, null when a collapsed folder is highlighted.
+   * `depth` is the folder level it would land on, the drop line is indented that far.
    * @typedef {{
    *   kind: 'page' | 'folder', id: string, x: number, y: number, offsetX: number, offsetY: number, width: number,
-   *   target: {folder: string | null, index: number, line: number | null} | null
+   *   target: {folder: string | null, index: number, line: number | null, depth: number} | null
    * }} Drag
    */
   let drag = $state(/** @type {Drag | null} */ (null));
@@ -76,46 +80,73 @@
   function findTarget() {
     if (!drag) return null;
     const y = drag.y;
+    const x = drag.x;
     const base = list.getBoundingClientRect().top - list.scrollTop;
     /** @param {number} position */
     const lineAt = (position) => position - base;
 
-    // Folders only move between the top-level entries, a folder counts with its pages.
-    const selector = drag.kind === 'folder' ? '[data-entry]' : '[data-row]';
-    const rows = /** @type {HTMLElement[]} */ ([...list.querySelectorAll(selector)]);
+    // A dragged folder can't go into itself, its own rows (and everything in it) are skipped.
+    const ownBlock = drag.kind === 'folder' ? `[data-folder-block="${CSS.escape(drag.id)}"]` : null;
+    const rows = /** @type {HTMLElement[]} */ ([...list.querySelectorAll('[data-row]')]).filter(
+      (element) => !ownBlock || !element.closest(ownBlock)
+    );
+    if (rows.length === 0) return { folder: null, index: folders.tree.length, line: 0, depth: 0 };
+    // Left edge of the top level rows, every level is indented one INDENT further.
+    const levelsLeft = rows.find((element) => element.dataset.depth === '0')?.getBoundingClientRect().left ?? 0;
+    /** @param {HTMLElement} row */
+    const depthOf = (row) => Number(row.dataset.depth);
+
+    /**
+     * The gap between two rows (`above` null: before the first row). The pointer's left-right position picks how
+     * deep it goes: over the indent of a level, on that level. Possible are the level of the row below up to the
+     * level of the row above, or one deeper when that is a folder (into it).
+     * @param {HTMLElement | undefined} above
+     * @param {HTMLElement | undefined} below
+     */
+    const gap = (above, below) => {
+      if (!above) return { folder: null, index: 0, line: lineAt((below?.getBoundingClientRect().top ?? 0) - HALF_GAP), depth: 0 };
+
+      const aboveDepth = depthOf(above);
+      const isFolder = above.dataset.row === 'folder';
+      const deepest = aboveDepth + (isFolder ? 1 : 0);
+      const shallowest = Math.min(below ? depthOf(below) : 0, deepest);
+      const level = Math.min(Math.max(Math.floor((x - levelsLeft) / INDENT), shallowest), deepest);
+      const line = lineAt(above.getBoundingClientRect().bottom + HALF_GAP);
+      const aboveId = /** @type {string} */ (above.dataset.id);
+
+      // Into the folder above: first when it's open, last when it's collapsed.
+      if (isFolder && level === deepest) {
+        const folder = folders.get(aboveId);
+        return { folder: aboveId, index: folder?.collapsed ? folder.children.length : 0, line, depth: level };
+      }
+
+      // After the row above, or after the folder around it on that level.
+      const ancestors = above.dataset.ancestors ? above.dataset.ancestors.split(' ') : [];
+      const entryId = level === aboveDepth ? aboveId : ancestors[level];
+      const folder = level === 0 ? null : ancestors[level - 1];
+      const siblings = folder ? (folders.get(folder)?.children ?? []) : folders.tree;
+      return { folder, index: siblings.findIndex((entry) => entry.id === entryId) + 1, line, depth: level };
+    };
+
     // The row under the pointer, or the first one below it when it is between rows.
-    const row = rows.find((element) => element.getBoundingClientRect().bottom > y);
-
-    if (!row) {
-      const last = rows.at(-1);
-      return { folder: null, index: folders.tree.length, line: last ? lineAt(last.getBoundingClientRect().bottom + HALF_GAP) : 0 };
-    }
-
+    const index = rows.findIndex((element) => element.getBoundingClientRect().bottom > y);
+    if (index === -1) return gap(rows.at(-1), undefined);
+    const row = rows[index];
     const rect = row.getBoundingClientRect();
-    const id = /** @type {string} */ (row.dataset.id);
-    const before = y < rect.top + rect.height / 2;
-
-    if (drag.kind === 'folder') {
-      const index = folders.tree.findIndex((entry) => entry.id === id) + (before ? 0 : 1);
-      return { folder: null, index, line: lineAt(before ? rect.top - HALF_GAP : rect.bottom + HALF_GAP) };
-    }
+    const above = gap(rows[index - 1], row);
+    const below = gap(row, rows[index + 1]);
 
     if (row.dataset.row === 'folder') {
-      const folder = folders.get(id);
+      const folder = folders.get(/** @type {string} */ (row.dataset.id));
       if (!folder) return null;
-      // The top of a folder puts the page before it, the rest puts it in.
-      if (y < rect.top + rect.height * FOLDER_BEFORE) {
-        return { folder: null, index: folders.tree.findIndex((entry) => entry.id === id), line: lineAt(rect.top - HALF_GAP) };
+      if (y < rect.top + rect.height * FOLDER_BEFORE) return above;
+      // The middle of a collapsed folder lights it up: in, last.
+      if (folder.collapsed && y < rect.bottom - rect.height * FOLDER_BEFORE) {
+        return { folder: folder.id, index: folder.children.length, line: null, depth: depthOf(row) + 1 };
       }
-      // Collapsed, the folder lights up and the page goes last. Open, the page goes first, right under it.
-      if (folder.collapsed) return { folder: id, index: folder.pageIds.length, line: null };
-      return { folder: id, index: 0, line: lineAt(rect.bottom + HALF_GAP) };
+      return below;
     }
-
-    const folderId = row.dataset.folder || null;
-    const siblings = folderId ? (folders.get(folderId)?.pageIds ?? []) : folders.tree.map((entry) => entry.id);
-    const index = siblings.indexOf(id) + (before ? 0 : 1);
-    return { folder: folderId, index, line: lineAt(before ? rect.top - HALF_GAP : rect.bottom + HALF_GAP) };
+    return y < rect.top + rect.height / 2 ? above : below;
   }
 
   // Every frame while dragging: scrolls the list near its top or bottom and finds the target again.
@@ -133,8 +164,7 @@
   function stopDrag() {
     const target = drag?.target;
     if (drag && target) {
-      if (drag.kind === 'page') folders.movePage(drag.id, target.folder, target.index);
-      else folders.moveFolder(drag.id, target.index);
+      folders.move(drag.id, target.folder, target.index);
     }
     cancelDrag();
     // The click that follows releasing the drag must not open the page or toggle the folder.
@@ -223,42 +253,10 @@
   <hr class="divider" />
 
   <div class="pages" class:sorting={drag !== null} bind:this={list}>
-    {#each folders.tree as entry (entry.id)}
-      {#if entry.kind === 'folder'}
-        <div class="folder" class:placeholder={drag?.id === entry.id} data-entry data-id={entry.id}>
-          <div
-            class="drag-row"
-            class:drop-into={drag?.target?.folder === entry.id && drag.target.line === null}
-            data-row="folder"
-            data-id={entry.id}
-            {@attach dragRow('folder', entry.id)}>
-            <SidebarFolder
-              folder={entry}
-              {activePageId}
-              editing={editingId === entry.id}
-              onEditChange={(editing) => (editingId = editing ? entry.id : null)} />
-          </div>
-          {#if !entry.collapsed && entry.pageIds.length > 0}
-            <div class="folder-pages" transition:slide={{ duration: 250 }}>
-              {#each entry.pageIds as id (id)}
-                {@const page = pages.get(id)}
-                {#if page}
-                  {@render pageRow(page, entry.id)}
-                {/if}
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {:else}
-        {@const page = pages.get(entry.id)}
-        {#if page}
-          {@render pageRow(page, null)}
-        {/if}
-      {/if}
-    {/each}
+    {@render entryList(folders.tree, [])}
 
     {#if drag?.target && drag.target.line !== null}
-      <div class="drop-line" class:indented={drag.target.folder !== null} style:top="{drag.target.line}px"></div>
+      <div class="drop-line" style:top="{drag.target.line}px" style:left="{8 + drag.target.depth * INDENT}px"></div>
     {/if}
 
     <button class="item add" class:active={view.kind === 'new-page'} onclick={() => navigation.go({ kind: 'new-page' })}>
@@ -276,21 +274,76 @@
   </div>
 </nav>
 
-{#snippet pageRow(/** @type {import('../pages/types.js').Page} */ page, /** @type {string | null} */ folderId)}
-  <div
-    class="drag-row"
-    class:placeholder={drag?.id === page.id}
-    data-row="page"
-    data-id={page.id}
-    data-folder={folderId ?? ''}
-    data-entry={folderId === null ? '' : undefined}
-    {@attach dragRow('page', page.id)}>
-    <SidebarPageItem
-      {page}
-      active={page.id === activePageId}
-      editing={editingId === page.id}
-      onEditChange={(editing) => (editingId = editing ? page.id : null)} />
-  </div>
+<!-- Pages and folders of one level, folders with what's in them. `ancestors` are the folders they're in, outermost first. -->
+{#snippet entryList(/** @type {import('./folders.svelte.js').Entry[]} */ entries, /** @type {string[]} */ ancestors)}
+  {@const parentId = ancestors.at(-1) ?? null}
+  {@const depth = ancestors.length}
+  {#each entries as entry (entry.id)}
+    {#if entry.kind === 'folder'}
+      <div class="folder" class:placeholder={drag?.id === entry.id} data-folder-block={entry.id}>
+        <div
+          class="drag-row"
+          class:drop-into={drag?.target?.folder === entry.id && drag.target.line === null}
+          data-row="folder"
+          data-id={entry.id}
+          data-parent={parentId ?? ''}
+          data-depth={depth}
+          data-ancestors={ancestors.join(' ')}
+          {@attach dragRow('folder', entry.id)}>
+          <SidebarFolder
+            folder={entry}
+            {activePageId}
+            editing={editingId === entry.id}
+            onEditChange={(editing) => (editingId = editing ? entry.id : null)} />
+        </div>
+        {#if !entry.collapsed && entry.children.length > 0}
+          <div class="folder-pages" transition:slide={{ duration: 250 }}>
+            {@render entryList(entry.children, [...ancestors, entry.id])}
+          </div>
+        {/if}
+      </div>
+    {:else}
+      {@const page = pages.get(entry.id)}
+      {#if page}
+        <div
+          class="drag-row"
+          class:placeholder={drag?.id === page.id}
+          data-row="page"
+          data-id={page.id}
+          data-parent={parentId ?? ''}
+          data-depth={depth}
+          data-ancestors={ancestors.join(' ')}
+          {@attach dragRow('page', page.id)}>
+          <SidebarPageItem
+            {page}
+            active={page.id === activePageId}
+            editing={editingId === page.id}
+            onEditChange={(editing) => (editingId = editing ? page.id : null)} />
+        </div>
+      {/if}
+    {/if}
+  {/each}
+{/snippet}
+
+<!-- The dragged folder as it looks: with what's open in it. Nothing in it reacts. -->
+{#snippet ghostList(/** @type {import('./folders.svelte.js').Entry[]} */ entries)}
+  {#each entries as entry (entry.id)}
+    {#if entry.kind === 'folder'}
+      <div class="folder">
+        <SidebarFolder folder={entry} activePageId={null} editing={false} onEditChange={() => {}} />
+        {#if !entry.collapsed && entry.children.length > 0}
+          <div class="folder-pages">
+            {@render ghostList(entry.children)}
+          </div>
+        {/if}
+      </div>
+    {:else}
+      {@const page = pages.get(entry.id)}
+      {#if page}
+        <SidebarPageItem {page} active={false} editing={false} onEditChange={() => {}} />
+      {/if}
+    {/if}
+  {/each}
 {/snippet}
 
 <!-- Outside the drawer, which would clip it. -->
@@ -299,7 +352,7 @@
     {#if draggedPage}
       <SidebarPageItem page={draggedPage} active={false} editing={false} onEditChange={() => {}} />
     {:else if draggedFolder}
-      <SidebarFolder folder={draggedFolder} activePageId={null} editing={false} onEditChange={() => {}} />
+      {@render ghostList([draggedFolder])}
     {/if}
   </div>
 {/if}
@@ -390,7 +443,7 @@
     gap: 6px;
   }
 
-  /* Pages in a folder are indented, a line on the left shows which folder they're in. */
+  /* What's in a folder is indented (INDENT per level), a line on the left shows which folder it's in. */
   .folder-pages {
     margin-left: 26px;
     padding-left: 8px;
@@ -420,8 +473,10 @@
     outline-offset: -2.5px;
   }
 
+  /* Above the dragged row, its indent shows how deep it goes. The dot marks where that level starts. */
   .drop-line {
     position: absolute;
+    z-index: 3002;
     left: 8px;
     right: 8px;
     height: 2.5px;
@@ -431,14 +486,24 @@
     pointer-events: none;
   }
 
-  .drop-line.indented {
-    left: 42px;
+  .drop-line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    transform: translateY(-50%);
   }
 
+  /* See-through, so the drop line under it stays visible. */
   .ghost {
     position: fixed;
     z-index: 3001;
     pointer-events: none;
+    opacity: 0.8;
     background-color: var(--surface-raised);
     border-radius: 20px;
     box-shadow: 0 8px 24px var(--shadow);

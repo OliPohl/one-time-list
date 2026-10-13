@@ -13,7 +13,8 @@ import { settings } from '../../app/settings.svelte.js';
 const DESCRIPTIONS = {
   clock: 'The time, with an alarm.',
   timer: 'A countdown that rings when it ends.',
-  pomodoro: 'Focus sessions with breaks in between.'
+  pomodoro: 'Focus sessions with breaks in between.',
+  calculator: 'A simple calculator, also with the keyboard.'
 };
 
 /**
@@ -45,3 +46,4 @@ function widgetPageType(widgetType) {
 export const clock = widgetPageType('clock');
 export const timer = widgetPageType('timer');
 export const pomodoro = widgetPageType('pomodoro');
+export const calculator = widgetPageType('calculator');

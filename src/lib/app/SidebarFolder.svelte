@@ -2,7 +2,7 @@
 <!-- A folder in the sidebar. Clicking it collapses or expands it, deleting it keeps its pages. -->
 <script>
   import { pages } from './pages.svelte.js';
-  import { folders } from './folders.svelte.js';
+  import { folders, pageIdsIn } from './folders.svelte.js';
   import SidebarRow from './SidebarRow.svelte';
   import FolderStyle from './FolderStyle.svelte';
 
@@ -16,10 +16,12 @@
    */
   let { folder, activePageId, editing, onEditChange } = $props();
 
-  let folderPages = $derived(folder.pageIds.map((id) => pages.get(id)).filter((page) => page !== undefined));
+  // Every page in it, also in folders inside it.
+  let pageIds = $derived(pageIdsIn(folder.children));
+  let folderPages = $derived(pageIds.map((id) => pages.get(id)).filter((page) => page !== undefined));
   // Collapsed, the folder stands in for its pages: it shows the open page and blinks for a ringing one.
   let ringingPages = $derived(folder.collapsed ? folderPages.filter((page) => pages.isRinging(page)) : []);
-  let active = $derived(folder.collapsed && activePageId !== null && folder.pageIds.includes(activePageId));
+  let active = $derived(folder.collapsed && activePageId !== null && pageIds.includes(activePageId));
   let count = $derived(folderPages.length === 1 ? '1 page' : `${folderPages.length} pages`);
   // The plain folder icon opens and closes with the folder, a picked icon stays.
   let icon = $derived(!folder.icon || folder.icon === 'folder' ? (folder.collapsed ? 'folder' : 'folder_open') : folder.icon);

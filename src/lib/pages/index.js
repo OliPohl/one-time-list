@@ -4,7 +4,7 @@
 
 import tasks from './tasks/index.js';
 import notes from './notes/index.js';
-import { clock, timer, pomodoro } from './widget-pages/index.js';
+import { clock, timer, pomodoro, calculator } from './widget-pages/index.js';
 
 /** @type {Record<string, import('./types.js').PageType>} */
 export const PAGE_TYPES = {
@@ -12,7 +12,8 @@ export const PAGE_TYPES = {
   [notes.type]: notes,
   [clock.type]: clock,
   [timer.type]: timer,
-  [pomodoro.type]: pomodoro
+  [pomodoro.type]: pomodoro,
+  [calculator.type]: calculator
 };
 
 /** Types that were renamed: old key -> current key. Saved pages are updated on load. */

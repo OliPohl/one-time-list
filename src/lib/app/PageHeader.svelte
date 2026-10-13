@@ -9,9 +9,10 @@
   /**
    * `visible` is false while the page hides the header, it then can't be focused and its settings close.
    * `icon` is shown before the title, `centered` puts icon, title and settings button in the middle of the page.
-   * @type {{page: import('../pages/types.js').Page, visible?: boolean, icon?: string, centered?: boolean}}
+   * `aside` fills the free space between the title and the settings button (not when centered).
+   * @type {{page: import('../pages/types.js').Page, visible?: boolean, icon?: string, centered?: boolean, aside?: import('svelte').Snippet}}
    */
-  let { page, visible = true, icon = '', centered = false } = $props();
+  let { page, visible = true, icon = '', centered = false, aside } = $props();
 
   let open = $state(false);
   /** @type {HTMLElement} */
@@ -55,6 +56,9 @@
 <header class="page-header" class:centered inert={!visible} bind:this={root}>
   {#if icon}<span class="title-icon m3-icon">{icon}</span>{/if}
   <h1 class="title">{page.name}</h1>
+  {#if aside && !centered}
+    <div class="aside">{@render aside()}</div>
+  {/if}
 
   <button class="settings-btn m3-icon" class:open title="Page Settings" aria-expanded={open} onclick={toggle}>settings</button>
 
@@ -94,14 +98,20 @@
     margin-top: 14px;
     flex-shrink: 0;
     display: grid;
-    grid-template-columns: 1fr 46px;
-    align-items: center;
+    /* The title takes the width it needs, the aside the rest. */
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 46px;
+    align-items: start;
     gap: 12px;
+  }
+
+  .aside {
+    min-width: 0;
   }
 
   .page-header.centered {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 10px;
     margin-top: 0;
   }
@@ -122,11 +132,17 @@
       grid-column: 2;
       text-align: center;
     }
+
+    /* No room for the aside, its contents go elsewhere (widgets back to the dock). */
+    .aside {
+      display: none;
+    }
   }
 
   .title {
     min-width: 0;
     margin: 0;
+    line-height: 46px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

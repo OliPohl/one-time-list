@@ -1,5 +1,5 @@
 <!-- src/lib/widgets/components/WidgetSideLayer.svelte -->
-<!-- Widgets placed beside the task column on wide screens, plus the drag ghost. -->
+<!-- Widgets placed freely on the screen (beside or below the tasks, see layout.svelte.js), plus the drag ghost. -->
 <script>
   import WidgetView from './WidgetView.svelte';
   import DragGhost from './DragGhost.svelte';
@@ -10,22 +10,20 @@
 
   let { visible = true } = $props();
 
-  let sideWidgets = $derived(widgets.list.filter((widget) => !layout.isDocked(widget)));
-  /** @type {Record<string, number>} */
-  let heights = $state({});
+  let freeWidgets = $derived(widgets.list.filter((widget) => widget.pos?.area === 'free' && !layout.isDocked(widget, widgets.list)));
 </script>
 
 <svelte:window bind:innerWidth={layout.width} bind:innerHeight={layout.height} />
 
 <div class="side-layer" class:hidden={!visible}>
-  {#each sideWidgets as widget (widget.id)}
-    {@const position = layout.sidePosition(widget.pos, heights[widget.id])}
+  {#each freeWidgets as widget (widget.id)}
+    {@const position = layout.freePosition(widget.pos, layout.heights[widget.id])}
     <div
       class="item"
       style:left="{position.left}px"
       style:top="{position.top}px"
       style:width="{SIDE_WIDTH}px"
-      bind:offsetHeight={heights[widget.id]}
+      bind:offsetHeight={layout.heights[widget.id]}
     >
       <WidgetView {widget} variant="side" />
     </div>

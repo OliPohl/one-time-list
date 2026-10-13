@@ -9,7 +9,7 @@
 
   const widgets = getWidgets();
 
-  let docked = $derived(widgets.list.filter((widget) => layout.isDocked(widget)));
+  let docked = $derived(widgets.list.filter((widget) => layout.isDocked(widget, widgets.list)));
 </script>
 
 <div class="dock">

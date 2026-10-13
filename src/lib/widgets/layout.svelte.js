@@ -1,53 +1,95 @@
 // src/lib/widgets/layout.svelte.js
-// Screen layout + drag state shared between the widget dock and the side layer.
+// Screen layout + drag state shared between the widget dock, the header area and the free widgets (side layer).
 // There is only one screen, so this is shared by all pages.
 
-/** Width of the centered task column (page max-width + padding). */
-export const COLUMN_WIDTH = 620;
-/** Width of a widget placed beside the task column. */
+/** Width of a widget placed freely on the screen (or beside the page title). */
 export const SIDE_WIDTH = 230;
-/** Gap between side widgets and the screen edge / task column. */
-export const SIDE_MARGIN = 24;
-/** Space kept free at the top of the screen for the menu button. */
-export const TOP_RESERVED = 80;
 /** Space kept free at the bottom of the screen for the task input. */
 export const BOTTOM_RESERVED = 180;
+/** Gap between widgets beside the page title. */
+export const HEADER_GAP = 12;
+/** Gap kept between the tasks and a widget below them. */
+const TASKS_GAP = 25;
+/** Closest a free widget gets to the top of the screen, and the corner kept free for the menu button. */
+const TOP_GAP = 16;
+const MENU_BUTTON = 80;
+/** How far below the page title a drop still counts as beside it. */
+const HEADER_REACH = 24;
 
+/**
+ * Where widgets are placed (`widget.pos`):
+ * - `null`: in the dock, the default.
+ * - `{area: 'header'}`: beside the page title, while it fits there.
+ * - `{area: 'free', x, y}`: anywhere on the screen. `x` is its left edge from the middle of the screen (it stays
+ *   beside the tasks when the window is resized), `y` its top edge. While it would cover the tasks (the column
+ *   from the top down to where the tasks end) it shows in the dock instead, and comes back once there's room.
+ * A docked widget keeps its `pos`, it's only the place it goes back to.
+ */
 class WidgetLayout {
   width = $state(0);
   height = $state(0);
 
   /** @type {{id: string, x: number, y: number, ratioX: number, offsetY: number, startWidth: number, startHeight: number} | null} */
   drag = $state(null);
+  /** Height of the drag ghost once it has its free widget shape. */
+  ghostHeight = $state(0);
+  /** Free width beside the page title, set by WidgetHeaderArea. 0 without a header area. */
+  headerRoom = $state(0);
+  /**
+   * The task column on the screen: its left and right edge and where the tasks end (all px in the window), set by
+   * the Tasks page. Without one nothing can be placed over the middle of the screen.
+   */
+  column = $state({ left: 0, right: 0, bottom: Infinity });
+  /** Last measured heights of free widgets, by id. @type {Record<string, number>} */
+  heights = $state({});
   /** @type {import('./store.svelte.js').WidgetStore | null} */
   #store = null;
 
-  /** Left edge of the task column. */
-  columnLeft = $derived(Math.max(0, (this.width - COLUMN_WIDTH) / 2));
-  /** True when there is room for widgets left and right of the task column. */
-  sideFits = $derived(this.columnLeft >= SIDE_WIDTH + SIDE_MARGIN * 2);
+  /**
+   * @param {any} widget
+   * @param {any[]} list all widgets of the page, header widgets take the room in their list order
+   */
+  isDocked(widget, list) {
+    if (!widget.pos) return true;
+    if (widget.pos.area === 'header') return !this.headerIds(list).includes(widget.id);
+    if (widget.pos.area === 'free') return this.#coversTasks(this.freePosition(widget.pos, this.heights[widget.id]));
+    return true;
+  }
 
-  /** @param {any} widget */
-  isDocked(widget) {
-    return !widget.pos || !this.sideFits;
+  /** Ids of the header widgets that fit beside the page title, in list order. @param {any[]} list */
+  headerIds(list) {
+    const ids = [];
+    let used = 0;
+    for (const widget of list) {
+      if (widget.pos?.area !== 'header') continue;
+      used += (ids.length ? HEADER_GAP : 0) + SIDE_WIDTH;
+      if (used > this.headerRoom) break;
+      ids.push(widget.id);
+    }
+    return ids;
   }
 
   /**
-   * Position of a side widget in px, clamped to the available side space.
-   * @param {{side: 'left' | 'right', dx: number, y: number}} pos
-   * @param {number} height
+   * Where a free widget is on the screen, kept inside the window and above the task input.
+   * @param {{x: number, y: number}} pos
+   * @param {number} [height]
    */
-  sidePosition(pos, height = 0) {
-    const maxDx = this.columnLeft - SIDE_WIDTH - SIDE_MARGIN * 2;
-    const dx = Math.min(Math.max(0, pos.dx), Math.max(0, maxDx));
-    const maxY = Math.max(TOP_RESERVED, this.height - BOTTOM_RESERVED - height);
-    const top = Math.min(Math.max(TOP_RESERVED, pos.y), maxY);
-
-    const left = pos.side === 'left'
-      ? this.columnLeft - SIDE_MARGIN - dx - SIDE_WIDTH
-      : this.width - this.columnLeft + SIDE_MARGIN + dx;
-
+  freePosition(pos, height = 0) {
+    const left = Math.min(Math.max(0, this.width / 2 + pos.x), Math.max(0, this.width - SIDE_WIDTH));
+    const minTop = left < MENU_BUTTON ? MENU_BUTTON : TOP_GAP;
+    const top = Math.min(Math.max(minTop, pos.y), Math.max(minTop, this.height - BOTTOM_RESERVED - height));
     return { left, top };
+  }
+
+  /**
+   * Whether a widget there would cover the tasks: it's over the column and starts above where the tasks end.
+   * Docked, the dock is taller by the widget, so the tasks end lower and it stays docked until there's room for
+   * both: it never flickers between the two places.
+   * @param {{left: number, top: number}} position
+   */
+  #coversTasks({ left, top }) {
+    const overColumn = left < this.column.right && left + SIDE_WIDTH > this.column.left;
+    return overColumn && top < this.column.bottom + TASKS_GAP;
   }
 
   /** Top left corner of the drag ghost. @param {NonNullable<WidgetLayout['drag']>} drag */
@@ -95,20 +137,19 @@ class WidgetLayout {
     if (!store || !widget) return;
 
     const { x, y } = drag;
-    const onLeft = x < this.columnLeft;
-    const onRight = x > this.width - this.columnLeft;
+    if (this.#dropInHeader(store, widget, x, y)) return;
 
-    if (this.sideFits && (onLeft || onRight)) {
-      const { left, top } = this.ghostPosition(drag);
-      const dx = onLeft
-        ? this.columnLeft - SIDE_MARGIN - SIDE_WIDTH - left
-        : left - (this.width - this.columnLeft + SIDE_MARGIN);
-
-      widget.pos = { side: onLeft ? 'left' : 'right', dx: Math.max(0, dx), y: top };
+    // Anywhere the widget doesn't cover the tasks it stays where it's dropped, otherwise it goes into the dock.
+    const ghost = this.ghostPosition(drag);
+    const pos = { area: 'free', x: ghost.left - this.width / 2, y: ghost.top };
+    const position = this.freePosition(pos, this.ghostHeight);
+    if (this.#coversTasks(position)) {
+      this.#dropInDock(store, widget, y);
       return;
     }
-
-    this.#dropInDock(store, widget, y);
+    // Kept as it's shown (inside the window, above the task input).
+    widget.pos = { area: 'free', x: position.left - this.width / 2, y: position.top };
+    this.heights[widget.id] = this.ghostHeight;
   };
 
   #cancel = () => this.#stop();
@@ -119,6 +160,47 @@ class WidgetLayout {
     window.removeEventListener('pointermove', this.#move);
     window.removeEventListener('pointerup', this.#drop);
     window.removeEventListener('pointercancel', this.#cancel);
+  }
+
+  /**
+   * Places the widget beside the page title if the pointer is there and it fits, ordered by `x` among the other
+   * header widgets.
+   * @param {import('./store.svelte.js').WidgetStore} store
+   * @param {any} widget
+   * @param {number} x
+   * @param {number} y
+   */
+  #dropInHeader(store, widget, x, y) {
+    const area = document.querySelector('[data-widget-area="header"]');
+    if (!area) return false;
+    // The whole free space beside the title: from the top of the window down to just below the title row.
+    const rect = area.getBoundingClientRect();
+    if (x < rect.left || x > rect.right || y > rect.bottom + HEADER_REACH) return false;
+
+    const others = store.list.filter((item) => item.id !== widget.id);
+    const shown = this.headerIds(others).length;
+    if (this.headerRoom - shown * (SIDE_WIDTH + HEADER_GAP) < SIDE_WIDTH) return false;
+
+    const headerIds = others.filter((item) => item.pos?.area === 'header').map((item) => item.id);
+    const leftIds = [...area.querySelectorAll('[data-header-widget]')]
+      .filter((element) => element.getAttribute('data-header-widget') !== widget.id)
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.left + rect.width / 2 < x;
+      })
+      .map((element) => element.getAttribute('data-header-widget'));
+
+    widget.pos = { area: 'header' };
+
+    // Without other header widgets the list order doesn't matter, the widget keeps its spot in the dock order.
+    if (headerIds.length === 0) return true;
+    const lastLeft = leftIds.at(-1);
+    const index = lastLeft
+      ? others.findIndex((item) => item.id === lastLeft) + 1
+      : others.findIndex((item) => item.id === headerIds[0]);
+    others.splice(index, 0, widget);
+    store.list = others;
+    return true;
   }
 
   /**

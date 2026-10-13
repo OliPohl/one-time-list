@@ -144,9 +144,12 @@
     font-size: 14px;
   }
 
+  /* In the sidebar: about five rows, the rest scrolls. */
   .compact .icons {
     grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
     gap: 4px;
+    max-height: 190px;
+    overflow-y: auto;
   }
 
   .compact .icon-option {
