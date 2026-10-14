@@ -1,11 +1,14 @@
 <!-- src/lib/pages/tasks/components/TaskDialog.svelte -->
-<!-- The popup of an advanced task, like a card in Trello or Jira: its title, priority, labels and a Markdown
-     description (the editor of the Notes pages). Every change is saved right away. The page's labels can be
-     created, renamed, recolored and deleted here too. -->
+<!-- The popup of an advanced task, like a card in Trello or Jira: its title, priority, labels, widgets and a
+     Markdown description (the editor of the Notes pages). Every change is saved right away. The page's labels can
+     be created, renamed, recolored and deleted here too. Widgets only while the list has them turned on
+     (`widgetStore`). -->
 <script>
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import TaskTag from './TaskTag.svelte';
+  import TaskWidgets from './TaskWidgets.svelte';
+  import { WIDGET_TYPES } from '$lib/widgets/store.svelte.js';
   import { PRIORITIES, LABEL_COLORS, LABEL_ICONS, labelIcon } from '../list.svelte.js';
   import { createEditor } from '../../notes/editor/editor.js';
   import { confirm, confirmState } from '../../../app/confirm.svelte.js';
@@ -15,10 +18,13 @@
    *   task: import('../list.svelte.js').TaskItem,
    *   list: import('../list.svelte.js').LabelOwner,
    *   onClose: () => void,
-   *   onDelete: () => void
+   *   onDelete: () => void,
+   *   widgetStore?: import('$lib/widgets/store.svelte.js').WidgetStore | null
    * }}
    */
-  let { task, list, onClose, onDelete } = $props();
+  let { task, list, onClose, onDelete, widgetStore = null } = $props();
+
+  let taskWidgets = $derived(widgetStore ? widgetStore.ofTask(task.id) : []);
 
   // The popup is opened for one task and closed before another one opens.
   // svelte-ignore state_referenced_locally
@@ -307,6 +313,24 @@
         </div>
       {/if}
     </section>
+
+    {#if widgetStore}
+      <section class="section">
+        <h3 class="section-label">Widgets</h3>
+        {#if taskWidgets.length > 0}
+          <TaskWidgets store={widgetStore} widgets={taskWidgets} quickRemove />
+        {/if}
+        <!-- Shown in the task, they only react to this task (a timer that starts when it's selected). -->
+        <div class="tags">
+          {#each Object.entries(WIDGET_TYPES) as [type, { label, icon }] (type)}
+            <button class="add-label" onclick={() => widgetStore.add(type, task.id)}>
+              <span class="add-icon m3-icon">{icon}</span>
+              <span>{label}</span>
+            </button>
+          {/each}
+        </div>
+      </section>
+    {/if}
 
     <section class="section description">
       <h3 class="section-label">Description</h3>

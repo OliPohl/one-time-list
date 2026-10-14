@@ -10,9 +10,10 @@
    * `visible` is false while the page hides the header, it then can't be focused and its settings close.
    * `icon` is shown before the title, `centered` puts icon, title and settings button in the middle of the page.
    * `aside` fills the free space between the title and the settings button (not when centered).
-   * @type {{page: import('../pages/types.js').Page, visible?: boolean, icon?: string, centered?: boolean, aside?: import('svelte').Snippet}}
+   * `actions` are buttons of the page, shown before the settings button (46px wide each).
+   * @type {{page: import('../pages/types.js').Page, visible?: boolean, icon?: string, centered?: boolean, aside?: import('svelte').Snippet, actions?: import('svelte').Snippet}}
    */
-  let { page, visible = true, icon = '', centered = false, aside } = $props();
+  let { page, visible = true, icon = '', centered = false, aside, actions } = $props();
 
   let open = $state(false);
   /** @type {HTMLElement} */
@@ -53,14 +54,17 @@
 
 <svelte:window onclick={handleClickOutside} onkeydown={handleKeyDown} />
 
-<header class="page-header" class:centered inert={!visible} bind:this={root}>
+<header class="page-header" class:centered class:with-actions={actions} inert={!visible} bind:this={root}>
   {#if icon}<span class="title-icon m3-icon">{icon}</span>{/if}
   <h1 class="title">{page.name}</h1>
   {#if aside && !centered}
     <div class="aside">{@render aside()}</div>
   {/if}
 
-  <button class="settings-btn m3-icon" class:open title="Page Settings" aria-expanded={open} onclick={toggle}>settings</button>
+  <div class="buttons">
+    {@render actions?.()}
+    <button class="settings-btn m3-icon" class:open title="Page Settings" aria-expanded={open} onclick={toggle}>settings</button>
+  </div>
 
   {#if open}
     <div class="panel">
@@ -99,9 +103,23 @@
     flex-shrink: 0;
     display: grid;
     /* The title takes the width it needs, the aside the rest. */
-    grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 46px;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr) var(--buttons-width);
     align-items: start;
     gap: 12px;
+    /* The settings button, and the page's actions before it. */
+    --buttons-width: 46px;
+  }
+
+  .page-header.with-actions {
+    --buttons-width: 98px;
+  }
+
+  .buttons {
+    grid-column: -2;
+    grid-row: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
   }
 
   .aside {
@@ -125,7 +143,7 @@
   /* Without room beside the column the menu button sits in the first column, the title is centered between both buttons. */
   @media (max-width: 740px) {
     .page-header:not(.centered) {
-      grid-template-columns: 46px 1fr 46px;
+      grid-template-columns: var(--buttons-width) 1fr var(--buttons-width);
     }
 
     .page-header:not(.centered) .title {
@@ -155,8 +173,6 @@
   }
 
   .settings-btn {
-    grid-column: -2;
-    grid-row: 1;
     width: 46px;
     height: 46px;
     display: flex;

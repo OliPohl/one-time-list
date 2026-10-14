@@ -42,11 +42,14 @@
 </EditorRow>
 
 {#if taskOptions}
-  <Toggle checked={widget.autoStart} onchange={(checked) => store.setOption(widget, 'autoStart', checked)}>
-    Start when a task is completed
-  </Toggle>
+  <!-- Not for a task's own timer: it stops when its task is completed. -->
+  {#if !widget.taskId}
+    <Toggle checked={widget.autoStart} onchange={(checked) => store.setOption(widget, 'autoStart', checked)}>
+      Start when a task is completed
+    </Toggle>
+  {/if}
 
   <Toggle checked={widget.startOnSelect} onchange={(checked) => store.setOption(widget, 'startOnSelect', checked)}>
-    Start when a task is selected
+    Start when {widget.taskId ? 'this' : 'a'} task is selected
   </Toggle>
 {/if}

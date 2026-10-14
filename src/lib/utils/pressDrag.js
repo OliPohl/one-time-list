@@ -44,8 +44,10 @@ export function pressDrag({ onStart, onPressChange, isDragging, enabled = () => 
     /** @param {PointerEvent} event */
     function handlePointerDown(event) {
       if (event.button !== 0 || !enabled()) return;
-      // Only empty space starts a drag, never buttons or inputs.
-      if (/** @type {Element} */ (event.target).closest(ignore)) return;
+      // Only empty space starts a drag, never buttons or inputs. Only those inside the element count: it can be
+      // inside one itself (a widget in a task, which is a label).
+      const ignored = /** @type {Element} */ (event.target).closest(ignore);
+      if (ignored && node.contains(ignored)) return;
 
       isTouch = event.pointerType === 'touch';
       origin = { clientX: event.clientX, clientY: event.clientY };

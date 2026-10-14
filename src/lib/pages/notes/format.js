@@ -67,6 +67,18 @@ export function insertLink({ value, start, end }) {
     : { from: start, to: end, insert, selectStart: start + 1, selectEnd: start + 1 + text.length };
 }
 
+/**
+ * Inserts an image from the web: ![text](https://), the selection becomes its text, the address is selected to be
+ * typed or pasted.
+ * @param {TextState} state
+ * @returns {TextEdit}
+ */
+export function insertImage({ value, start, end }) {
+  const text = value.slice(start, end) || 'image';
+  const insert = `![${text}](https://)`;
+  return { from: start, to: end, insert, selectStart: start + text.length + 4, selectEnd: start + insert.length - 1 };
+}
+
 /** Kinds of line a button can make. @typedef {'h1' | 'h2' | 'h3' | 'bullet' | 'number' | 'task' | 'quote'} LineKind */
 
 /** Every line sign a line can start with, after its indentation. */

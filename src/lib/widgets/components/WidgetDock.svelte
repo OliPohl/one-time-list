@@ -1,5 +1,7 @@
 <!-- src/lib/widgets/components/WidgetDock.svelte -->
-<!-- Default widget position: stacked above the "Add Widget" button, below the current task. -->
+<!-- Default widget position: stacked above the "Add Widget" button, below the current task. `isDocked` picks the
+     widgets shown here, by default the ones that aren't placed freely on the screen (see layout.svelte.js).
+     `fixedMenu`: the "Add Widget" menu is drawn over everything, for a dock inside something that scrolls. -->
 <script>
   import { flip } from 'svelte/animate';
   import WidgetView from './WidgetView.svelte';
@@ -9,7 +11,11 @@
 
   const widgets = getWidgets();
 
-  let docked = $derived(widgets.list.filter((widget) => layout.isDocked(widget)));
+  /** @type {{isDocked?: (widget: any) => boolean, fixedMenu?: boolean}} */
+  let { isDocked = (widget) => layout.isDocked(widget), fixedMenu = false } = $props();
+
+  // A task's own widgets are shown in the task.
+  let docked = $derived(widgets.list.filter((widget) => !widget.taskId && isDocked(widget)));
 </script>
 
 <div class="dock" data-widget-dock>
@@ -19,7 +25,7 @@
     </div>
   {/each}
 
-  <AddWidget />
+  <AddWidget fixed={fixedMenu} />
 </div>
 
 

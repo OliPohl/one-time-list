@@ -42,9 +42,25 @@
       description: task.description,
       priority: priorityOf(task.priority),
       labels: list.labelsOf(task),
-      onOpen: () => (openTaskId = task.id)
+      onOpen: () => (openTaskId = task.id),
+      // The task's own widgets, while the page has widgets turned on.
+      widgetStore: taskWidgets,
+      widgets: taskWidgets ? taskWidgets.ofTask(task.id) : []
     };
   }
+
+  /** The widgets for tasks, null while the page has them turned off. */
+  let taskWidgets = $derived(widgetsEnabled(page.options) ? list.widgets : null);
+
+  // A widget dropped on a task (in the list or the current task) becomes that task's.
+  $effect(() => {
+    layout.taskAt = (store, x, y) => {
+      if (store !== list.widgets) return null;
+      const id = document.elementFromPoint(x, y)?.closest('[data-widget-task]')?.getAttribute('data-widget-task');
+      return id && (list.currentTask?.id === id || list.tasks.some((task) => task.id === id)) ? id : null;
+    };
+    return () => (layout.taskAt = null);
+  });
 
   /** Closes the popup. Sorted by priority, the list follows a changed priority. */
   function closeTask() {
@@ -234,18 +250,14 @@
     <PageHeader {page} visible={list.hasTasks} />
 
     <NextTask
-    onShuffle={() => list.sortTasks('random')}
-    onSortAlphanumeric={() => list.sortTasks('alphanumeric')}
-    onSortPriority={() => list.sortTasks('priority')}
-    onCustomOrder={() => list.restoreCustomOrder()}
-    onUnselect ={() => list.unselectTask()}
+    {list}
     isDropTarget={taskDrag?.overCurrent ?? false}
     bind:taskContainer={currentTaskEl}>
       {#if list.currentTask}
         {#key list.currentTask.id}
           {@const activeId = list.currentTask.id}
           <!-- Hidden while it's dragged, the box shows where it came from. -->
-          <div class="current-task" class:dragged={taskDrag?.source === 'current'}>
+          <div class="current-task" class:dragged={taskDrag?.source === 'current'} data-widget-task={activeId}>
             <Task
               text={list.currentTask.text}
               onEdit={(event) => list.editTask(activeId, event.message)}
@@ -274,6 +286,7 @@
             class:placeholder={task.isDropSlot || taskDrag?.id === task.id}
             style:height={task.isDropSlot ? `${taskDrag.height}px` : null}
             data-task-id={task.isDropSlot ? undefined : task.id}
+            data-widget-task={task.isDropSlot ? undefined : task.id}
             animate:flip={{ duration: 200 }}>
             {#if !task.isDropSlot}
               <Task
@@ -305,7 +318,7 @@
 </main>
 
 {#if openTask}
-  <TaskDialog task={openTask} {list} onClose={closeTask} onDelete={deleteOpenTask} />
+  <TaskDialog task={openTask} {list} onClose={closeTask} onDelete={deleteOpenTask} widgetStore={taskWidgets} />
 {/if}
 
 {#if widgetsEnabled(page.options)}

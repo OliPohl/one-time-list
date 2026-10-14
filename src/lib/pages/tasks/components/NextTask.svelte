@@ -1,55 +1,27 @@
 <!-- src/lib/pages/tasks/components/NextTask.svelte -->
+<!-- The "Current Task" heading with the list's sort button, and the box the current task is in. -->
 <script>
-  import { COLORS } from '../../../colors.js';
+  import SortMenu from './SortMenu.svelte';
 
-  // The buttons always use the wave colors of the color sets, whichever set the page uses. Priority is orange,
-  // like the "Important" priority.
-  const buttonColors = `--button-custom: ${COLORS.amethyst.wave}; --button-alpha: ${COLORS.cobalt.wave}; --button-priority: var(--orange); --button-random: ${COLORS.emerald.wave}; --button-unselect: ${COLORS.crimson.wave};`;
-
-  let { 
-    onShuffle,
-    onSortAlphanumeric,
-    /** Without it there's no priority button. */
-    onSortPriority = undefined,
-    onCustomOrder,
-    onUnselect,
-    // A dragged task is held over the current task box, dropping it there selects it.
-    isDropTarget = false,
-    taskContainer = $bindable(),
-    /** Smaller heading and buttons, for a column of a Kanban board. */
-    compact = false,
-    children
-  } = $props();
+  /**
+   * `isDropTarget`: a dragged task is held over the current task box, dropping it there selects it.
+   * `compact`: smaller heading and button, for a column of a board.
+   * @type {{
+   *   list: import('../list.svelte.js').TaskList,
+   *   isDropTarget?: boolean,
+   *   taskContainer?: HTMLElement,
+   *   compact?: boolean,
+   *   children?: import('svelte').Snippet
+   * }}
+   */
+  let { list, isDropTarget = false, taskContainer = $bindable(), compact = false, children } = $props();
 </script>
 
 
 <div class="wrapper" class:compact>
   <div class="heading-container">
     <h2 class="heading">Current Task</h2>
-
-    <div class="button-container" style={buttonColors}>
-      <button class="button button-custom" title="Restore Custom Order" onclick={onCustomOrder}>
-        <span class="button-icon m3-icon">layers</span>
-      </button>
-
-      <button class="button button-alpha" title="Sort Alphanumerically" onclick={onSortAlphanumeric}>
-        <span class="button-icon m3-icon">sort_by_alpha</span>
-      </button>
-
-      {#if onSortPriority}
-        <button class="button button-priority" title="Sort by Priority" onclick={onSortPriority}>
-          <span class="button-icon m3-icon">flag</span>
-        </button>
-      {/if}
-
-      <button class="button button-random" title="Shuffle Tasks" onclick={onShuffle}>
-        <span class="button-icon m3-icon">shuffle</span>
-      </button>
-
-      <button class="button button-unselect" title="Deselect Current Task" onclick={onUnselect}>
-        <span class="button-icon m3-icon">deselect</span>
-      </button>
-    </div>
+    <SortMenu {list} />
   </div>
 
   <div class="task-container" class:drop-target={isDropTarget} bind:this={taskContainer}>
@@ -60,6 +32,8 @@
 
 <style>
 .wrapper {
+  /* The heading's size, the sort button is as tall as its letters (see SortMenu). */
+  --heading-size: 25px;
   box-sizing: border-box;
   /* background-color: aliceblue; */
   width: 100%;
@@ -79,7 +53,8 @@
 .heading {
   margin: 0;
   font-family: "Stoke", serif;
-  font-size: 25px;
+  font-size: var(--heading-size);
+  line-height: 1;
   font-weight: 900;
   letter-spacing: -0.04em;
   text-transform: uppercase;
@@ -105,114 +80,29 @@
   background-color: color-mix(in srgb, var(--task), transparent 85%);
 }
 
-.button-container {
-  width: auto;
-  display: flex;
-  gap: 10px;
+/* A board column. */
+.compact {
+  --heading-size: 16px;
 }
 
-.button {
-  background: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-
-  border-radius: 50px;
-  transition: filter 0.2s;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.button:hover {
-  filter: brightness(110%);
-}
-
-.button:active {
-    filter: brightness(90%);
-}
-
-.button-custom {
-    background-color: var(--button-custom);
-}
-
-.button-alpha {
-    background-color: var(--button-alpha);
-}
-
-.button-priority {
-    background-color: var(--button-priority);
-}
-
-.button-random {
-    background-color: var(--button-random);
-}
-
-.button-unselect {
-    background-color: var(--button-unselect);
-}
-
-.button-icon {
-  font-size: 25px;
-  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
-  color: var(--on-color);
-}
-
-/* A Kanban column. */
 .compact .heading-container {
   padding: 6px 0 8px;
-}
-
-.compact .heading-container {
   gap: 8px;
 }
 
 .compact .heading {
-  font-size: 16px;
   white-space: nowrap;
 }
 
-.compact .button-container {
-  gap: 5px;
-}
-
-.compact .button {
-  padding: 4px;
-}
-
-.compact .button-icon {
-  font-size: 18px;
-  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 18;
-}
-
 @media (max-width: 480px) {
-  .heading {
-    font-size: 21px;
-  }
-
-  .button-container {
-    gap: 8px;
-  }
-
-  .button-icon {
-    font-size: 21px;
-    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 21;
+  .wrapper:not(.compact) {
+    --heading-size: 21px;
   }
 }
 
 @media (max-width: 380px) {
-  .heading {
-    font-size: 18px;
-  }
-
-  .button-container {
-    gap: 6px;
-  }
-
-  .button-icon {
-    font-size: 18px;
-    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 18;
+  .wrapper:not(.compact) {
+    --heading-size: 18px;
   }
 }
 </style>

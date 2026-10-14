@@ -1,5 +1,5 @@
-<!-- src/lib/pages/kanban/components/ColumnInput.svelte -->
-<!-- The "Add Task" field at the top of a Kanban column, a small version of the Tasks page's input.
+<!-- src/lib/pages/board/components/ColumnInput.svelte -->
+<!-- The "Add Task" field at the top of a board column, a small version of the Tasks page's input.
      Enter adds the task, Shift+Enter starts a new line. -->
 <script>
   /** @type {{onSubmit: (text: string) => void}} */

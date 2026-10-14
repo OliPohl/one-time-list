@@ -1,29 +1,30 @@
-// src/lib/pages/kanban/index.js
-// Kanban: columns side by side, each a small Tasks page. Same options as a Tasks page (colors, widgets).
+// src/lib/pages/board/index.js
+// Board: columns side by side, each a stack of pages (Tasks lists and notes, local or linked). Its options are the
+// colors and widgets, which each page can also set for itself.
 
-import KanbanPage from './KanbanPage.svelte';
-import KanbanCard from './KanbanCard.svelte';
-import TasksOptions from '../tasks/TasksOptions.svelte';
+import BoardPage from './BoardPage.svelte';
+import BoardCard from './BoardCard.svelte';
+import BoardOptions from './BoardOptions.svelte';
 import { getBoardStore, findBoardStore, deleteBoardStore } from './board.svelte.js';
 import { colorsOf, colorsStyle } from '../../colors.js';
 import { settings } from '../../app/settings.svelte.js';
 
 /** @type {import('../types.js').PageType} */
 export default {
-  type: 'kanban',
+  type: 'board',
   group: 'page',
-  label: 'Kanban Board',
-  description: 'Columns of tasks side by side, drag tasks between them.',
+  label: 'Board',
+  description: 'Tasks and notes side by side, new or linked from your pages.',
   icon: 'view_kanban',
   defaultName: 'Board',
-  component: KanbanPage,
-  Options: TasksOptions,
-  Card: KanbanCard,
+  component: BoardPage,
+  Options: BoardOptions,
+  Card: BoardCard,
   // New boards start with the default colors from the settings, widgets off.
   defaultOptions: () => ({ colors: settings.colors, widgets: false }),
   style: (page) => colorsStyle(colorsOf(page.options)),
   // Load every board on startup so its timers and alarms run while another page is open.
   init: (page) => void getBoardStore(page.id, page),
-  ringingWidgets: (page) => findBoardStore(page.id)?.widgets.list.filter((widget) => widget.ringing) ?? [],
+  ringingWidgets: (page) => findBoardStore(page.id)?.ringingWidgets() ?? [],
   destroy: (page) => deleteBoardStore(page.id)
 };

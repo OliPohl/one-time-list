@@ -266,9 +266,25 @@ export class WidgetStore {
     return this.list.find((widget) => widget.id === id);
   }
 
-  /** @param {string} type */
-  add(type) {
-    this.list.push(createWidget(type, uniqueId((id) => Boolean(this.get(id)))));
+  /**
+   * Adds a widget, of the page or (`taskId`) of one of its tasks: shown in that task, only reacts to that task.
+   * @param {string} type @param {string} [taskId]
+   */
+  add(type, taskId) {
+    const widget = createWidget(type, uniqueId((id) => Boolean(this.get(id))));
+    this.list.push(taskId ? { ...widget, taskId } : widget);
+  }
+
+  /** The widgets of a task. @param {string} taskId */
+  ofTask(taskId) {
+    return this.list.filter((widget) => widget.taskId === taskId);
+  }
+
+  /** Removes the widgets of a deleted task. @param {string} taskId */
+  removeTaskWidgets(taskId) {
+    if (!this.list.some((widget) => widget.taskId === taskId)) return;
+    this.list = this.list.filter((widget) => widget.taskId !== taskId);
+    this.#silenceIfQuiet();
   }
 
   /** @param {string} id */
@@ -451,18 +467,43 @@ export class WidgetStore {
     }
   }
 
-  /** Called when the current task is completed. */
-  taskCompleted() {
-    if (this.suspended) return;
+  /**
+   * Called when the current task is completed. The task's own widgets stop, they go to the history with it.
+   * The page's timers that start on a completed task start again.
+   * @param {string} [taskId]
+   */
+  taskCompleted(taskId) {
     for (const widget of this.list) {
+      if (widget.taskId) {
+        if (widget.taskId === taskId) this.#stop(widget);
+        continue;
+      }
+      if (this.suspended) continue;
       if (widget.type === 'timer' && widget.autoStart && !widget.ringing) this.#restart(widget);
     }
   }
 
-  /** Called when a task becomes the current task. */
-  taskSelected() {
+  /** Stops a widget: a clock's alarm off, a running timer or pomodoro paused, one that rings dismissed. @param {any} widget */
+  #stop(widget) {
+    if (widget.type === 'clock') {
+      if (widget.alarmMode !== 'off') this.setAlarm(widget, 'off');
+      return;
+    }
+    if (widget.ringing) {
+      if (widget.type === 'pomodoro') this.advance(widget, false);
+      else this.reset(widget);
+    }
+    this.pause(widget);
+  }
+
+  /**
+   * Called when a task becomes the current task. A task's own widgets only react to that task.
+   * @param {string} [taskId]
+   */
+  taskSelected(taskId) {
     if (this.suspended) return;
     for (const widget of this.list) {
+      if (widget.taskId && widget.taskId !== taskId) continue;
       if (!widget.startOnSelect || widget.ringing) continue;
 
       if (widget.type === 'timer') {

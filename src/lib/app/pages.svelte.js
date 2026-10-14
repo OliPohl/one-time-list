@@ -7,7 +7,7 @@ import { uniqueId } from '../utils/id.js';
 import { isBreakEnd } from '../widgets/views.js';
 
 const STORAGE_KEY = 'otl_pages';
-/** Default names of renamed types, pages still called this get the new default name. */
+/** Default names of renamed types, pages still called this get the new default name. @type {Record<string, string>} */
 const OLD_DEFAULT_NAMES = { 'one-time-list': 'One-Time-List', 'task-list': 'Task List' };
 
 /** @param {Page} page */

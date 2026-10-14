@@ -8,7 +8,7 @@
   import PageHeader from '$lib/app/PageHeader.svelte';
   import { getNote } from './store.svelte.js';
   import { createEditor, applyChange } from './editor/editor.js';
-  import { toggleWrap, toggleCode, insertLink, toggleLines, insertRule, lineKind } from './format.js';
+  import { toggleWrap, toggleCode, insertLink, insertImage, toggleLines, insertRule, lineKind } from './format.js';
 
   /** @type {{page: import('../types.js').Page}} */
   let { page } = $props();
@@ -45,6 +45,7 @@
     { icon: 'format_strikethrough', title: 'Strikethrough', run: () => format((state) => toggleWrap(state, '~~')) },
     { icon: 'code', title: 'Code (block for several lines)', run: () => format(toggleCode) },
     { icon: 'link', title: 'Link (Ctrl+K)', run: () => format(insertLink) },
+    { icon: 'image', title: 'Image from the Web', run: () => format(insertImage) },
     null,
     { icon: 'format_list_bulleted', title: 'Bulleted List', kind: 'bullet', run: () => format((state) => toggleLines(state, 'bullet')) },
     { icon: 'format_list_numbered', title: 'Numbered List', kind: 'number', run: () => format((state) => toggleLines(state, 'number')) },

@@ -1,5 +1,5 @@
 <!-- src/lib/pages/tasks/TasksOptions.svelte -->
-<!-- Customization of a Tasks page (and a Kanban board), shown on the "New Page" screen and in the page settings. Edits `options` in place. -->
+<!-- Customization of a Tasks page, shown on the "New Page" screen and in the page settings. Edits `options` in place. -->
 <script>
   import ColorOptions from '../ColorOptions.svelte';
   import { widgetsEnabled } from './list.svelte.js';

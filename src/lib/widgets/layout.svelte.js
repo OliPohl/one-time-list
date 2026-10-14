@@ -15,10 +15,12 @@ const MENU_BUTTON = 80;
 /**
  * Where widgets are placed (`widget.pos`):
  * - `null`: in the dock, the default.
+ * - `{area: 'board', x, y}`: in a board's free space, see BoardPage.
  * - `{area: 'free', x, y}`: anywhere on the screen. `x` is its left edge from the middle of the screen (it stays
  *   beside the tasks when the window is resized), `y` its top edge. While it would cover the tasks (the column
  *   from the top down to where the tasks end) it shows in the dock instead, and comes back once there's room.
  * A docked widget keeps its `pos`, it's only the place it goes back to.
+ * A widget with a `taskId` belongs to that task: it's shown in the task, not docked or placed anywhere.
  */
 class WidgetLayout {
   width = $state(0);
@@ -37,6 +39,22 @@ class WidgetLayout {
   heights = $state({});
   /** @type {import('./store.svelte.js').WidgetStore | null} */
   #store = null;
+  /**
+   * Set by a page that places dropped widgets itself (a board), instead of the Tasks page's free spots and dock.
+   * @type {((store: import('./store.svelte.js').WidgetStore, widget: any, drag: NonNullable<WidgetLayout['drag']>) => void) | null}
+   */
+  dropHandler = null;
+  /**
+   * Set by the page: the task of the widget's store at that point of the screen, a widget dropped there becomes
+   * that task's.
+   * @type {((store: import('./store.svelte.js').WidgetStore, x: number, y: number) => string | null) | null}
+   */
+  taskAt = null;
+
+  /** The store of the dragged widget. */
+  get dragStore() {
+    return this.#store;
+  }
 
   /** @param {any} widget */
   isDocked(widget) {
@@ -129,7 +147,21 @@ class WidgetLayout {
     this.#stop();
 
     const widget = drag && store?.get(drag.id);
-    if (!store || !widget) return;
+    if (!store || !widget || !drag) return;
+
+    // On a task: it becomes that task's. Anywhere else: the page's again.
+    const taskId = this.taskAt?.(store, drag.x, drag.y) ?? null;
+    if (taskId) {
+      widget.taskId = taskId;
+      widget.pos = null;
+      return;
+    }
+    delete widget.taskId;
+
+    if (this.dropHandler) {
+      this.dropHandler(store, widget, drag);
+      return;
+    }
 
     const { y } = drag;
     // Anywhere the widget doesn't cover the tasks it stays where it's dropped. Over the tasks it goes into the dock,

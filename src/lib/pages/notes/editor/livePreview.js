@@ -2,6 +2,7 @@
 // Obsidian's live preview for CodeMirror: the note is shown formatted, the Markdown signs (##, **, [](), ...) only
 // show on the lines the caret or selection is on, faint. Bullets and task boxes are drawn in place of their signs,
 // task boxes can be ticked with a click. With `signs` every sign stays visible (faint) and nothing is drawn over it.
+// Images from the web (![text](https://...)) are shown in place of their Markdown, below it while it shows.
 
 import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
@@ -64,6 +65,50 @@ class RuleWidget extends WidgetType {
     const rule = document.createElement('span');
     rule.className = 'cm-rule';
     return rule;
+  }
+}
+
+/** Only images from the web are loaded. */
+const REMOTE = /^https?:\/\//i;
+
+class ImageWidget extends WidgetType {
+  /** @param {string} url @param {string} alt */
+  constructor(url, alt) {
+    super();
+    this.url = url;
+    this.alt = alt;
+  }
+
+  /** @param {ImageWidget} other */
+  eq(other) {
+    return other.url === this.url && other.alt === this.alt;
+  }
+
+  /** @param {EditorView} view */
+  toDOM(view) {
+    const box = document.createElement('span');
+    box.className = 'cm-image';
+    const image = document.createElement('img');
+    image.src = this.url;
+    image.alt = this.alt;
+    image.loading = 'lazy';
+    // The image's site isn't told which page it's shown on.
+    image.referrerPolicy = 'no-referrer';
+    // Its height is only known once it's loaded, the editor measures its lines again then.
+    image.addEventListener('load', () => view.requestMeasure());
+    // A broken image shows its text instead.
+    image.addEventListener('error', () => {
+      box.classList.add('cm-image-broken');
+      box.textContent = this.alt || this.url;
+      view.requestMeasure();
+    });
+    box.append(image);
+    return box;
+  }
+
+  /** A click on the image puts the caret on it, to change its Markdown. */
+  ignoreEvent() {
+    return false;
   }
 }
 
@@ -179,6 +224,17 @@ function buildDecorations(view, signs) {
             } else if (url) {
               decorations.push(link.range(url.from, url.to));
             }
+            return false;
+          }
+          case 'Image': {
+            const marks = node.node.getChildren('LinkMark');
+            const url = node.node.getChild('URL');
+            const address = url ? doc.sliceString(url.from, url.to) : '';
+            if (marks.length < 2 || !REMOTE.test(address)) return false;
+            const widget = new ImageWidget(address, doc.sliceString(marks[0].to, marks[1].from));
+            // Being changed: its Markdown, the image below it.
+            if (isActive(node.from)) decorations.push(Decoration.widget({ widget, side: 1 }).range(node.to));
+            else decorations.push(Decoration.replace({ widget }).range(node.from, node.to));
             return false;
           }
           case 'Blockquote':

@@ -121,6 +121,11 @@ const theme = EditorView.theme({
     fontSize: '0.88em'
   },
 
+  // Images from the web, on a line of their own, as wide as the note at most.
+  '.cm-image': { display: 'block', padding: '4px 0' },
+  '.cm-image img': { display: 'block', maxWidth: '100%', maxHeight: '480px', borderRadius: '12px', cursor: 'text' },
+  '.cm-image-broken': { color: 'var(--text-muted)', fontStyle: 'italic' },
+
   '.cm-bullet': { display: 'inline-block', minWidth: '0.39em', textAlign: 'center' },
   '.cm-task-box': {
     boxSizing: 'border-box',

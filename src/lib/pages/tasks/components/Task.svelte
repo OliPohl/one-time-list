@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import { pressDrag } from '../../../utils/pressDrag.js';
   import TaskTag from './TaskTag.svelte';
+  import TaskWidgets from './TaskWidgets.svelte';
   import { descriptionPreview, labelIcon } from '../list.svelte.js';
 
   const swapFade = { duration: 250 };
@@ -27,7 +28,11 @@
     /** @type {{label: string, color: string} | null} */
     priority = null,
     /** @type {import('../list.svelte.js').Label[]} */
-    labels = []
+    labels = [],
+    /** The task's own widgets (advanced tasks), shown between its description and its labels, and their store. */
+    widgets = [],
+    /** @type {import('$lib/widgets/store.svelte.js').WidgetStore | null} */
+    widgetStore = null
   } = $props();
 
   let preview = $derived(advanced ? descriptionPreview(description) : '');
@@ -158,7 +163,8 @@
   bind:this={componentRef}
   {@attach pressDrag({
     enabled: () => Boolean(onDragStart) && !isEditing,
-    ignore: '.m3-icon',
+    // Pressing a widget drags the widget, not the task.
+    ignore: '.m3-icon, .task-widgets',
     isDragging: () => isDragging,
     onPressChange: (value) => (pressing = value),
     onStart: (point, rect) => onDragStart(point, rect)
@@ -198,16 +204,24 @@
     {#if preview}
       <span class="description">{preview}</span>
     {/if}
-
-    {#if advanced && labels.length > 0}
-      <div class="labels">
-        {#each labels as label (label.id)}
-          <TaskTag name={label.name} color={label.color} icon={labelIcon(label)} />
-        {/each}
-      </div>
-    {/if}
   </div>
 
+  <!-- The card's own row, as wide as the card, like the widget dock. -->
+  {#if advanced && widgetStore && widgets.length > 0}
+    <div class="widgets">
+      <TaskWidgets store={widgetStore} {widgets} />
+    </div>
+  {/if}
+
+  {#if advanced && labels.length > 0}
+    <div class="labels">
+      {#each labels as label (label.id)}
+        <TaskTag name={label.name} color={label.color} icon={labelIcon(label)} />
+      {/each}
+    </div>
+  {/if}
+
+  <span class="buttons">
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   {#if isEditing}
@@ -230,6 +244,7 @@
       <span class="delete-btn m3-icon" class:armed={deleteArmed} title={deleteTitle} in:fade={swapFade} onclick={requestDelete}>{deleteIcon}</span>
     {/key}
   {/if}
+  </span>
 </label>
 
 
@@ -376,6 +391,11 @@
     gap: 5px;
   }
 
+  /* Only arranges the buttons on a card, otherwise they're laid out as if they weren't wrapped. */
+  .buttons {
+    display: contents;
+  }
+
   .description {
     overflow: hidden;
     white-space: nowrap;
@@ -412,13 +432,45 @@
     user-select: text;
   }
 
-  /* Advanced tasks: a smaller card, the buttons at the top next to the first line of the text. */
+  /* Advanced tasks: a smaller card, the buttons at the top next to the first line of the text. Below, the task's
+     widgets across the whole card, then its labels under the text. */
   .container.card {
     position: relative;
     overflow: hidden;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "done body buttons"
+      "widgets widgets widgets"
+      ". labels .";
+    align-items: start;
     padding: 9px 16px 9px 20px;
     border-radius: 22px;
+  }
+
+  .card .done-btn {
+    grid-area: done;
+  }
+
+  .card .body {
+    grid-area: body;
+    width: auto;
+  }
+
+  .card .buttons {
+    grid-area: buttons;
+    display: flex;
+    align-items: center;
+  }
+
+  .card .widgets {
+    grid-area: widgets;
+    margin: 8px 0 2px;
+  }
+
+  .card .labels {
+    grid-area: labels;
+    margin: 6px 12px 4px;
   }
 
   .card .body {

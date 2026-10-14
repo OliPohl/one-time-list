@@ -2,7 +2,7 @@
 // State of one Tasks page: its tasks, the current task, the history, sorting and its widgets.
 // Lives outside the page component so it keeps running (timers, alarms) while another page is shown
 // and so other views, like the dashboard, can read it.
-// `TaskList` is one list without labels, widgets or saving: a Tasks page has one, a Kanban board one per column.
+// `TaskList` is one list without labels, widgets or saving: a Tasks page has one, a board one per column.
 
 import { untrack } from 'svelte';
 import { WidgetStore } from '../../widgets/store.svelte.js';
@@ -104,9 +104,10 @@ export function withoutCompletion(task) {
 
 /**
  * Tasks, the current task and the history of one list, with sorting.
- * `onSelected` and `onCompleted` tell the page's widgets, `isTaken` checks a new task id against every list of the
- * page (tasks move between the columns of a board).
- * @typedef {{onSelected?: () => void, onCompleted?: () => void, isTaken?: (id: string) => boolean}} TaskListHooks
+ * `onSelected` and `onCompleted` tell the page's widgets (a task's own widgets only react to that task),
+ * `onRemoved` that a task is deleted (its widgets go with it), `isTaken` checks a new task id against every list
+ * of the page (tasks move between the lists of a board).
+ * @typedef {{onSelected?: (task: TaskItem) => void, onCompleted?: (task: TaskItem) => void, onRemoved?: (id: string) => void, isTaken?: (id: string) => boolean}} TaskListHooks
  */
 export class TaskList {
   /** @type {TaskItem[]} */
@@ -293,6 +294,7 @@ export class TaskList {
   deleteFromHistory(id) {
     this.history = this.history.filter((item) => item.id !== id);
     this.customOrder = this.customOrder.filter((taskId) => taskId !== id);
+    this.#hooks.onRemoved?.(id);
   }
 
   clearHistory() {
@@ -300,6 +302,7 @@ export class TaskList {
     const ids = new Set(this.history.map((item) => item.id));
     this.customOrder = this.customOrder.filter((taskId) => !ids.has(taskId));
     this.history = [];
+    for (const id of ids) this.#hooks.onRemoved?.(id);
   }
 
   /** @param {string} id @param {string} text */
@@ -317,6 +320,7 @@ export class TaskList {
     } else {
       this.tasks = this.tasks.filter((task) => task.id !== id);
     }
+    this.#hooks.onRemoved?.(id);
   }
 
   /** @param {string} id */
@@ -327,7 +331,7 @@ export class TaskList {
     if (task) {
       this.currentTask = task;
       this.tasks = this.tasks.filter((item) => item.id !== id);
-      this.#hooks.onSelected?.();
+      this.#hooks.onSelected?.(task);
     }
   }
 
@@ -345,7 +349,7 @@ export class TaskList {
     }
 
     playComplete();
-    this.#hooks.onCompleted?.();
+    this.#hooks.onCompleted?.(task);
   }
 
   unselectTask() {
@@ -372,6 +376,12 @@ export class TaskList {
   insert(task, index) {
     this.tasks = this.tasks.toSpliced(index, 0, task);
     this.saveCustomOrder();
+  }
+
+  /** Puts a task from another list in at the end, keeping the sorting, e.g. to select it. @param {TaskItem} task */
+  adopt(task) {
+    this.tasks = [...this.tasks, task];
+    this.customOrder = [...this.customOrder, task.id];
   }
 }
 
@@ -414,7 +424,11 @@ export class ListStore extends TaskList {
   /** @param {string} pageId */
   constructor(pageId) {
     const widgets = new WidgetStore(widgetsKey(pageId));
-    super({ onSelected: () => widgets.taskSelected(), onCompleted: () => widgets.taskCompleted() });
+    super({
+      onSelected: (task) => widgets.taskSelected(task.id),
+      onCompleted: (task) => widgets.taskCompleted(task.id),
+      onRemoved: (id) => widgets.removeTaskWidgets(id)
+    });
     this.#pageId = pageId;
     this.widgets = widgets;
   }

@@ -17,15 +17,21 @@
 
   <h4>What is stored and where</h4>
   <p>
-    Your pages, tasks, widgets and settings are saved in your browser's local storage on this device, so they
-    are still there the next time you open the app. They are never sent to me or anyone else, and they don't
-    sync between devices or browsers.
+    Your pages, tasks, notes, drawings, widgets and settings are saved in your browser's local storage on this
+    device, so they are still there the next time you open the app. They are never sent to me or anyone else, and
+    they don't sync between devices or browsers.
   </p>
 
   <h4>No third parties</h4>
   <p>
-    The app loads nothing from other servers: fonts and icons are served from this site. Sounds are generated
-    in your browser.
+    The app itself loads nothing from other servers: fonts, icons and the whiteboard (Excalidraw) are served
+    from this site. Sounds are generated in your browser.
+  </p>
+  <p>
+    Only what you add yourself is loaded from elsewhere: an image you put into a note or task description by its
+    web address is loaded from that address (without telling it which page it's on), and the whiteboard's links
+    and web embeds open or load their sites when you use them. Those sites then receive technical data such as
+    your IP address.
   </p>
 
   <h4>Hosting</h4>

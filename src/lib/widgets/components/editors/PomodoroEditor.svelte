@@ -52,6 +52,6 @@
 
 {#if taskOptions}
   <Toggle checked={widget.startOnSelect} onchange={(checked) => store.setOption(widget, 'startOnSelect', checked)}>
-    Start when a task is selected
+    Start when {widget.taskId ? 'this' : 'a'} task is selected
   </Toggle>
 {/if}

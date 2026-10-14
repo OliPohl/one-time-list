@@ -50,6 +50,12 @@ function addHook() {
     }
     // Task list checkboxes can be ticked, see `toggleTask`.
     if (node.tagName === 'INPUT') node.removeAttribute('disabled');
+    // Only images from the web, loaded once they're near, without telling their site which page they're on.
+    if (node.tagName === 'IMG') {
+      if (!/^https?:\/\//i.test(node.getAttribute('src') ?? '')) node.removeAttribute('src');
+      node.setAttribute('loading', 'lazy');
+      node.setAttribute('referrerpolicy', 'no-referrer');
+    }
   });
 }
 

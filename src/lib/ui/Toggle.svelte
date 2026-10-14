@@ -12,7 +12,10 @@
 
 
 <style>
+  /* Positioned, so the hidden checkbox stays inside it: placed by something further out, it would stick out of
+     whatever clips the toggle (a widget's edit panel while it slides) and make the page around it scroll. */
   .toggle {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 8px;

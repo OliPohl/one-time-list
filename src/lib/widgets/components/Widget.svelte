@@ -1,5 +1,6 @@
 <!-- src/lib/widgets/components/Widget.svelte -->
-<!-- Shared shell for all widgets: layout, border state, controls, edit panel and dragging. -->
+<!-- Shared shell for all widgets: layout, border state, controls, edit panel and dragging. The edit panel holds the
+     widget's settings (`editor`, if it has any) and, at its bottom, removing the widget. -->
 <script>
   import { slide } from 'svelte/transition';
   import { layout } from '../layout.svelte.js';
@@ -36,7 +37,9 @@
     fitTime = false,
     editor,
     /** Shown under the display, always (the calculator's keys). @type {import('svelte').Snippet | undefined} */
-    body
+    body,
+    /** A remove button with the controls too (in a task's popup), not only in the edit panel. */
+    quickRemove = false
   } = $props();
 
   /** After the first click on remove, a second click within this time removes the widget. */
@@ -115,7 +118,7 @@
   {/if}
 
   <div class="head">
-    <span class="type-icon m3-icon">{icon}</span>
+    <span class="type-icon m3-icon" title={label}>{icon}</span>
     <span class="label">{label}</span>
   </div>
 
@@ -136,19 +139,19 @@
       <span class="control placeholder m3-icon" aria-hidden="true">check_circle</span>
     {/each}
 
-    {#if editor}
-      <button
-        class="control m3-icon"
-        class:active={editing}
-        title={editing ? 'Done' : 'Edit'}
-        onclick={() => (editing = !editing)}>{editing ? 'check' : 'edit_square'}</button>
-    {/if}
-
     <button
-      class="control remove m3-icon"
-      class:armed={removeArmed}
-      title={removeArmed ? 'Click again to remove' : 'Remove Widget'}
-      onclick={requestRemove}>{removeArmed ? 'delete_forever' : 'delete'}</button>
+      class="control m3-icon"
+      class:active={editing}
+      title={editing ? 'Done' : 'Edit'}
+      onclick={() => (editing = !editing)}>{editing ? 'check' : 'edit_square'}</button>
+
+    {#if quickRemove}
+      <button
+        class="control quick-remove m3-icon"
+        class:armed={removeArmed}
+        title={removeArmed ? 'Click again to remove' : 'Remove Widget'}
+        onclick={requestRemove}>{removeArmed ? 'delete_forever' : 'delete'}</button>
+    {/if}
   </div>
 
   {#if body}
@@ -157,9 +160,13 @@
     </div>
   {/if}
 
-  {#if editing && editor}
+  {#if editing}
     <div class="editor" transition:slide={{ duration: 250 }}>
-      {@render editor()}
+      {@render editor?.()}
+      <button class="remove" class:armed={removeArmed} onclick={requestRemove}>
+        <span class="remove-icon m3-icon">{removeArmed ? 'delete_forever' : 'delete'}</span>
+        <span>{removeArmed ? 'Click again to remove' : 'Remove Widget'}</span>
+      </button>
     </div>
   {/if}
 </div>
@@ -184,8 +191,9 @@
     -webkit-user-select: none;
     -webkit-touch-callout: none;
 
+    /* No fade of the border color: a countdown starting or ending swaps the border for the ProgressBorder at once,
+       fading, both would show (or neither) for a moment. */
     transition:
-      border-color 0.4s,
       border-radius 0.3s,
       opacity 0.3s,
       transform 0.15s;
@@ -393,17 +401,47 @@
     pointer-events: none;
   }
 
-  .control.remove {
+  .control.quick-remove {
     color: var(--text-muted);
   }
 
-  .control.remove:hover {
+  .control.quick-remove:hover,
+  .control.quick-remove.armed {
     color: var(--red);
   }
 
-  .control.remove.armed {
-    color: var(--red);
+  .control.quick-remove.armed {
     font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 25;
+  }
+
+  /* At the bottom of the edit panel, like "Delete Page" in a page's settings. */
+  .remove {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: "Roboto Slab", serif;
+    font-size: 15px;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+
+  .remove:hover,
+  .remove.armed {
+    color: var(--red);
+  }
+
+  .remove-icon {
+    font-size: 22px;
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 22;
+  }
+
+  .remove.armed .remove-icon {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 22;
   }
 
   .body {

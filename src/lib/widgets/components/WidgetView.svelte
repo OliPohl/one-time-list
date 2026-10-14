@@ -10,7 +10,8 @@
 
   const widgets = getWidgets();
 
-  let { widget, variant = 'dock', ghost = false } = $props();
+  /** `quickRemove`: a remove button with the controls too, see Widget. */
+  let { widget, variant = 'dock', ghost = false, quickRemove = false } = $props();
 
   let type = $derived(WIDGET_TYPES[/** @type {keyof typeof WIDGET_TYPES} */ (widget.type)]);
   let view = $derived(widgetView(widget, widgets));
@@ -43,6 +44,7 @@
     breakEnd={view.breakEnd}
     focused={active}
     fitTime={isCalculator}
+    {quickRemove}
     editor={EDITORS[widget.type] ? editor : undefined}
     body={isCalculator ? keypad : undefined} />
 {/if}

@@ -1,5 +1,6 @@
-<!-- src/lib/pages/kanban/KanbanCard.svelte -->
-<!-- A Kanban board on the dashboard: every column with its current task and how many tasks are left in it. -->
+<!-- src/lib/pages/board/BoardCard.svelte -->
+<!-- A board on the dashboard: every page on it, a Tasks list with its current task and how many tasks are left in
+     it, a note as such. -->
 <script>
   import { getBoardStore } from './board.svelte.js';
 
@@ -11,16 +12,17 @@
   const board = getBoardStore(page.id);
 </script>
 
-<ul class="columns">
-  {#each board.columns as column (column.id)}
-    {@const left = column.list.tasks.length + (column.list.currentTask ? 1 : 0)}
-    <li class="column">
+<ul class="items">
+  {#each board.items as item (item.id)}
+    {@const list = board.listOf(item)}
+    {@const left = list ? list.tasks.length + (list.currentTask ? 1 : 0) : 0}
+    <li class="item">
       <div class="row">
-        <span class="name">{column.name}</span>
-        <span class="count">{left} {left === 1 ? 'task' : 'tasks'}</span>
+        <span class="name">{board.nameOf(item)}</span>
+        <span class="count">{list ? `${left} ${left === 1 ? 'task' : 'tasks'}` : 'Note'}</span>
       </div>
-      {#if column.list.currentTask}
-        <span class="current">{column.list.currentTask.text}</span>
+      {#if list?.currentTask}
+        <span class="current">{list.currentTask.text}</span>
       {/if}
     </li>
   {/each}
@@ -28,7 +30,7 @@
 
 
 <style>
-  .columns {
+  .items {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -37,7 +39,7 @@
     gap: 10px;
   }
 
-  .column {
+  .item {
     display: flex;
     flex-direction: column;
     gap: 4px;
