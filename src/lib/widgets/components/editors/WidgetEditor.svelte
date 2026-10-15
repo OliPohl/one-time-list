@@ -4,9 +4,10 @@
   import ClockEditor from './ClockEditor.svelte';
   import TimerEditor from './TimerEditor.svelte';
   import PomodoroEditor from './PomodoroEditor.svelte';
+  import ImageEditor from './ImageEditor.svelte';
 
   /** Widget types with settings, the others have no edit button. @type {Record<string, import('svelte').Component<any>>} */
-  export const EDITORS = { clock: ClockEditor, timer: TimerEditor, pomodoro: PomodoroEditor };
+  export const EDITORS = { clock: ClockEditor, timer: TimerEditor, pomodoro: PomodoroEditor, image: ImageEditor };
 </script>
 
 <script>

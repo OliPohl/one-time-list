@@ -1,7 +1,7 @@
 // src/lib/pages/board/board.svelte.js
 // State of one board page: its columns side by side, each a stack of pages (items), and the labels of the whole
-// board. An item is a local Tasks list (current task, list, history, its widgets), a local note, or a link to a
-// Tasks or Notes page that shows that page's own data. Lives outside the page component like the Tasks page's
+// board. An item is a local Tasks list (current task, list, history, its widgets), a local note or whiteboard, or a
+// link to a Tasks, Notes or Whiteboard page that shows that page's own data. Lives outside the page component like the Tasks page's
 // store, so widgets keep running while another page is shown and the dashboard can read it.
 
 import { untrack } from 'svelte';
@@ -14,12 +14,14 @@ import { getNote } from '../notes/store.svelte.js';
 import { pages } from '../../app/pages.svelte.js';
 import tasksType from '../tasks/index.js';
 import notesType from '../notes/index.js';
+import whiteboardType from '../whiteboard/index.js';
+import { loadDrawing, saveDrawing, deleteDrawing } from '../whiteboard/store.js';
 
 /** @typedef {import('../tasks/list.svelte.js').TaskItem} TaskItem */
 /** @typedef {import('../tasks/list.svelte.js').Label} Label */
 /** @typedef {import('../tasks/list.svelte.js').LabelOwner} LabelOwner */
 /** @typedef {import('../types.js').Page} Page */
-/** Page types a board can hold, local or linked. @typedef {'tasks' | 'notes'} ItemKind */
+/** Page types a board can hold, local or linked. @typedef {'tasks' | 'notes' | 'whiteboard'} ItemKind */
 /**
  * Settings of a local item. With `own` it has its own colors and widgets option, without it the board's.
  * @typedef {{own?: boolean, colors?: string, widgets?: boolean}} ItemOptions
@@ -28,6 +30,7 @@ import notesType from '../notes/index.js';
  * A page on the board. Ids are unique on the whole board. A Tasks list has its own widgets, like a Tasks page.
  * @typedef {{id: string, kind: 'tasks', name: string, options: ItemOptions, list: TaskList, widgets: WidgetStore}
  *   | {id: string, kind: 'notes', name: string, options: ItemOptions, text: string}
+ *   | {id: string, kind: 'whiteboard', name: string, options: ItemOptions}
  *   | {id: string, kind: 'link', pageId: string}} Item
  */
 /** Pages stacked on top of each other, never empty. @typedef {{id: string, items: Item[]}} Column */
@@ -39,13 +42,12 @@ import notesType from '../notes/index.js';
 /** Where a task is in its list. @typedef {'list' | 'current' | 'history'} TaskSource */
 
 /** The page types an item can be, by kind. */
-const TYPES = { tasks: tasksType, notes: notesType };
-
-/** Name of the first list of a new board. */
-const FIRST_LIST = 'To Do';
+const TYPES = { tasks: tasksType, notes: notesType, whiteboard: whiteboardType };
 
 /** @param {string} pageId */
 const boardKey = (pageId) => `otl_board_${pageId}`;
+/** Where the drawing of a whiteboard on a board is saved (see whiteboard/store.js). @param {string} pageId @param {string} itemId */
+const itemDrawingId = (pageId, itemId) => `board_${pageId}_${itemId}`;
 /** The widgets of a Tasks list on a board. @param {string} pageId @param {string} itemId */
 const itemWidgetsKey = (pageId, itemId) => `otl_board_widgets_${pageId}_${itemId}`;
 
@@ -118,6 +120,7 @@ export class BoardStore {
     // Saved before an item could have its own widgets option: its own colors were its own settings.
     if (options.own === undefined && options.colors) options.own = true;
     if (saved.kind === 'notes') return { id: saved.id, kind: 'notes', name: saved.name, options, text: typeof saved.text === 'string' ? saved.text : '' };
+    if (saved.kind === 'whiteboard') return { id: saved.id, kind: 'whiteboard', name: saved.name, options };
     return { id: saved.id, kind: 'tasks', name: saved.name, options, ...this.#newList(saved.id, saved) };
   }
 
@@ -125,13 +128,16 @@ export class BoardStore {
   #saveItem(item) {
     if (item.kind === 'link') return { id: item.id, kind: item.kind, pageId: item.pageId };
     if (item.kind === 'notes') return { id: item.id, kind: item.kind, name: item.name, options: item.options, text: item.text };
+    if (item.kind === 'whiteboard') return { id: item.id, kind: item.kind, name: item.name, options: item.options };
     return { id: item.id, kind: item.kind, name: item.name, options: item.options, ...item.list.toSaved() };
   }
 
-  /** A new local Tasks list or note. @param {ItemKind} kind @param {string} [name] @returns {Item} */
+  /** A new local Tasks list, note or whiteboard. @param {ItemKind} kind @param {string} [name] @returns {Item} */
   #newItem(kind, name = TYPES[kind].defaultName) {
     const id = this.#newId();
-    return kind === 'tasks' ? { id, kind, name, options: {}, ...this.#newList(id) } : { id, kind, name, options: {}, text: '' };
+    if (kind === 'tasks') return { id, kind, name, options: {}, ...this.#newList(id) };
+    if (kind === 'whiteboard') return { id, kind, name, options: {} };
+    return { id, kind, name, options: {}, text: '' };
   }
 
   /** Puts an item into a new column at the right end. @param {Item} item */
@@ -154,8 +160,8 @@ export class BoardStore {
       if (Array.isArray(column.items)) this.columns.push({ id: column.id, items });
       else for (const item of items) this.#pushColumn(item);
     }
-    // A new board starts with one empty list.
-    if (!saved.columns) this.#pushColumn(this.#newItem('tasks', FIRST_LIST));
+    // A new board has no columns, it asks for its first one (see BoardPage).
+
     this.labels = Array.isArray(saved.labels) ? saved.labels : [];
 
     this.#stopEffects?.();
@@ -201,7 +207,10 @@ export class BoardStore {
   /** Stops the store and deletes everything it saved. Linked pages stay. */
   destroy() {
     this.#stopEffects?.();
-    for (const item of this.items) if (item.kind === 'tasks') item.widgets.destroy();
+    for (const item of this.items) {
+      if (item.kind === 'tasks') item.widgets.destroy();
+      if (item.kind === 'whiteboard') deleteDrawing(itemDrawingId(this.#pageId, item.id));
+    }
     localStorage.removeItem(boardKey(this.#pageId));
     localStorage.removeItem(widgetsKey(this.#pageId));
   }
@@ -226,11 +235,18 @@ export class BoardStore {
     return item.kind === 'link' ? pages.get(item.pageId) : undefined;
   }
 
-  /** Tasks or notes, also for a linked page. @param {Item} item @returns {ItemKind | undefined} */
+  /** Tasks, notes or a whiteboard, also for a linked page. @param {Item} item @returns {ItemKind | undefined} */
   kindOf(item) {
     if (item.kind !== 'link') return item.kind;
     const type = this.pageOf(item)?.type;
-    return type === 'tasks' || type === 'notes' ? type : undefined;
+    return type === 'tasks' || type === 'notes' || type === 'whiteboard' ? type : undefined;
+  }
+
+  /** Where the drawing of a whiteboard is saved, a linked Whiteboard page's own. Null for others. @param {Item} item */
+  drawingOf(item) {
+    if (item.kind === 'whiteboard') return itemDrawingId(this.#pageId, item.id);
+    if (item.kind === 'link' && this.kindOf(item) === 'whiteboard') return item.pageId;
+    return null;
   }
 
   /** @param {Item} item */
@@ -303,7 +319,7 @@ export class BoardStore {
     return this.items.some((item) => item.kind === 'link' && item.pageId === pageId);
   }
 
-  /** Adds a local Tasks list or note in a new column at the right end. @param {ItemKind} kind */
+  /** Adds a local Tasks list, note or whiteboard in a new column at the right end. @param {ItemKind} kind */
   addItem(kind) {
     this.#pushColumn(this.#newItem(kind));
   }
@@ -375,13 +391,14 @@ export class BoardStore {
   removeItem(id) {
     const item = this.item(id);
     if (item?.kind === 'tasks') item.widgets.destroy();
+    if (item?.kind === 'whiteboard') deleteDrawing(itemDrawingId(this.#pageId, item.id));
     for (const column of this.columns) column.items = column.items.filter((each) => each.id !== id);
     this.columns = this.columns.filter((column) => column.items.length > 0);
   }
 
   /**
-   * Turns a local item into a page of its own, with its tasks and their labels and its widgets or its note, with
-   * its settings. The item then links to the new page.
+   * Turns a local item into a page of its own, with its tasks and their labels and its widgets, its note or its
+   * drawing, with its settings. The item then links to the new page.
    * @param {string} id
    * @param {Record<string, any>} boardOptions the board's, for an item with the board's colors
    * @returns {Page | null} the new page
@@ -407,6 +424,10 @@ export class BoardStore {
       // Docked on the new page, like widgets added there.
       store.widgets.list = $state.snapshot(item.widgets.list).map((widget) => ({ ...widget, pos: null }));
       item.widgets.destroy();
+    } else if (item.kind === 'whiteboard') {
+      const drawingId = itemDrawingId(this.#pageId, item.id);
+      saveDrawing(page.id, loadDrawing(drawingId));
+      deleteDrawing(drawingId);
     } else {
       getNote(page.id).text = item.text;
     }

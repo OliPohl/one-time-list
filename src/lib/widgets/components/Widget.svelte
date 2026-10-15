@@ -39,7 +39,9 @@
     /** Shown under the display, always (the calculator's keys). @type {import('svelte').Snippet | undefined} */
     body,
     /** A remove button with the controls too (in a task's popup), not only in the edit panel. */
-    quickRemove = false
+    quickRemove = false,
+    /** Only the body, edge to edge (an image): no head or display, the controls float over it while hovered. */
+    bare = false
   } = $props();
 
   /** After the first click on remove, a second click within this time removes the widget. */
@@ -92,6 +94,7 @@
 <div
   class="widget {variant} {tone}"
   class:break-end={breakEnd}
+  class:bare
   class:focused
   class:fit-time={fitTime}
   style:--time-chars={fitTime ? Math.max(1, time.length) : undefined}
@@ -103,8 +106,9 @@
   bind:offsetHeight={boxHeight}
   {@attach pressDrag({
     enabled: () => !isGhost,
-    // Only empty space starts a drag, never buttons, inputs, the edit panel or the body (calculator keys).
-    ignore: 'button, input, label, .editor, .body',
+    // Only empty space starts a drag, never buttons, inputs, the edit panel or the body (calculator keys). A bare
+    // widget is all body, it's dragged by that.
+    ignore: 'button, input, label, .editor, .body:not(.draggable)',
     isDragging: () => layout.drag?.id === widget.id,
     onPressChange: (value) => (pressing = value),
     onStart: (point, rect) => {
@@ -155,7 +159,7 @@
   </div>
 
   {#if body}
-    <div class="body">
+    <div class="body" class:draggable={bare}>
       {@render body()}
     </div>
   {/if}
@@ -457,6 +461,60 @@
     margin: 6px 0 12px;
     padding-top: 14px;
     border-top: 1.5px dashed var(--line);
+  }
+
+  /* Bare (an image): the body fills the widget inside its border, the corners cut off with the widget's. The
+     controls float over its top right corner, shown while hovered (always on touch screens, there's no hover). */
+  .widget.bare {
+    /* Never wider than the widget: a narrow one (on the side) wraps its edit panel instead of cutting it off. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "body"
+      "editor";
+    padding: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .bare .head,
+  .bare .display {
+    display: none;
+  }
+
+  .bare .body {
+    margin: 0;
+  }
+
+  .bare .controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    flex-direction: row;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background-color: color-mix(in srgb, var(--surface), transparent 15%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .bare:hover .controls,
+  .bare:focus-within .controls,
+  .bare.editing .controls {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .bare .controls {
+      opacity: 1;
+    }
+  }
+
+  .bare .editor {
+    min-width: 0;
+    margin: 0;
+    padding: 14px 18px;
   }
 
   @media (max-width: 520px) {

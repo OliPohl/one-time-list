@@ -1,6 +1,6 @@
 // src/lib/pages/board/index.js
-// Board: columns side by side, each a stack of pages (Tasks lists and notes, local or linked). Its options are the
-// colors and widgets, which each page can also set for itself.
+// Board: columns side by side, each a stack of pages (Tasks lists, notes and whiteboards, local or linked). Its
+// options are the colors and widgets, which each page can also set for itself.
 
 import BoardPage from './BoardPage.svelte';
 import BoardCard from './BoardCard.svelte';
@@ -14,7 +14,7 @@ export default {
   type: 'board',
   group: 'page',
   label: 'Board',
-  description: 'Tasks and notes side by side, new or linked from your pages.',
+  description: 'Tasks, notes and whiteboards side by side, new or linked from your pages.',
   icon: 'view_kanban',
   defaultName: 'Board',
   component: BoardPage,

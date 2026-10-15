@@ -11,6 +11,7 @@
   import { navigation } from '../../../app/navigation.svelte.js';
   import tasksType from '../../tasks/index.js';
   import notesType from '../../notes/index.js';
+  import whiteboardType from '../../whiteboard/index.js';
 
   /**
    * @type {{
@@ -22,7 +23,7 @@
    */
   let { item, board, boardPage, onClose } = $props();
 
-  const TYPES = { tasks: tasksType, notes: notesType };
+  const TYPES = { tasks: tasksType, notes: notesType, whiteboard: whiteboardType };
 
   let linkedPage = $derived(board.pageOf(item));
   let linkedType = $derived(linkedPage ? TYPES[/** @type {keyof typeof TYPES} */ (linkedPage.type)] : undefined);

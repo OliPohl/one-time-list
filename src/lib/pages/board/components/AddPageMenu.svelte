@@ -1,10 +1,8 @@
 <!-- src/lib/pages/board/components/AddPageMenu.svelte -->
-<!-- "Add New Column" in the board's header, next to the settings: a menu to add a new Tasks list or note to the board, or
-     to link a Tasks or Notes page that isn't on the board yet. -->
+<!-- "Add New Column" in the board's header, next to the settings: a menu to add a new Tasks list, note or whiteboard
+     to the board, or to link a Tasks, Notes or Whiteboard page that isn't on the board yet (AddPageOptions). -->
 <script>
-  import { pages } from '../../../app/pages.svelte.js';
-  import tasksType from '../../tasks/index.js';
-  import notesType from '../../notes/index.js';
+  import AddPageOptions from './AddPageOptions.svelte';
 
   /**
    * @type {{
@@ -17,26 +15,6 @@
   let open = $state(false);
   /** @type {HTMLElement} */
   let root;
-
-  /** The kinds of page a board can hold. */
-  const TYPES = { tasks: tasksType, notes: notesType };
-  const KINDS = /** @type {import('../board.svelte.js').ItemKind[]} */ (Object.keys(TYPES));
-
-  let linkable = $derived(pages.list.filter((page) => page.type in TYPES && !board.isLinked(page.id)));
-
-  /** @param {import('../board.svelte.js').ItemKind} kind */
-  function add(kind) {
-    board.addItem(kind);
-    open = false;
-    onAdded();
-  }
-
-  /** @param {string} pageId */
-  function link(pageId) {
-    board.linkPage(pageId);
-    open = false;
-    onAdded();
-  }
 
   /** @param {MouseEvent} event */
   function handleClickOutside(event) {
@@ -51,23 +29,12 @@
 
   {#if open}
     <div class="menu" role="menu">
-      <span class="heading">New</span>
-      {#each KINDS as kind (kind)}
-        <button class="option" role="menuitem" onclick={() => add(kind)}>
-          <span class="option-icon m3-icon">{TYPES[kind].icon}</span>
-          <span class="option-name">{TYPES[kind].label}</span>
-        </button>
-      {/each}
-
-      {#if linkable.length > 0}
-        <span class="heading">Link Page</span>
-        {#each linkable as page (page.id)}
-          <button class="option" role="menuitem" onclick={() => link(page.id)}>
-            <span class="option-icon m3-icon">{TYPES[/** @type {keyof typeof TYPES} */ (page.type)].icon}</span>
-            <span class="option-name">{page.name}</span>
-          </button>
-        {/each}
-      {/if}
+      <AddPageOptions
+        {board}
+        onAdded={() => {
+          open = false;
+          onAdded();
+        }} />
     </div>
   {/if}
 </div>
@@ -128,43 +95,4 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .heading {
-    padding: 8px 14px 4px;
-    font-family: "Roboto Slab", serif;
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-
-  .option {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 14px;
-    background: none;
-    border: none;
-    border-radius: 18px;
-    color: var(--text-soft);
-    font-family: "Roboto Slab", serif;
-    font-size: 16px;
-    text-align: left;
-    cursor: pointer;
-    transition: color 0.4s, background-color 0.4s;
-  }
-
-  .option:hover {
-    color: var(--accent);
-    background-color: var(--surface-active);
-  }
-
-  .option-icon {
-    flex-shrink: 0;
-    font-size: 22px;
-    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 22;
-  }
-
-  .option-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 </style>

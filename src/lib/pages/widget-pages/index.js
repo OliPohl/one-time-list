@@ -14,7 +14,10 @@ const DESCRIPTIONS = {
   clock: 'The time, with an alarm.',
   timer: 'A countdown that rings when it ends.',
   pomodoro: 'Focus sessions with breaks in between.',
-  calculator: 'A simple calculator, also with the keyboard.'
+  calculator: 'A simple calculator, also with the keyboard.',
+  image: 'A picture, uploaded or from a link.',
+  // No page of its own, there's the Whiteboard page.
+  whiteboard: 'A small whiteboard to sketch on.'
 };
 
 /**
@@ -47,3 +50,4 @@ export const clock = widgetPageType('clock');
 export const timer = widgetPageType('timer');
 export const pomodoro = widgetPageType('pomodoro');
 export const calculator = widgetPageType('calculator');
+export const image = widgetPageType('image');

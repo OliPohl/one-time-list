@@ -174,21 +174,6 @@
     border-radius: 30px;
   }
 
-  @media (max-width: 500px) {
-    .note {
-      padding: 20px 20px 0;
-    }
-
-    .toolbar {
-      margin: -20px -20px 12px;
-      padding: 6px 12px;
-    }
-
-    .status {
-      margin: 0 -20px;
-      padding: 8px 20px;
-    }
-  }
 
   /* Like Notepad's formatting bar: across the top of the note, stays in view while a long note scrolls. */
   .toolbar {
@@ -284,5 +269,35 @@
   .status-counts {
     display: flex;
     gap: 16px;
+  }
+
+  /* On a phone the note fills the screen below the header, from edge to edge. */
+  @media (max-width: 500px) {
+    .notes-page {
+      min-height: 100dvh;
+      padding: 0;
+    }
+
+    .notes-page :global(.page-header) {
+      padding-inline: 10px;
+    }
+
+    .note {
+      margin-top: 8px;
+      padding: 16px 20px 0;
+      border-radius: 0;
+    }
+
+    .toolbar {
+      margin: -16px -20px 12px;
+      padding: 6px 12px;
+      border-radius: 0;
+    }
+
+    .status {
+      margin: 0 -20px;
+      padding: 8px 20px calc(8px + env(safe-area-inset-bottom));
+      border-radius: 0;
+    }
   }
 </style>

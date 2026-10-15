@@ -1,7 +1,8 @@
 <!-- src/lib/pages/widget-pages/WidgetPageView.svelte -->
 <!-- The body of a widget page: the time in big, the bar, the status and the controls.
      Used by the widget page and, smaller (`compact`), by its card on the dashboard.
-     A calculator shows its number with the calculation above it and its keys: large on the page, small on the card. -->
+     A calculator shows its number with the calculation above it and its keys: large on the page, small on the card.
+     An image shows just the image, as big as fits. -->
 <script>
   import { widgetOf, getWidgetPageStore } from './store.svelte.js';
   import { widgetView, elapsedNow } from '$lib/widgets/views.js';
@@ -26,10 +27,30 @@
   let timeChars = $derived(view ? [...view.time] : []);
   /** The card's calculator takes the keyboard (after a click on it), its screen shows it. */
   let calcActive = $state(false);
+  let imageFailed = $state(false);
+
+  // A new image gets another try.
+  $effect(() => {
+    void widget?.src;
+    imageFailed = false;
+  });
 </script>
 
-<div class="widget-view" class:compact class:calculator={widget?.type === 'calculator'} class:break-end={view?.breakEnd}>
-  {#if view && widget?.type === 'calculator'}
+<div
+  class="widget-view"
+  class:compact
+  class:calculator={widget?.type === 'calculator'}
+  class:image={widget?.type === 'image'}
+  class:break-end={view?.breakEnd}>
+  {#if widget?.type === 'image'}
+    {#if !widget.src}
+      <p class="no-image"><span class="m3-icon">add_photo_alternate</span>No image yet. Add one in the page's settings.</p>
+    {:else if imageFailed}
+      <p class="no-image"><span class="m3-icon">broken_image</span>The image couldn't be loaded.</p>
+    {:else}
+      <img class="picture" src={widget.src} alt="" draggable="false" referrerpolicy="no-referrer" onerror={() => (imageFailed = true)} />
+    {/if}
+  {:else if view && widget?.type === 'calculator'}
     <!-- A calculator's body, the number in its screen, the keys below. On the card a click on it turns the keyboard on. -->
     <div class="calc-body">
       <div class="calc-display" class:active={calcActive} style:--chars={Math.max(1, view.time.length)}>
@@ -91,6 +112,46 @@
     align-items: center;
     color: var(--text);
     font-family: "Roboto Slab", serif;
+  }
+
+  /* An image: as big as fits on the page, below the header. On the card it fills the card's middle. */
+  .image {
+    width: 100%;
+  }
+
+  .picture {
+    display: block;
+    max-width: min(100%, 1200px);
+    max-height: calc(100vh - 220px);
+    object-fit: contain;
+    border-radius: 30px;
+    box-shadow: 0 12px 40px var(--shadow);
+  }
+
+  .compact.image {
+    flex: 1;
+    min-height: 0;
+    justify-content: center;
+  }
+
+  .compact .picture {
+    max-height: 100%;
+    border-radius: 22px;
+    box-shadow: none;
+  }
+
+  .no-image {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-muted);
+  }
+
+  .compact .no-image {
+    font-size: 14px;
   }
 
   /* The full width, the calculator takes up to 480px of it. */

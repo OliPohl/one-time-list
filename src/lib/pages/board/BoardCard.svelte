@@ -1,6 +1,6 @@
 <!-- src/lib/pages/board/BoardCard.svelte -->
 <!-- A board on the dashboard: every page on it, a Tasks list with its current task and how many tasks are left in
-     it, a note as such. -->
+     it, a note or whiteboard as such. -->
 <script>
   import { getBoardStore } from './board.svelte.js';
 
@@ -19,7 +19,7 @@
     <li class="item">
       <div class="row">
         <span class="name">{board.nameOf(item)}</span>
-        <span class="count">{list ? `${left} ${left === 1 ? 'task' : 'tasks'}` : 'Note'}</span>
+        <span class="count">{list ? `${left} ${left === 1 ? 'task' : 'tasks'}` : board.kindOf(item) === 'whiteboard' ? 'Whiteboard' : 'Note'}</span>
       </div>
       {#if list?.currentTask}
         <span class="current">{list.currentTask.text}</span>

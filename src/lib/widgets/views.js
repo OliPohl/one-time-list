@@ -5,6 +5,7 @@
 import { formatCountdown, formatRemaining, remainingOf, phaseDuration } from './store.svelte.js';
 import { frameClock } from '../utils/frameClock.svelte.js';
 import { settings } from '../app/settings.svelte.js';
+import { openWhiteboard } from '../pages/whiteboard/window.svelte.js';
 
 /** @typedef {import('./store.svelte.js').WidgetStore} WidgetStore */
 /** `label` is shown next to the icon where there is room (widget pages). */
@@ -170,7 +171,23 @@ function calculatorView(widget) {
   return { time: widget.entry, sub: widget.error || widget.expression, slots: 0, progress: null, controls: [] };
 }
 
-const VIEWS = { clock: clockView, timer: timerView, pomodoro: pomodoroView, calculator: calculatorView };
+/** An image shows itself (see WidgetImage), no time and no controls. @param {any} widget @returns {TypeView} */
+function imageView(widget) {
+  return { time: '', sub: widget.src ? '' : 'No image yet', slots: 0, progress: null, controls: [] };
+}
+
+/** A whiteboard shows its drawing (see WidgetWhiteboard), its control opens it to draw. @param {any} widget @returns {TypeView} */
+function whiteboardView(widget) {
+  return {
+    time: '',
+    sub: '',
+    slots: 1,
+    progress: null,
+    controls: [{ icon: 'open_in_full', title: 'Open Whiteboard', onclick: () => openWhiteboard(widget.drawingId, 'Whiteboard') }]
+  };
+}
+
+const VIEWS = { clock: clockView, timer: timerView, pomodoro: pomodoroView, calculator: calculatorView, image: imageView, whiteboard: whiteboardView };
 
 /** A pomodoro that rings because its break ended. @param {any} widget */
 export function isBreakEnd(widget) {

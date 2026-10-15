@@ -31,6 +31,28 @@ export function deleteDrawing(pageId) {
   localStorage.removeItem(storageKey(pageId));
 }
 
+/**
+ * Deletes the drawings of whiteboard widgets that are gone: removed, or with their task or page. They're not
+ * deleted with the widget, as a widget moves to another list with its task (as a copy, the old one is removed).
+ * A drawing is in use while any saved data of the app mentions its id. Run on startup, when everything is saved.
+ */
+export function cleanUpWidgetDrawings() {
+  try {
+    const prefix = storageKey('widget_');
+    const drawings = Object.keys(localStorage).filter((key) => key.startsWith(prefix));
+    if (drawings.length === 0) return;
+    const saved = Object.keys(localStorage)
+      .filter((key) => key.startsWith('otl_') && !key.startsWith(storageKey('')))
+      .map((key) => localStorage.getItem(key) ?? '')
+      .join('\n');
+    for (const key of drawings) {
+      if (!saved.includes(`"${key.slice(storageKey('').length)}"`)) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage blocked, nothing to clean up.
+  }
+}
+
 /** How many shapes a drawing has, for the dashboard. @param {string} pageId */
 export function shapeCount(pageId) {
   return loadDrawing(pageId).elements.filter((element) => !element.isDeleted).length;

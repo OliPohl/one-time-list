@@ -6,7 +6,7 @@ import tasks from './tasks/index.js';
 import board from './board/index.js';
 import notes from './notes/index.js';
 import whiteboard from './whiteboard/index.js';
-import { clock, timer, pomodoro, calculator } from './widget-pages/index.js';
+import { clock, timer, pomodoro, calculator, image } from './widget-pages/index.js';
 
 // In the order of the "Add New" list.
 /** @type {Record<string, import('./types.js').PageType>} */
@@ -18,7 +18,8 @@ export const PAGE_TYPES = {
   [clock.type]: clock,
   [timer.type]: timer,
   [pomodoro.type]: pomodoro,
-  [calculator.type]: calculator
+  [calculator.type]: calculator,
+  [image.type]: image
 };
 
 /** Types that were renamed: old key -> current key. Saved pages are updated on load. */

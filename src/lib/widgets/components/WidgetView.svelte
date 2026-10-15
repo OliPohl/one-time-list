@@ -4,6 +4,8 @@
   import Widget from './Widget.svelte';
   import WidgetEditor, { EDITORS } from './editors/WidgetEditor.svelte';
   import CalculatorPad from './CalculatorPad.svelte';
+  import WidgetImage from './WidgetImage.svelte';
+  import WidgetWhiteboard from './WidgetWhiteboard.svelte';
   import { WIDGET_TYPES } from '../store.svelte.js';
   import { widgetView } from '../views.js';
   import { getWidgets } from '../context.js';
@@ -16,6 +18,7 @@
   let type = $derived(WIDGET_TYPES[/** @type {keyof typeof WIDGET_TYPES} */ (widget.type)]);
   let view = $derived(widgetView(widget, widgets));
   let isCalculator = $derived(widget.type === 'calculator');
+  let isImage = $derived(widget.type === 'image');
   /** The calculator takes the keyboard after it was clicked. */
   let active = $state(false);
 </script>
@@ -26,6 +29,14 @@
 
 {#snippet keypad()}
   <CalculatorPad {widget} {ghost} bind:active />
+{/snippet}
+
+{#snippet picture()}
+  <WidgetImage {widget} {variant} />
+{/snippet}
+
+{#snippet drawing()}
+  <WidgetWhiteboard {widget} {ghost} />
 {/snippet}
 
 {#if type}
@@ -45,6 +56,7 @@
     focused={active}
     fitTime={isCalculator}
     {quickRemove}
+    bare={(isImage && Boolean(widget.src)) || widget.type === 'whiteboard'}
     editor={EDITORS[widget.type] ? editor : undefined}
-    body={isCalculator ? keypad : undefined} />
+    body={isCalculator ? keypad : isImage && widget.src ? picture : widget.type === 'whiteboard' ? drawing : undefined} />
 {/if}

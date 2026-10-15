@@ -12,7 +12,8 @@
   <h4>In short</h4>
   <p>
     This app doesn't collect any data about you. Everything you enter stays in your own browser.
-    There are no accounts, no cookies, no tracking, no analytics and no ads.
+    There are no accounts, no cookies, no tracking, no analytics and no ads. Only content you add from other
+    sites yourself (such as a video embedded in a whiteboard) can bring its own, see below.
   </p>
 
   <h4>What is stored and where</h4>
@@ -21,17 +22,51 @@
     device, so they are still there the next time you open the app. They are never sent to me or anyone else, and
     they don't sync between devices or browsers.
   </p>
+  <p>
+    This includes images you upload: a picture for an image widget, or one you put on a whiteboard, is stored
+    in your browser with the rest (an image widget's picture is made smaller first, so it fits). Uploading it
+    doesn't send it anywhere. The whiteboard's library (shapes you keep to reuse) is stored the same way.
+  </p>
 
   <h4>No third parties</h4>
   <p>
     The app itself loads nothing from other servers: fonts, icons and the whiteboard (Excalidraw) are served
-    from this site. Sounds are generated in your browser.
+    from this site. Sounds are generated in your browser. Only if the whiteboard's fonts can't be loaded from this
+    site, it loads them from the esm.sh CDN instead.
   </p>
   <p>
-    Only what you add yourself is loaded from elsewhere: an image you put into a note or task description by its
-    web address is loaded from that address (without telling it which page it's on), and the whiteboard's links
-    and web embeds open or load their sites when you use them. Those sites then receive technical data such as
-    your IP address.
+    Only what you add or open yourself is loaded from elsewhere, and those sites then receive technical data such
+    as your IP address:
+  </p>
+  <ul>
+    <li>
+      An image you add by its web address (to a note, a task description or an image widget) is loaded from that
+      address, without telling it which page it's on.
+    </li>
+    <li>Links on a whiteboard open their sites when you click them.</li>
+    <li>
+      Web embeds on a whiteboard (a YouTube or Vimeo video, a tweet, a Figma file and the like) are loaded from
+      their site when you open a whiteboard that has one and the embed is on screen. Previews (on a board, the
+      dashboard or a widget) only show a placeholder and load nothing. The site learns the address of this app and
+      may set its own cookies and track what you do in the embed, under its own privacy policy. YouTube videos are
+      loaded from youtube-nocookie.com, YouTube's privacy-enhanced mode, which according to YouTube doesn't use
+      cookies that track what you watch; Google's privacy policy still applies.
+    </li>
+    <li>
+      "Browse libraries" in the whiteboard's library opens Excalidraw's library site (libraries.excalidraw.com)
+      in a new tab. The address of this app is passed along, so that site can send a library back. When it does,
+      the app asks you first, and only then loads that library file from Excalidraw's site.
+    </li>
+    <li>
+      Publishing a library from the whiteboard sends the shapes you chose and what you enter in that form (name,
+      description, author name and handles) to Excalidraw's library service, which publishes them. Nothing is sent
+      unless you submit that form.
+    </li>
+    <li>The whiteboard's help links (documentation, GitHub, blog) open those sites.</li>
+  </ul>
+  <p>
+    The whiteboard runs without Excalidraw's online features: no collaboration, no sharing by link, no AI and
+    no analytics.
   </p>
 
   <h4>Hosting</h4>
@@ -80,6 +115,14 @@
 
   p {
     margin: 0;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   a {

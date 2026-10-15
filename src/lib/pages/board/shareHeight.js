@@ -25,10 +25,10 @@ function naturalHeight(item) {
   let bottom = box.top + parseFloat(style.paddingTop);
   for (const child of marked.length > 0 ? marked : fill.children) bottom = Math.max(bottom, child.getBoundingClientRect().bottom);
   const content = bottom - box.top + fill.scrollTop + parseFloat(style.paddingBottom);
-  // What's above the scrolling part (name, "Add Task", current task) keeps its size even when the page is
-  // squeezed, so it's measured from the page's top, not taken from its current height.
-  const above = box.top - item.getBoundingClientRect().top;
-  return above + content;
+  // What's above the scrolling part (name, "Add Task", current task) and below it (the page's padding) keeps its
+  // size even when the page is squeezed, so it's measured from the page's edges, not taken from its current height.
+  const page = item.getBoundingClientRect();
+  return box.top - page.top + content + page.bottom - box.bottom;
 }
 
 /** How tall a column gets: two thirds of the window, at most the board's height. Keep in sync with the CSS. */

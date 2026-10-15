@@ -65,21 +65,29 @@ const FENCE = /^\s*(```|~~~)/;
 const EMPTY_HEADING = /^(\s{0,3})(#{1,6})[ \t]*$/;
 /** A list item, its indentation nests it, so it's kept as it is. */
 const LIST_ITEM = /^\s*([-*+]|\d+[.)])\s/;
+/** A line of only "-" or "=": under text, Markdown would make that text a (Setext) heading. */
+const UNDERLINE = /^( {0,3})(-+|=+)[ \t]*$/;
+/** Three or more "-": a divider. */
+const RULE = /^ {0,3}-{3,}[ \t]*$/;
 
 /**
  * Prepares the text for Markdown, outside code blocks:
  * - Like in Obsidian, "#" only makes a heading once text follows it. Until then it's shown as it is, Markdown
  *   would make it an empty (invisible) heading.
+ * - No Setext headings, like in the editor (see editor.js): a line of "-" or "=" under text stays text, "---" is a
+ *   divider there. Headings are only made with "#".
  * - Spaces (and tabs, 4 spaces each) at the start of a line show, like in a text editor. HTML would drop them.
  * @param {string} text
  */
 function prepareText(text) {
   let inCode = false;
-  return text
-    .split('\n')
-    .map((line) => {
+  const lines = text.split('\n');
+  return lines
+    .map((line, index) => {
       if (FENCE.test(line)) inCode = !inCode;
       if (inCode) return line;
+      const underText = index > 0 && lines[index - 1].trim() !== '';
+      if (underText && UNDERLINE.test(line)) return RULE.test(line) ? `\n${line}` : line.replace(UNDERLINE, '$1\\$2');
       const indent = /^[ \t]*/.exec(line)?.[0] ?? '';
       const kept = indent && !LIST_ITEM.test(line) ? '\u00a0'.repeat(indent.replace(/\t/g, '    ').length) + line.slice(indent.length) : line;
       return kept.replace(EMPTY_HEADING, '$1\\$2');

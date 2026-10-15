@@ -18,7 +18,9 @@ export const WIDGET_TYPES = {
   clock: { label: 'Clock', icon: 'schedule' },
   timer: { label: 'Timer', icon: 'timer' },
   pomodoro: { label: 'Pomodoro', icon: 'nutrition' },
-  calculator: { label: 'Calculator', icon: 'calculate' }
+  calculator: { label: 'Calculator', icon: 'calculate' },
+  image: { label: 'Image', icon: 'image' },
+  whiteboard: { label: 'Whiteboard', icon: 'draw' }
 };
 
 /** Snooze lengths a clock or timer can be set to, in minutes. 0 is off: no snooze button while it rings. */
@@ -49,6 +51,17 @@ function createWidget(type, id) {
   if (type === 'calculator') {
     // See calculator.js.
     return { id, type, pos: null, ...calculatorState() };
+  }
+
+  if (type === 'whiteboard') {
+    // Its drawing is saved on its own (see whiteboard/store.js), under an id unique in the whole app: a widget's id is
+    // only unique in its store, and the widget can move to another one with its task.
+    return { id, type, pos: null, drawingId: `widget_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}` };
+  }
+
+  if (type === 'image') {
+    // `src` is a link to an image, or an uploaded one as a data URL (see image.js). Empty until one is set.
+    return { id, type, pos: null, src: '' };
   }
 
   const { work, short, long, every } = POMODORO_PRESETS[0];
@@ -381,6 +394,13 @@ export class WidgetStore {
     widget.snooze = minutes;
   }
 
+  // Image
+
+  /** @param {any} widget @param {string} src a link, or a data URL, or '' for none */
+  setImage(widget, src) {
+    widget.src = src;
+  }
+
   // Timer & Pomodoro
 
   /** @param {any} widget */
@@ -456,9 +476,10 @@ export class WidgetStore {
     widget[option] = value;
   }
 
-  /** Stops all timers and alarms and puts every widget back to its start state. */
+  /** Stops all timers and alarms and puts every widget back to its start state. An image or a drawing stays. */
   resetAll() {
     for (const widget of this.list) {
+      if (widget.type === 'image' || widget.type === 'whiteboard') continue;
       if (widget.type === 'clock') {
         this.setAlarm(widget, 'off');
       } else {

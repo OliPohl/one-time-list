@@ -18,6 +18,10 @@
   import { dashboard } from './dashboard.svelte.js';
   import { folders } from './folders.svelte.js';
   import { settings } from './settings.svelte.js';
+  import WhiteboardWindow from '../pages/whiteboard/WhiteboardWindow.svelte';
+  import { whiteboardWindow, closeWhiteboard } from '../pages/whiteboard/window.svelte.js';
+  import { cleanUpWidgetDrawings } from '../pages/whiteboard/store.js';
+  import { addLibraryFromAddress } from '../pages/whiteboard/library.js';
 
   let isLoaded = $state(false);
 
@@ -37,7 +41,15 @@
     navigation.load();
     unlockAudio();
     isLoaded = true;
-    return syncAnimations();
+    // Once every page's saved state has been written again.
+    const cleanUp = setTimeout(cleanUpWidgetDrawings, 5000);
+    // Back from Excalidraw's library site with a library to add.
+    addLibraryFromAddress();
+    const stopAnimations = syncAnimations();
+    return () => {
+      clearTimeout(cleanUp);
+      stopAnimations();
+    };
   });
 </script>
 
@@ -58,6 +70,13 @@
       {:else if page && PageComponent}
         {#key page.id}
           <PageComponent {page} />
+        {/key}
+      {/if}
+
+      <!-- A whiteboard widget's drawing, opened to draw on (see whiteboard/window.svelte.js). In the page's colors. -->
+      {#if whiteboardWindow.current}
+        {#key whiteboardWindow.current.drawingId}
+          <WhiteboardWindow drawingId={whiteboardWindow.current.drawingId} name={whiteboardWindow.current.name} onClose={closeWhiteboard} />
         {/key}
       {/if}
     </div>

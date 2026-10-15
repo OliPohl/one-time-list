@@ -185,7 +185,9 @@ export function createEditor({ parent, text, signs = false, placeholder: placeho
         keymap.of(keys),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         surroundSelection,
-        markdown({ base: markdownLanguage, codeLanguages: languages }),
+        // Without Setext headings: dashes (or "=") typed under a line would turn it into a heading, as in
+        // Markdown. Here they stay text, "---" is a divider, headings are only made with "#" (see markdown.js).
+        markdown({ base: markdownLanguage, codeLanguages: languages, extensions: [{ remove: ['SetextHeading'] }] }),
         syntaxHighlighting(highlight),
         theme,
         placeholder(placeholderText),

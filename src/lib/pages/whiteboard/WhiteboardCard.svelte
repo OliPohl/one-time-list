@@ -1,6 +1,8 @@
 <!-- src/lib/pages/whiteboard/WhiteboardCard.svelte -->
-<!-- A Whiteboard page on the dashboard: how many shapes it has. Excalidraw itself isn't loaded for the dashboard. -->
+<!-- A Whiteboard page on the dashboard: the whole drawing as a preview, like a whiteboard in a board's column (the
+     card's own button opens the page). Without a drawing, just that it's empty. -->
 <script>
+  import Whiteboard from './Whiteboard.svelte';
   import { shapeCount } from './store.js';
 
   /** @type {{page: import('../types.js').Page}} */
@@ -11,19 +13,26 @@
   const count = shapeCount(page.id);
 </script>
 
-<div class="whiteboard-card">
-  <span class="icon m3-icon">draw</span>
-  <span class="count">{count === 0 ? 'Nothing drawn yet.' : `${count} ${count === 1 ? 'shape' : 'shapes'}`}</span>
-</div>
+{#if count === 0}
+  <div class="empty">
+    <span class="icon m3-icon">draw</span>
+    <span>Nothing drawn yet.</span>
+  </div>
+{:else}
+  <div class="preview">
+    <Whiteboard drawingId={page.id} preview />
+  </div>
+{/if}
 
 
 <style>
-  .whiteboard-card {
+  .empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
     font-family: "Roboto Slab", serif;
+    font-size: 15px;
     color: var(--text-muted);
   }
 
@@ -33,7 +42,12 @@
     color: var(--accent);
   }
 
-  .count {
-    font-size: 15px;
+  /* Fills the card between its name and its button. */
+  .preview {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 22px;
   }
 </style>

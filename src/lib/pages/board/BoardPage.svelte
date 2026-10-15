@@ -5,10 +5,12 @@
      column's stack, or between columns into a column of their own. The data lives in `board.svelte.js`. -->
 <script>
   import { cubicOut } from 'svelte/easing';
+  import { scale } from 'svelte/transition';
   import { getBoardStore } from './board.svelte.js';
   import { shareHeight } from './shareHeight.js';
   import BoardItem from './components/BoardItem.svelte';
   import AddPageMenu from './components/AddPageMenu.svelte';
+  import AddPageOptions from './components/AddPageOptions.svelte';
   import FreeWidgets from './components/FreeWidgets.svelte';
   import Task from '../tasks/components/Task.svelte';
   import TaskDialog from '../tasks/components/TaskDialog.svelte';
@@ -597,7 +599,17 @@
     {/snippet}
   </PageHeader>
 
-  <div class="board" bind:this={boardEl}>
+  <div class="board" class:dragging={drag || itemDrag} bind:this={boardEl}>
+    <!-- An empty board (a new one, or with every page taken off) asks for its first column in its middle. -->
+    {#if board.columns.length === 0}
+      <div class="empty-board">
+        <div class="empty-content" transition:scale={{ duration: 200, start: 0.96 }}>
+          <h2 class="empty-heading">Add a Column</h2>
+          <AddPageOptions {board} onAdded={scrollToEnd} large />
+        </div>
+      </div>
+    {/if}
+
     {#each shownColumns as column (column.id)}
       <!-- A column holding only the dragged page takes no room while it's dragged. The column holding the dragged
            page doesn't slide: the page is drawn where the pointer is, a sliding column would carry it along. -->
@@ -731,6 +743,35 @@
     scroll-padding-inline: 20px;
   }
 
+  /* An empty board: its first column is picked in its middle, like a page on the "Add New" screen (NewPage). */
+  .empty-board {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .empty-content {
+    box-sizing: border-box;
+    width: min(100%, 600px);
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .empty-heading {
+    margin: 0;
+    font-family: "Stoke", serif;
+    font-size: 40px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
   /* A stack of pages, at most two thirds of the window and the board's height. The pages share that height
      (shareHeight.js): as tall as they need, squeezed evenly when they don't all fit. On a phone a column is a bit
      narrower than the screen, so the next one peeks in. */
@@ -778,14 +819,16 @@
     outline-offset: -2.5px;
   }
 
-  /* On a phone, swiping the board stops at a column. */
+  /* On a phone, a swipe moves the board by one column. Not while dragging: scrolling at the edges moves it by a
+     few pixels at a time, which snapping would undo. */
   @media (max-width: 500px) {
-    .board {
-      scroll-snap-type: x proximity;
+    .board:not(.dragging) {
+      scroll-snap-type: x mandatory;
     }
 
     .column-slot {
       scroll-snap-align: center;
+      scroll-snap-stop: always;
     }
   }
 

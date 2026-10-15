@@ -39,7 +39,14 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     margin: 0 -14px;
-    padding: 4px 20px 14px;
+    padding: 4px 20px 0;
+    /* The scrollbar only shows while the pointer is over the scrolling part. */
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s;
+  }
+
+  .note:hover {
+    scrollbar-color: #494949 transparent;
   }
 
   /* Fills the page: a click below the text keeps writing there. No room of its own below the text

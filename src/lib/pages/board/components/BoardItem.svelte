@@ -1,6 +1,7 @@
 <!-- src/lib/pages/board/components/BoardItem.svelte -->
 <!-- One page on a board, in a column's stack: its name with a menu, then a small Tasks page (the "Add Task" field,
-     the current task with the sort button, the list and the history) or a note. A local page can be exported to a
+     the current task with the sort button, the list and the history), a note, or a whiteboard's preview that opens
+     (maximizes) in a window over the board to draw. A local page can be exported to a
      page of its own, a linked one shows that page's data and opens it from the menu. Each has its own settings
      (ItemSettings) and colors: a linked page its own, a local one the board's unless it picked some. Dragging is
      run by the board (BoardPage): the item shows where a dragged task would land, also when it comes from another
@@ -15,6 +16,9 @@
   import History from '../../tasks/components/History.svelte';
   import ColumnInput from './ColumnInput.svelte';
   import ColumnNote from './ColumnNote.svelte';
+  import ColumnWhiteboard from './ColumnWhiteboard.svelte';
+  import WhiteboardWindow from '../../whiteboard/WhiteboardWindow.svelte';
+  import { shapeCount } from '../../whiteboard/store.js';
   import ItemSettings from './ItemSettings.svelte';
   import { confirm, isInDialog } from '../../../app/confirm.svelte.js';
   import { navigation } from '../../../app/navigation.svelte.js';
@@ -47,6 +51,9 @@
   let itemName = $derived(board.nameOf(item));
   let list = $derived(board.listOf(item));
   let note = $derived(board.noteOf(item));
+  let drawingId = $derived(board.drawingOf(item));
+  /** The whiteboard is open in its window. */
+  let maximized = $state(false);
   let column = $derived(board.columnOf(item.id));
 
   // The item is re-created when its kind changes (exported), so its widgets never change.
@@ -145,10 +152,12 @@
       return;
     }
     const tasks = list ? list.tasks.length + (list.currentTask ? 1 : 0) + list.history.length : 0;
+    const drawn = drawingId ? shapeCount(drawingId) > 0 : false;
     let message = `"${itemName}" is deleted.`;
     if (tasks > 0) message = `"${itemName}" is deleted with its ${tasks} ${tasks === 1 ? 'task' : 'tasks'}.`;
     else if (note?.text.trim()) message = `"${itemName}" is deleted with its note.`;
-    if (tasks === 0 && !note?.text.trim()) board.removeItem(item.id);
+    else if (drawn) message = `"${itemName}" is deleted with its drawing.`;
+    if (tasks === 0 && !note?.text.trim() && !drawn) board.removeItem(item.id);
     else if (await confirm({ title: 'Delete Page', message, confirmLabel: 'Delete' })) board.removeItem(item.id);
   }
 
@@ -193,6 +202,9 @@
     {:else}
       <h2 class="name" title="Double-click to rename" ondblclick={startRename}>{itemName}</h2>
     {/if}
+    {#if drawingId}
+      <button class="menu-btn m3-icon" title="Maximize" onclick={() => (maximized = true)}>open_in_full</button>
+    {/if}
     <button class="menu-btn m3-icon" class:open={menuOpen} title="Page Menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>more_horiz</button>
 
     {#if menuOpen}
@@ -217,7 +229,12 @@
     {/if}
   </header>
 
-  {#if note}
+  {#if drawingId}
+    <ColumnWhiteboard {drawingId} open={maximized} onOpen={() => (maximized = true)} />
+    {#if maximized}
+      <WhiteboardWindow {drawingId} name={itemName} onClose={() => (maximized = false)} />
+    {/if}
+  {:else if note}
     <ColumnNote {note} />
   {:else if list}
     {@const tasks = list}
@@ -316,7 +333,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 14px 14px 0;
+    padding: 14px;
     background-color: var(--surface-raised);
     border-radius: 30px;
   }
@@ -504,14 +521,22 @@
     display: none;
   }
 
-  /* The list and history scroll inside the page, the input and current task stay on top. */
+  /* The list and history scroll inside the page, the input and current task stay on top. It ends above the
+     page's padding, so a task scrolled past its bottom is cut off there, not where the page's corners curve. */
   .scroller {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     margin: 0 -14px;
-    padding: 4px 14px 14px;
+    padding: 4px 14px 0;
+    /* The scrollbar only shows while the pointer is over the scrolling part. */
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s;
+  }
+
+  .scroller:hover {
+    scrollbar-color: #494949 transparent;
   }
 
   /* Positioned, so the tasks' offsets are measured from the list (see `locate` in BoardPage). */
