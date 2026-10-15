@@ -2,7 +2,8 @@
 <!-- The popup of an advanced task, like a card in Trello or Jira: its title, priority, labels, widgets and a
      Markdown description (the editor of the Notes pages). Every change is saved right away. The page's labels can
      be created, renamed, recolored and deleted here too. Widgets only while the list has them turned on
-     (`widgetStore`). -->
+     (`widgetStore`). Without the mouse: the arrow keys move an outline over everything, Space presses it (or starts
+     writing in the title or description), Escape stops writing and then closes the popup. -->
 <script>
   import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
@@ -40,6 +41,79 @@
   let labelForm = $state(null);
   /** @type {HTMLInputElement | undefined} */
   let labelNameInput = $state();
+
+  /** @type {HTMLElement | undefined} */
+  let dialogEl = $state();
+  /** What the arrow keys moved to, Space presses it. Outlined. @type {HTMLElement | null} */
+  let cursor = $state(null);
+
+  /** What the arrow keys move over: the buttons, the fields and the description's editor. */
+  const NAVIGABLE = 'button:not(:disabled), textarea, input, .cm-editor';
+  /** Being written in, the keys stay there. */
+  const WRITING = 'textarea, input, [contenteditable="true"]';
+
+  // The outline shows where the keys are.
+  $effect(() => {
+    const element = cursor;
+    if (!element) return;
+    element.classList.add('key-cursor');
+    element.scrollIntoView({ block: 'nearest' });
+    return () => element.classList.remove('key-cursor');
+  });
+
+  /** Everything the keys can move to, in reading order. */
+  function navigable() {
+    if (!dialogEl) return [];
+    return /** @type {HTMLElement[]} */ ([...dialogEl.querySelectorAll(NAVIGABLE)]).filter(
+      (element) => (element.matches('.cm-editor') || !element.closest('.cm-editor')) && element.getClientRects().length > 0
+    );
+  }
+
+  /**
+   * Left and right go through everything in reading order, up and down to the nearest thing above or below.
+   * @param {string} key
+   */
+  function moveCursor(key) {
+    const items = navigable();
+    if (items.length === 0) return;
+    const from = cursor && cursor.isConnected ? cursor : null;
+    if (!from) return void (cursor = items[0]);
+
+    if (key === 'ArrowLeft' || key === 'ArrowRight') {
+      const index = items.indexOf(from) + (key === 'ArrowRight' ? 1 : -1);
+      cursor = items[Math.min(items.length - 1, Math.max(0, index))];
+      return;
+    }
+
+    const box = from.getBoundingClientRect();
+    const middle = box.left + box.width / 2;
+    const down = key === 'ArrowDown';
+    let best = null;
+    let bestScore = Infinity;
+    for (const item of items) {
+      const other = item.getBoundingClientRect();
+      const gap = down ? other.top - box.bottom : box.top - other.bottom;
+      if (item === from || gap < -2) continue;
+      // The next row first, then the one most in line with it.
+      const score = Math.max(0, gap) * 4 + Math.abs(other.left + other.width / 2 - middle);
+      if (score < bestScore) [best, bestScore] = [item, score];
+    }
+    if (best) cursor = best;
+  }
+
+  /** Space: writes in a field (the cursor goes to its end), presses anything else. */
+  function pressCursor() {
+    const element = cursor && cursor.isConnected ? cursor : null;
+    if (!element) return void (cursor = navigable()[0] ?? null);
+    if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
+      element.focus();
+      element.setSelectionRange(element.value.length, element.value.length);
+    } else if (element.matches('.cm-editor')) {
+      /** @type {HTMLElement | null} */ (element.querySelector('.cm-content'))?.focus();
+    } else {
+      element.click();
+    }
+  }
 
   /** An emptied title keeps the old one. */
   function updateTitle() {
@@ -152,10 +226,32 @@
   // dialog on top handles its own Escape.
   /** @param {KeyboardEvent} event */
   function handleKeyDown(event) {
-    if (event.key !== 'Escape' || confirmState.request) return;
-    event.stopPropagation();
-    if (labelForm) labelForm = null;
-    else onClose();
+    if (confirmState.request || !dialogEl) return;
+    const active = document.activeElement;
+    const writing = active && dialogEl.contains(active) ? active.closest(WRITING) : null;
+
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      // One step back at a time: the label form, then writing (the title is focused when it opens), then the popup.
+      // Stopped writing, the field stays outlined for the arrow keys.
+      if (labelForm) labelForm = null;
+      else if (writing instanceof HTMLElement) {
+        writing.blur();
+        cursor = /** @type {HTMLElement} */ (writing.closest('.cm-editor') ?? writing);
+      } else onClose();
+      return;
+    }
+
+    if (writing || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (event.key.startsWith('Arrow')) {
+      event.preventDefault();
+      event.stopPropagation();
+      moveCursor(event.key);
+    } else if (event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      pressCursor();
+    }
   }
 
   $effect(() => {
@@ -181,7 +277,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="scrim" transition:fade={{ duration: 200 }} onclick={onClose}></div>
 
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="Task" transition:scale={{ duration: 200, start: 0.94 }}>
+  <div class="dialog" role="dialog" aria-modal="true" aria-label="Task" bind:this={dialogEl} transition:scale={{ duration: 200, start: 0.94 }}>
     <div class="head">
       <textarea
         class="title"
@@ -349,6 +445,12 @@
 
 
 <style>
+  /* Where the arrow keys are (see `cursor`). */
+  .dialog :global(.key-cursor) {
+    outline: 2.5px solid var(--accent);
+    outline-offset: 2px;
+  }
+
   .dialog-layer {
     position: fixed;
     inset: 0;

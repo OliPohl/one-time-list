@@ -12,9 +12,19 @@
   let pageType = $derived(PAGE_TYPES[page.type]);
   // Pages with their own colors (Tasks) keep them on the dashboard, the others use the global colors.
   let pageStyle = $derived(pageType.style?.(page));
+  /** What the keyboard shortcuts treat it as: a Tasks page has tasks, the others open. */
+  let kind = $derived(page.type === 'tasks' || page.type === 'notes' || page.type === 'whiteboard' ? page.type : 'page');
 </script>
 
-<article class="slot card" class:ghost inert={ghost} data-page-colors={pageStyle ? '' : undefined} style={pageStyle}>
+<!-- One of the pages the keyboard shortcuts move between (taskCursor.svelte.js), not the dragged copy. -->
+<article
+  class="slot card"
+  class:ghost
+  inert={ghost}
+  data-page-colors={pageStyle ? '' : undefined}
+  data-task-list={ghost ? undefined : page.id}
+  data-list-kind={ghost ? undefined : kind}
+  style={pageStyle}>
   <header class="head">
     <span class="icon m3-icon">{pageType.icon}</span>
     <h2 class="name">{page.name}</h2>

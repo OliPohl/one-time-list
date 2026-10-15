@@ -22,10 +22,11 @@
    *   onOpen: () => void,
    *   onRename: (name: string) => void,
    *   onDelete: () => boolean | Promise<boolean>,
-   *   extra?: import('svelte').Snippet
+   *   extra?: import('svelte').Snippet,
+   *   shortcut?: string
    * }}
    */
-  let { icon, iconColor, name, title, kind, active = false, ringing = false, breakEnd = false, editing, onEditChange, onOpen, onRename, onDelete, extra } = $props();
+  let { icon, iconColor, name, title, kind, active = false, ringing = false, breakEnd = false, editing, onEditChange, onOpen, onRename, onDelete, extra, shortcut = '' } = $props();
 
   let draft = $state('');
   /** @type {HTMLElement} */
@@ -95,6 +96,10 @@
         <span class="name">{name}</span>
       </button>
       <button class="icon-btn edit m3-icon" title="Edit {kind}" in:fade={swapFade} onclick={() => onEditChange(true)}>edit_square</button>
+      <!-- The key that opens it (keyboard shortcuts), where the edit button shows on hover. -->
+      {#if shortcut}
+        <span class="shortcut" aria-hidden="true">{shortcut}</span>
+      {/if}
     {/if}
   </div>
   {#if editing && extra}
@@ -105,6 +110,7 @@
 
 <style>
   .row {
+    position: relative;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -215,9 +221,30 @@
   }
 
   /* Touch screens have no hover, keep the edit button visible there. */
+  .shortcut {
+    position: absolute;
+    right: 14px;
+    color: var(--text-muted);
+    font-family: "Roboto Slab", serif;
+    font-size: 13px;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  /* Makes room for the edit button. */
+  .row:hover .shortcut,
+  .row:focus-within .shortcut {
+    opacity: 0;
+  }
+
   @media (hover: none) {
     .edit {
       opacity: 1;
+    }
+
+    /* The edit button always shows there, and there's no keyboard. */
+    .shortcut {
+      display: none;
     }
   }
 

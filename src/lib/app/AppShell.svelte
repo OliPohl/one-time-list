@@ -22,6 +22,12 @@
   import { whiteboardWindow, closeWhiteboard } from '../pages/whiteboard/window.svelte.js';
   import { cleanUpWidgetDrawings } from '../pages/whiteboard/store.js';
   import { addLibraryFromAddress } from '../pages/whiteboard/library.js';
+  import { shortcuts } from './shortcuts.svelte.js';
+  import { taskCursor } from './taskCursor.svelte.js';
+  import { pageIdsIn } from './folders.svelte.js';
+  import PageFinder from './PageFinder.svelte';
+  import ShortcutsDialog from './ShortcutsDialog.svelte';
+  import KeyboardHint from './KeyboardHint.svelte';
 
   let isLoaded = $state(false);
 
@@ -39,6 +45,8 @@
     folders.load();
     dashboard.load();
     navigation.load();
+    shortcuts.load();
+    taskCursor.start();
     unlockAudio();
     isLoaded = true;
     // Once every page's saved state has been written again.
@@ -51,7 +59,49 @@
       stopAnimations();
     };
   });
+
+  // Another page, the one that gave the keyboard back isn't shown anymore.
+  $effect(() => {
+    void navigation.view;
+    shortcuts.take();
+  });
+
+  /** Pages in sidebar order. */
+  const orderedPages = () => pageIdsIn(folders.tree).filter((id) => pages.get(id));
+
+  /** Opens a page in sidebar order, false if there's none there. @param {string | undefined} id */
+  function openPage(id) {
+    if (!id) return false;
+    navigation.go({ kind: 'page', id });
+  }
+
+  /** The page `by` steps further down the sidebar (up when negative), going round at the ends. @param {number} by */
+  function stepPage(by) {
+    const ids = orderedPages();
+    if (ids.length === 0) return false;
+    const current = navigation.view.kind === 'page' ? ids.indexOf(navigation.view.id) : -1;
+    const next = current === -1 ? (by > 0 ? 0 : ids.length - 1) : (current + by + ids.length) % ids.length;
+    return openPage(ids[next]);
+  }
+
+  /** The app wide shortcuts, see shortcuts.svelte.js. @type {import('./shortcuts.svelte.js').Handlers} */
+  const appShortcuts = {
+    findPage: () => void (shortcuts.finderOpen = true),
+    ...Object.fromEntries(Array.from({ length: 9 }, (_, index) => [`page${index + 1}`, () => openPage(orderedPages()[index])])),
+    previousPage: () => stepPage(-1),
+    nextPage: () => stepPage(1),
+    dashboard: () => navigation.go({ kind: 'dashboard' }),
+    newPage: () => navigation.go({ kind: 'new-page' }),
+    toggleSidebar: () => void (navigation.sidebarOpen = !navigation.sidebarOpen),
+    showShortcuts: () => void (shortcuts.dialogOpen = true)
+  };
 </script>
+
+<!-- Escape on a whiteboard or a note gives the keyboard to the shortcuts, clicking it takes it back. -->
+<svelte:window
+  onkeydown={(event) => isLoaded && shortcuts.handle(event, appShortcuts)}
+  onkeydowncapture={(event) => isLoaded && shortcuts.releaseFocus(event)}
+  onpointerdowncapture={(event) => shortcuts.takeOnClick(event)} />
 
 <svelte:head>
   <title>{(isLoaded && title) || 'One Time List'}</title>
@@ -86,6 +136,18 @@
 
     {#if settings.dialogOpen}
       <SettingsDialog />
+    {/if}
+
+    {#if shortcuts.finderOpen}
+      <PageFinder />
+    {/if}
+
+    {#if shortcuts.dialogOpen}
+      <ShortcutsDialog />
+    {/if}
+
+    {#if shortcuts.released && shortcuts.enabled}
+      <KeyboardHint />
     {/if}
 
     {#if confirmState.request}

@@ -169,7 +169,15 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<section class="item" class:linked data-item-id={item.id} style={board.styleOf(item)} bind:this={itemEl}>
+<!-- Every page is one of the lists the keyboard shortcuts move between (taskCursor.svelte.js), only task lists have tasks. -->
+<section
+  class="item"
+  class:linked
+  data-item-id={item.id}
+  data-task-list={list || note || drawingId ? item.id : undefined}
+  data-list-kind={list ? 'tasks' : note ? 'notes' : drawingId ? 'whiteboard' : undefined}
+  style={board.styleOf(item)}
+  bind:this={itemEl}>
   <header
     class="head"
     bind:this={headEl}
@@ -201,9 +209,6 @@
         }} />
     {:else}
       <h2 class="name" title="Double-click to rename" ondblclick={startRename}>{itemName}</h2>
-    {/if}
-    {#if drawingId}
-      <button class="menu-btn m3-icon" title="Maximize" onclick={() => (maximized = true)}>open_in_full</button>
     {/if}
     <button class="menu-btn m3-icon" class:open={menuOpen} title="Page Menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>more_horiz</button>
 
@@ -245,7 +250,7 @@
         {#if tasks.currentTask}
           {#key tasks.currentTask.id}
             {@const task = tasks.currentTask}
-            <div class="current-task" class:dragged={drag?.id === task.id} data-widget-task={task.id}>
+            <div class="current-task" class:dragged={drag?.id === task.id} data-widget-task={task.id} data-cursor-task={task.id}>
               <Task
                 text={task.text}
                 isCurrent={true}
@@ -277,6 +282,7 @@
             style:height={task.isDropSlot ? `${drag?.height ?? 0}px` : null}
             data-task-id={task.isDropSlot ? undefined : task.id}
             data-widget-task={task.isDropSlot ? undefined : task.id}
+            data-cursor-task={task.isDropSlot ? undefined : task.id}
             animate:flip={{ duration: 200 }}>
             {#if !task.isDropSlot}
               <Task

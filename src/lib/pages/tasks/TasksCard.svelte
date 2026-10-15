@@ -7,6 +7,7 @@
   import { getListStore, priorityOf } from './list.svelte.js';
   import { colorsOf, colorsStyle } from '../../colors.js';
   import { portal } from '../../utils/portal.js';
+  import { dashboard } from '../../app/dashboard.svelte.js';
 
   /** @type {{page: import('../types.js').Page}} */
   let { page } = $props();
@@ -15,17 +16,23 @@
   // svelte-ignore state_referenced_locally
   const list = getListStore(page.id);
 
-  /** The popup is open for the current task. */
-  let open = $state(false);
+  /** The popup is open for the current task. Kept by the dashboard, the "Open task" key opens it too. */
+  let open = $derived(dashboard.openTaskPage === page.id);
+
+  /** @param {boolean} value */
+  function setOpen(value) {
+    if (value) dashboard.openTaskPage = page.id;
+    else if (open) dashboard.openTaskPage = null;
+  }
 
   // Closed once the current task is gone (completed, deleted, or changed on the page).
   $effect(() => {
-    if (!list.currentTask) open = false;
+    if (!list.currentTask) setOpen(false);
   });
 
   /** Sorted by priority, the list follows a changed priority. */
   function closeTask() {
-    open = false;
+    setOpen(false);
     if (list.sortMode === 'priority') list.sortTasks('priority');
   }
 
@@ -36,7 +43,8 @@
 <div class="tasks-card">
   <span class="label">Current Task</span>
 
-  <div class="current">
+  <!-- The current task is the one the task keyboard shortcuts pick on the dashboard (taskCursor.svelte.js). -->
+  <div class="current" data-cursor-task={list.currentTask?.id}>
     {#if list.currentTask}
       {#key list.currentTask.id}
         {@const id = list.currentTask.id}
@@ -50,7 +58,7 @@
           description={list.currentTask.description}
           priority={priorityOf(list.currentTask.priority)}
           labels={list.labelsOf(list.currentTask)}
-          onOpen={() => (open = true)} />
+          onOpen={() => setOpen(true)} />
       {/key}
     {:else if list.tasks.length > 0}
       <button class="select" onclick={() => list.selectTask(list.tasks[0].id)}>Select Task</button>
@@ -71,7 +79,7 @@
       {list}
       onClose={closeTask}
       onDelete={() => {
-        open = false;
+        setOpen(false);
         list.removeTask(task.id);
       }} />
   </div>

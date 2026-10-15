@@ -12,6 +12,8 @@
   import Wave from './components/Wave.svelte';
   import { WidgetDock, WidgetSideLayer, setWidgets } from '$lib/widgets';
   import PageHeader from '$lib/app/PageHeader.svelte';
+  import { dragScroll } from '$lib/utils/dragScroll.js';
+  import { taskCursor } from '$lib/app/taskCursor.svelte.js';
   import { layout } from '$lib/widgets/layout.svelte.js';
 
   /** @type {{page: import('../types.js').Page}} */
@@ -61,6 +63,28 @@
     };
     return () => (layout.taskAt = null);
   });
+
+  /** @type {HTMLElement} */
+  let pageEl;
+
+  // The task keyboard shortcuts (see taskCursor.svelte.js). The page's one list has the page's id as its key.
+  $effect(() =>
+    taskCursor.register({
+      open: (_, id) => (openTaskId = id),
+      select: (_, id) => list.currentTask?.id !== id && list.selectTask(id),
+      complete: (_, id) => list.completeTask(id),
+      // Without a current task, the next one becomes it (like "Select Task").
+      completeCurrent: () => {
+        if (list.currentTask) list.completeTask(list.currentTask.id);
+        else if (list.tasks.length > 0) list.selectTask(list.tasks[0].id);
+      },
+      move: (_, id, by) => {
+        const index = list.tasks.findIndex((task) => task.id === id);
+        if (index !== -1 && list.moveTask(id, Math.max(0, index + by))) list.saveCustomOrder();
+      },
+      addTask: () => /** @type {HTMLElement | null} */ (pageEl.querySelector('.input-field'))?.focus()
+    })
+  );
 
   /** Closes the popup. Sorted by priority, the list follows a changed priority. */
   function closeTask() {
@@ -238,7 +262,10 @@
 </script>
 
 
-<main class="page-layout">
+<!-- Dragging empty space with the mouse scrolls the tasks, also beside them. -->
+<svelte:body {@attach dragScroll({ vertical: () => taskListEl })} />
+
+<main class="page-layout" data-task-list={page.id} bind:this={pageEl}>
   <Wave bottom={list.hasTasks}/>
   <TaskInput
   placeholder="Add Task"
@@ -257,7 +284,7 @@
         {#key list.currentTask.id}
           {@const activeId = list.currentTask.id}
           <!-- Hidden while it's dragged, the box shows where it came from. -->
-          <div class="current-task" class:dragged={taskDrag?.source === 'current'} data-widget-task={activeId}>
+          <div class="current-task" class:dragged={taskDrag?.source === 'current'} data-widget-task={activeId} data-cursor-task={activeId}>
             <Task
               text={list.currentTask.text}
               onEdit={(event) => list.editTask(activeId, event.message)}
@@ -287,6 +314,7 @@
             style:height={task.isDropSlot ? `${taskDrag.height}px` : null}
             data-task-id={task.isDropSlot ? undefined : task.id}
             data-widget-task={task.isDropSlot ? undefined : task.id}
+            data-cursor-task={task.isDropSlot ? undefined : task.id}
             animate:flip={{ duration: 200 }}>
             {#if !task.isDropSlot}
               <Task

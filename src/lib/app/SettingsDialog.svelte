@@ -9,6 +9,8 @@
   import { COLORS } from '../colors.js';
   import NumberField from '../ui/NumberField.svelte';
   import { frameClock } from '../utils/frameClock.svelte.js';
+  import { shortcuts } from './shortcuts.svelte.js';
+  import Toggle from '../ui/Toggle.svelte';
 
   /** @type {Record<typeof THEMES[number], {label: string, icon: string}>} */
   const THEME_OPTIONS = {
@@ -48,6 +50,12 @@
   /** @type {HTMLButtonElement | undefined} */
   let closeButton = $state();
   let privacyOpen = $state(false);
+
+  /** The shortcuts have a popup of their own, it takes the place of the settings. */
+  function openShortcuts() {
+    close();
+    shortcuts.dialogOpen = true;
+  }
 
   $effect(() => closeButton?.focus());
 
@@ -156,6 +164,16 @@
         {/if}
       </div>
       <p class="hint">Clocks show {clockNow} and their alarms go by it.</p>
+    </section>
+
+    <section class="setting">
+      <h3 class="setting-label">Keyboard Shortcuts</h3>
+      <Toggle checked={shortcuts.enabled} onchange={(checked) => (shortcuts.enabled = checked)}>Enable keyboard shortcuts</Toggle>
+      <button class="clear-btn shortcuts-btn" onclick={openShortcuts}>
+        <span class="clear-icon m3-icon">keyboard</span>
+        <span>Edit Shortcuts</span>
+      </button>
+      <p class="hint">See and change every key. <kbd>?</kbd> opens them too.</p>
     </section>
 
     <!-- At the bottom, opens below so the settings stay short. -->
@@ -417,6 +435,22 @@
   .clear-btn:focus-visible {
     color: var(--red);
     border-color: var(--red);
+  }
+
+  /* Not destructive like "Clear Cache", hovered in the accent color. */
+  .clear-btn.shortcuts-btn:hover,
+  .clear-btn.shortcuts-btn:focus-visible {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .hint kbd {
+    padding: 0 6px;
+    background-color: var(--surface-active);
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
   }
 
   .clear-icon {

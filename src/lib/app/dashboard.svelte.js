@@ -11,6 +11,8 @@ class Dashboard {
   slots = $state([]);
   /** Set when "Add New Page" is chosen from a slot: the new page gets linked when it's created. */
   linkNextPage = $state(false);
+  /** The Tasks page whose card shows its current task's popup (TasksCard), opened by clicking or a key. @type {string | null} */
+  openTaskPage = $state(null);
 
   /** The linked pages that still exist. */
   linked = $derived(this.slots.map((id) => pages.get(id)).filter((page) => page !== undefined));

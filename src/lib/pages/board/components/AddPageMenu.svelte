@@ -3,18 +3,23 @@
      to the board, or to link a Tasks, Notes or Whiteboard page that isn't on the board yet (AddPageOptions). -->
 <script>
   import AddPageOptions from './AddPageOptions.svelte';
+  import { focusFirstOption, moveFocus } from '../../../utils/menuKeys.js';
 
   /**
    * @type {{
    *   board: import('../board.svelte.js').BoardStore,
-   *   onAdded: () => void
+   *   onAdded: () => void,
+   *   open?: boolean
    * }}
    */
-  let { board, onAdded } = $props();
-
-  let open = $state(false);
+  let { board, onAdded, open = $bindable(false) } = $props();
   /** @type {HTMLElement} */
   let root;
+
+  // Opened (also with the "Add a column" key), the first option has the focus: the arrow keys and Enter pick one.
+  $effect(() => {
+    if (open) focusFirstOption(root);
+  });
 
   /** @param {MouseEvent} event */
   function handleClickOutside(event) {
@@ -28,7 +33,7 @@
   <button class="add-btn m3-icon" class:open title="Add New Column" aria-expanded={open} onclick={() => (open = !open)}>add</button>
 
   {#if open}
-    <div class="menu" role="menu">
+    <div class="menu" role="menu" tabindex="-1" onkeydown={moveFocus}>
       <AddPageOptions
         {board}
         onAdded={() => {

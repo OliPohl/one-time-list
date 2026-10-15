@@ -6,6 +6,7 @@
 <script>
   import { onMount } from 'svelte';
   import PageHeader from '$lib/app/PageHeader.svelte';
+  import { dragScroll } from '$lib/utils/dragScroll.js';
   import { getNote } from './store.svelte.js';
   import { createEditor, applyChange } from './editor/editor.js';
   import { toggleWrap, toggleCode, insertLink, insertImage, toggleLines, insertRule, lineKind } from './format.js';
@@ -99,6 +100,9 @@
   // Changed elsewhere (ticked on the dashboard): the editor follows.
   $effect(() => editor?.setText(note.text));
 </script>
+
+<!-- Dragging empty space with the mouse scrolls the note, also beside it. -->
+<svelte:body {@attach dragScroll()} />
 
 <main class="notes-page">
   <PageHeader {page} />

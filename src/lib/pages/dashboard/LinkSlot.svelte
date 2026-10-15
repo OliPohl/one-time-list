@@ -5,8 +5,14 @@
   import { PAGE_TYPES } from '../index.js';
   import { navigation } from '../../app/navigation.svelte.js';
   import { dashboard } from '../../app/dashboard.svelte.js';
+  import { focusFirstOption, moveFocus } from '../../utils/menuKeys.js';
 
-  let open = $state(false);
+  /** Also opened with the "Add a column" key, the first option has the focus then. @type {{open?: boolean}} */
+  let { open = $bindable(false) } = $props();
+
+  $effect(() => {
+    if (open) focusFirstOption(root);
+  });
   /** @type {HTMLElement} */
   let root;
 
@@ -36,7 +42,7 @@
   </button>
 
   {#if open}
-    <div class="menu" role="menu">
+    <div class="menu" role="menu" tabindex="-1" onkeydown={moveFocus}>
       {#each dashboard.unlinked as page (page.id)}
         <button class="option" role="menuitem" onclick={() => link(page.id)}>
           <span class="option-icon m3-icon">{PAGE_TYPES[page.type].icon}</span>
@@ -129,7 +135,8 @@
     transition: color 0.4s, background-color 0.4s;
   }
 
-  .option:hover {
+  .option:hover,
+  .option:focus-visible {
     color: var(--accent);
     background-color: var(--surface-active);
   }

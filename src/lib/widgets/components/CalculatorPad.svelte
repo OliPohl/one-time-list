@@ -1,10 +1,13 @@
 <!-- src/lib/widgets/components/CalculatorPad.svelte -->
 <!-- The keys of the calculator widget. Clicking the widget (or its dashboard card) makes it `active`: the keyboard types into it (digits,
      + - * / x, Enter or =, Backspace, Esc, %, r for the square root, ^ to square) until something else is clicked.
-     With `always` (its own page) it takes the keyboard right away. `large` for the page, bigger keys, `small` for
+     With `always` (its own page) it takes the keyboard right away. Esc on an empty calculator gives the keyboard to
+     the app's shortcuts until it's clicked again, so do an open sidebar and the shortcuts popup. `large` for the page, bigger keys, `small` for
      the dashboard card. -->
 <script>
   import { press, keyFromKeyboard } from '../calculator.js';
+  import { shortcuts } from '../../app/shortcuts.svelte.js';
+  import { navigation } from '../../app/navigation.svelte.js';
 
   /** @type {{widget: any, active?: boolean, ghost?: boolean, always?: boolean, large?: boolean, small?: boolean}} */
   let { widget, active = $bindable(false), ghost = false, always = false, large = false, small = false } = $props();
@@ -40,6 +43,12 @@
     { key: '=', label: '=', title: 'Equals (Enter)', kind: 'equals', wide: true }
   ];
 
+  /** It types now: active, and not given back to the shortcuts or behind the open sidebar. */
+  let takesKeys = $derived(active && !shortcuts.released && !navigation.sidebarOpen);
+
+  /** Nothing typed, nothing to clear. */
+  let isEmpty = $derived(widget.entry === '0' && widget.acc === null && widget.op === null && !widget.error && !widget.expression);
+
   /** @type {HTMLElement} */
   let root;
   /** The key last pressed on the keyboard, it lights up for a moment. */
@@ -49,14 +58,21 @@
 
   /** Clicking the widget (on the dashboard: the calculator's body) turns the keyboard on, clicking anywhere else off. @param {PointerEvent} event */
   function handlePointerDown(event) {
-    if (ghost || always) return;
+    if (ghost) return;
+    const target = /** @type {Element} */ (event.target);
+    // On its own page, clicking the page (not the sidebar or a popup) takes the keyboard back.
+    if (always) {
+      if (shortcuts.released === 'calculator' && !target.closest('[data-sidebar], [data-dialog]')) shortcuts.take();
+      return;
+    }
     const card = root?.closest('.widget, .calc-body');
-    active = Boolean(card?.contains(/** @type {Node} */ (event.target)));
+    active = Boolean(card?.contains(target));
+    if (active && shortcuts.released === 'calculator') shortcuts.take();
   }
 
   /** @param {KeyboardEvent} event */
   function handleKeyDown(event) {
-    if (!active || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!takesKeys || event.ctrlKey || event.metaKey || event.altKey) return;
     // Typing into a field (a task, a note) stays there.
     const target = /** @type {HTMLElement} */ (event.target);
     if (target.closest?.('input, textarea, [contenteditable="true"]')) return;
@@ -64,6 +80,12 @@
     const key = keyFromKeyboard(event);
     if (!key) return;
     event.preventDefault();
+    // Escape clears first, on an empty calculator it gives the keyboard to the shortcuts.
+    if (event.key === 'Escape' && isEmpty) {
+      shortcuts.release('calculator');
+      if (!always) active = false;
+      return;
+    }
     press(widget, key);
 
     flashed = key;
@@ -76,7 +98,8 @@
 
 <svelte:window onpointerdowncapture={handlePointerDown} onkeydown={handleKeyDown} />
 
-<div class="pad" class:large class:small bind:this={root}>
+<!-- `data-takes-keys`: while it types, the app's keyboard shortcuts wait (see shortcuts.svelte.js). -->
+<div class="pad" class:large class:small data-takes-keys={takesKeys ? '' : undefined} bind:this={root}>
   {#each KEYS as item (item.key)}
     <!-- Not focusable: Enter on a focused key would press it again, Enter is "=" here. -->
     <button

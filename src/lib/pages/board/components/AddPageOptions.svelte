@@ -128,7 +128,8 @@
     transition: border-color 0.4s, color 0.4s;
   }
 
-  .type:hover {
+  .type:hover,
+  .type:focus-visible {
     border-color: var(--accent);
     color: var(--accent);
   }
@@ -184,7 +185,9 @@
     transition: color 0.4s, background-color 0.4s;
   }
 
-  .option:hover {
+  /* Also the one picked with the keyboard ("Add a column" key, arrow keys). */
+  .option:hover,
+  .option:focus-visible {
     color: var(--accent);
     background-color: var(--surface-active);
   }

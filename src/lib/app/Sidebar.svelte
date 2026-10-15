@@ -13,6 +13,7 @@
   import SidebarFolder from './SidebarFolder.svelte';
   import VolumeControl from './VolumeControl.svelte';
   import { settings } from './settings.svelte.js';
+  import { shortcuts } from './shortcuts.svelte.js';
 
   /** How far the closed drawer is moved past its own width, so its shadow is off screen too. */
   const HIDDEN_OFFSET = 60;
@@ -230,6 +231,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="scrim"
+  data-sidebar
   class:dragging={dragProgress !== null}
   class:visible={progress > 0}
   style:opacity={progress}
@@ -238,6 +240,7 @@
 
 <nav
   class="drawer"
+  data-sidebar
   class:dragging={dragProgress !== null}
   style:transform="translateX(calc({progress - 1} * (100% + {HIDDEN_OFFSET}px)))"
   aria-hidden={progress === 0}
@@ -247,6 +250,9 @@
   <button class="item dashboard" class:active={view.kind === 'dashboard'} onclick={() => navigation.go({ kind: 'dashboard' })}>
     <span class="item-icon m3-icon">space_dashboard</span>
     <span class="item-name">Dashboard</span>
+    {#if shortcuts.keyLabel('dashboard')}
+      <span class="item-key" aria-hidden="true">{shortcuts.keyLabel('dashboard')}</span>
+    {/if}
   </button>
 
   <!-- Same line as above the volume and settings at the bottom. -->
@@ -552,6 +558,20 @@
     flex-shrink: 0;
     font-size: 25px;
     font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 25;
+  }
+
+  /* The key that opens it (keyboard shortcuts), like the pages' (SidebarRow). */
+  .item-key {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  @media (hover: none) {
+    .item-key {
+      display: none;
+    }
   }
 
   .item-name {

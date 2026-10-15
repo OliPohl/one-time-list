@@ -4,10 +4,15 @@
      between lists, onto a list's current task to select it there. Pages are dragged by their head into another
      column's stack, or between columns into a column of their own. The data lives in `board.svelte.js`. -->
 <script>
+  import { tick } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
   import { getBoardStore } from './board.svelte.js';
   import { shareHeight } from './shareHeight.js';
+  import { dragScroll } from '../../utils/dragScroll.js';
+  import { taskCursor } from '../../app/taskCursor.svelte.js';
+  import { shortcuts } from '../../app/shortcuts.svelte.js';
+  import { EditorView } from '@codemirror/view';
   import BoardItem from './components/BoardItem.svelte';
   import AddPageMenu from './components/AddPageMenu.svelte';
   import AddPageOptions from './components/AddPageOptions.svelte';
@@ -60,6 +65,60 @@
       widgets: widgetStore ? widgetStore.ofTask(task.id) : []
     };
   }
+
+  /** The "Add New Column" menu is open. */
+  let addMenuOpen = $state(false);
+
+  // The board's own key: "Add a column" opens that menu. An empty board shows the options in its middle already.
+  $effect(() => shortcuts.register({ addColumn: () => (board.columns.length === 0 ? false : void (addMenuOpen = true)) }));
+
+  /** The list of a board item (a column's tasks, or a linked Tasks page) by its id. @param {string} itemId */
+  const listOfItem = (itemId) => board.listOf(board.item(itemId));
+
+  // The task keyboard shortcuts (see taskCursor.svelte.js). Each task list is the board item's id.
+  $effect(() =>
+    taskCursor.register({
+      open: (itemId, id) => (opened = { itemId, taskId: id }),
+      select: (itemId, id) => {
+        const list = listOfItem(itemId);
+        if (list && list.currentTask?.id !== id) list.selectTask(id);
+      },
+      complete: (itemId, id) => listOfItem(itemId)?.completeTask(id),
+      completeCurrent: (itemId) => {
+        const list = listOfItem(itemId);
+        // Without a current task, the next one becomes it (like "Select Task").
+        if (list?.currentTask) list.completeTask(list.currentTask.id);
+        else if (list && list.tasks.length > 0) list.selectTask(list.tasks[0].id);
+      },
+      move: (itemId, id, by) => {
+        const list = listOfItem(itemId);
+        const index = list ? list.tasks.findIndex((task) => task.id === id) : -1;
+        if (list && index !== -1 && list.moveTask(id, Math.max(0, index + by))) list.saveCustomOrder();
+      },
+      // A note gets the cursor at its end, a whiteboard opens in its window (its open button).
+      openList: (itemId) => {
+        const itemEl = boardEl?.querySelector(`[data-item-id="${CSS.escape(itemId)}"]`);
+        const editor = itemEl?.querySelector('.cm-editor');
+        const view = editor instanceof HTMLElement ? EditorView.findFromDOM(editor) : null;
+        if (view) {
+          view.focus();
+          view.dispatch({ selection: { anchor: view.state.doc.length }, scrollIntoView: true });
+        } else {
+          /** @type {HTMLElement | null} */ (itemEl?.querySelector('.whiteboard-box .open') ?? null)?.click();
+        }
+      },
+      addTask: (itemId) => /** @type {HTMLElement | null} */ (boardEl?.querySelector(`[data-item-id="${CSS.escape(itemId)}"] .input textarea`))?.focus(),
+      // To the end of the other list, like Trello's "<" and ">". Moved to another page it can get a new id.
+      moveToList: (itemId, id, toId) => {
+        const from = listOfItem(itemId);
+        const to = listOfItem(toId);
+        if (!from || !to) return null;
+        board.moveTask(id, itemId, from.currentTask?.id === id ? 'current' : 'list', toId, to.tasks.length);
+        const moved = to.tasks.at(-1);
+        return moved ? { list: toId, id: moved.id } : null;
+      }
+    })
+  );
 
   /** The widgets for an item's tasks, null while its widgets are turned off. @param {import('./board.svelte.js').Item} item */
   function taskWidgetsOf(item) {
@@ -286,6 +345,16 @@
   let stackSnapshot = null;
 
   /**
+   * How wide the board's content was when the page was lifted, 0 when no page is dragged. It stays that wide
+   * while the page is dragged: a spot moving from a column of its own into a stack makes it narrower, scrolled to
+   * its end it would scroll back, the columns would move under the pointer and the spot with them.
+   */
+  let dragScrollWidth = $state(0);
+
+  /** The board is dragged sideways with the mouse (dragScroll.js), its columns don't snap meanwhile. */
+  let panning = $state(false);
+
+  /**
    * The columns as shown: while a page is dragged, with the dashed spot where it would land, in a column's stack
    * or as a column of its own (`__new`). The dragged page stays in its column (lifted, it takes no space there).
    * @typedef {{key: string, item?: import('./board.svelte.js').Item, placeholder?: boolean}} Entry
@@ -331,6 +400,7 @@
       target: column.items.length > 1 ? { column: column.id, index } : { at: board.columns.indexOf(column) }
     };
     stackSnapshot = null;
+    dragScrollWidth = boardEl?.scrollWidth ?? 0;
     window.addEventListener('pointermove', moveItemDrag);
     window.addEventListener('pointerup', endItemDrag);
     window.addEventListener('pointercancel', cancelItemDrag);
@@ -412,11 +482,37 @@
     stopItemDrag();
     if (itemDrag?.target) board.moveItem(itemDrag.id, itemDrag.target);
     itemDrag = null;
+    releaseWidth();
   }
 
   function cancelItemDrag() {
     stopItemDrag();
     itemDrag = null;
+    releaseWidth();
+  }
+
+  /**
+   * The board stops keeping its width once the page is dropped. Narrower now and scrolled past its new end, it
+   * first slides back there instead of jumping.
+   */
+  async function releaseWidth() {
+    await tick();
+    const element = boardEl;
+    const release = () => {
+      // Not while the next page is already dragged.
+      if (!itemDrag) dragScrollWidth = 0;
+    };
+    if (!element) return release();
+
+    const children = /** @type {HTMLElement[]} */ ([...element.children]).filter((child) => !child.classList.contains('keep-width'));
+    const contentWidth = Math.max(0, ...children.map((child) => child.offsetLeft + child.offsetWidth)) + parseFloat(getComputedStyle(element).paddingRight);
+    const end = Math.max(0, contentWidth - element.clientWidth);
+    if (element.scrollLeft <= end) return release();
+
+    element.addEventListener('scrollend', release, { once: true });
+    // Browsers without `scrollend`.
+    setTimeout(release, 1000);
+    element.scrollTo({ left: end, behavior: 'smooth' });
   }
 
   /**
@@ -595,11 +691,15 @@
 <main class="board-page">
   <PageHeader {page}>
     {#snippet actions()}
-      <AddPageMenu {board} onAdded={scrollToEnd} />
+      <AddPageMenu {board} onAdded={scrollToEnd} bind:open={addMenuOpen} />
     {/snippet}
   </PageHeader>
 
-  <div class="board" class:dragging={drag || itemDrag} bind:this={boardEl}>
+  <div
+    class="board"
+    class:dragging={drag || itemDrag || panning}
+    bind:this={boardEl}
+    {@attach dragScroll({ sideways: () => boardEl, onPanChange: (value) => (panning = value) })}>
     <!-- An empty board (a new one, or with every page taken off) asks for its first column in its middle. -->
     {#if board.columns.length === 0}
       <div class="empty-board">
@@ -656,6 +756,11 @@
         {/each}
       </div>
     {/each}
+
+    <!-- Keeps the board as wide as when the dragged page was lifted (see `dragScrollWidth`). -->
+    {#if dragScrollWidth}
+      <div class="keep-width" style:left="{dragScrollWidth - 1}px" aria-hidden="true"></div>
+    {/if}
 
     <!-- Widgets placed in the free space, in their page's colors. -->
     {#each board.items as item (item.id)}
@@ -790,6 +895,14 @@
   /* Holds only the page being dragged: no room in the row, the page itself is drawn where the pointer is. */
   .column-slot.collapsed {
     display: contents;
+  }
+
+  .keep-width {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
   }
 
   /* Squeezed by the browser too until shareHeight has set the heights, never below what's set there. */

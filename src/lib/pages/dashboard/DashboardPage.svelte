@@ -6,12 +6,40 @@
   import { pressDrag } from '../../utils/pressDrag.js';
   import DashboardCard from './DashboardCard.svelte';
   import LinkSlot from './LinkSlot.svelte';
+  import { navigation } from '../../app/navigation.svelte.js';
+  import { shortcuts } from '../../app/shortcuts.svelte.js';
+  import { taskCursor } from '../../app/taskCursor.svelte.js';
+  import { getListStore } from '../tasks/list.svelte.js';
 
   /** Space at the top and bottom of the window where dragging scrolls the page. */
   const SCROLL_EDGE = 70;
 
   /** @type {{id: string, x: number, y: number, offsetX: number, offsetY: number, width: number, height: number} | null} */
   let drag = $state(null);
+
+  /** The "Link Page" menu is open. */
+  let linkOpen = $state(false);
+
+  // The board's keys work here too (see taskCursor.svelte.js): every card is a page the keys move between, a Tasks
+  // card has its current task. "Add a column" links a page.
+  $effect(() =>
+    taskCursor.register({
+      open: (pageId) => (dashboard.openTaskPage = pageId),
+      select: () => {},
+      complete: (pageId, id) => getListStore(pageId).completeTask(id),
+      // Without a current task, the next one becomes it (like "Select Task").
+      completeCurrent: (pageId) => {
+        const list = getListStore(pageId);
+        if (list.currentTask) list.completeTask(list.currentTask.id);
+        else if (list.tasks.length > 0) list.selectTask(list.tasks[0].id);
+      },
+      move: () => {},
+      // The card only shows the current task, new ones are added on the page.
+      addTask: (pageId) => navigation.go({ kind: 'page', id: pageId }),
+      openList: (pageId) => navigation.go({ kind: 'page', id: pageId })
+    })
+  );
+  $effect(() => shortcuts.register({ addColumn: () => void (linkOpen = true) }));
   /** @type {HTMLElement} */
   let grid;
 
@@ -95,7 +123,7 @@
         <DashboardCard {page} />
       </div>
     {/each}
-    <LinkSlot />
+    <LinkSlot bind:open={linkOpen} />
   </div>
 </main>
 
