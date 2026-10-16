@@ -6,7 +6,7 @@ import { loadJSON, saveJSON } from '../utils/storage.js';
 import { uniqueId } from '../utils/id.js';
 import { withGameJamIcons } from '../icons.js';
 
-const STORAGE_KEY = 'otl_folders';
+const STORAGE_KEY = 'taskbook_folders';
 const DEFAULT_NAME = 'New Folder';
 
 /** Icons a folder can have, Material Symbols names: everyday ones, then game jam ones. `folder` opens and closes with the folder. */

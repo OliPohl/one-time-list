@@ -22,12 +22,3 @@ export const PAGE_TYPES = {
   [image.type]: image
 };
 
-/** Types that were renamed: old key -> current key. Saved pages are updated on load. */
-export const RENAMED_TYPES = {
-  'one-time-list': tasks.type,
-  'task-list': tasks.type,
-  kanban: board.type
-};
-
-/** The type of the page that data from before multiple pages existed is moved into. */
-export const DEFAULT_PAGE_TYPE = tasks.type;

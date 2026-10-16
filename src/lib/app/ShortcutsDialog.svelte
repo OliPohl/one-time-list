@@ -18,7 +18,7 @@
   const COLUMNS = [
     [
       { title: 'Pages', icon: 'description', actions: inGroup('pages') },
-      { title: 'Board', icon: 'view_kanban', actions: inGroup('board') }
+      { title: 'Spread', icon: 'menu_book', actions: inGroup('board') }
     ],
     [{ title: 'Open a Page', icon: 'format_list_numbered', actions: ACTIONS.filter(isPageNumber) }],
     [{ title: 'Tasks', icon: 'checklist', actions: inGroup('tasks') }]

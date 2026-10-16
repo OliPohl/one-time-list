@@ -1,44 +1,23 @@
 // src/lib/app/pages.svelte.js
 // The pages the user created, in sidebar order. Each page's own data is kept by its page type.
 
-import { PAGE_TYPES, DEFAULT_PAGE_TYPE, RENAMED_TYPES } from '../pages/index.js';
+import { PAGE_TYPES } from '../pages/index.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 import { uniqueId } from '../utils/id.js';
 import { isBreakEnd } from '../widgets/views.js';
 
-const STORAGE_KEY = 'otl_pages';
-/** Default names of renamed types, pages still called this get the new default name. @type {Record<string, string>} */
-const OLD_DEFAULT_NAMES = { 'one-time-list': 'One-Time-List', 'task-list': 'Task List' };
-
-/** @param {Page} page */
-function migrate(page) {
-  const type = /** @type {keyof typeof RENAMED_TYPES} */ (page.type);
-  if (!(type in RENAMED_TYPES)) return page;
-
-  const renamed = { ...page, type: RENAMED_TYPES[type] };
-  if (page.name === OLD_DEFAULT_NAMES[type]) renamed.name = PAGE_TYPES[renamed.type].defaultName;
-  return renamed;
-}
-
+const STORAGE_KEY = 'taskbook_pages';
 /** @typedef {import('../pages/types.js').Page} Page */
 
 class PageList {
   /** @type {Page[]} */
   list = $state([]);
 
-  /** Loads the pages, moves data from before multiple pages existed into a new page and starts every page. */
+  /** Loads the pages and starts every page. A fresh install starts without pages, on the New Page screen. */
   load() {
-    const saved = loadJSON(STORAGE_KEY, /** @type {Page[]} */ ([])).map(migrate);
+    const saved = loadJSON(STORAGE_KEY, /** @type {Page[]} */ ([]));
     // Pages of types that no longer exist are kept in storage but not shown.
     this.list = saved.filter((page) => PAGE_TYPES[page.type]);
-
-    // A fresh install starts without pages, on the New Page screen. Only old data gets a page of its own.
-    if (saved.length === 0) {
-      const type = PAGE_TYPES[DEFAULT_PAGE_TYPE];
-      // Not started yet, the old data has to be in place before the page loads it.
-      const page = this.#add({ type: type.type, name: type.defaultName, options: type.defaultOptions() });
-      if (!type.importLegacy?.(page.id)) this.list = this.list.filter((item) => item.id !== page.id);
-    }
 
     for (const page of this.list) PAGE_TYPES[page.type].init?.(page);
 

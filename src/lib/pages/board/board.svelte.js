@@ -45,16 +45,16 @@ import { loadDrawing, saveDrawing, deleteDrawing } from '../whiteboard/store.js'
 const TYPES = { tasks: tasksType, notes: notesType, whiteboard: whiteboardType };
 
 /** @param {string} pageId */
-const boardKey = (pageId) => `otl_board_${pageId}`;
+const boardKey = (pageId) => `taskbook_board_${pageId}`;
 /** Where the drawing of a whiteboard on a board is saved (see whiteboard/store.js). @param {string} pageId @param {string} itemId */
 const itemDrawingId = (pageId, itemId) => `board_${pageId}_${itemId}`;
 /** The widgets of a Tasks list on a board. @param {string} pageId @param {string} itemId */
-const itemWidgetsKey = (pageId, itemId) => `otl_board_widgets_${pageId}_${itemId}`;
+const itemWidgetsKey = (pageId, itemId) => `taskbook_board_widgets_${pageId}_${itemId}`;
 
 /** Whether a board's widgets are on: off unless turned on. @param {Record<string, any>} options */
 export const boardWidgetsEnabled = (options) => options.widgets === true;
 /** Widgets boards had before, still removed with the board. @param {string} pageId */
-const widgetsKey = (pageId) => `otl_widgets_${pageId}`;
+const widgetsKey = (pageId) => `taskbook_widgets_${pageId}`;
 
 /** @implements {LabelOwner} */
 export class BoardStore {

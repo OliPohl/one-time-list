@@ -717,6 +717,7 @@
         class="column-slot"
         class:collapsed={column.entries.every((entry) => entry.key === itemDrag?.id)}
         data-column-slot={column.id}
+        data-cursor-column
         animate:slide={{ duration: column.entries.some((entry) => entry.key === itemDrag?.id) ? 0 : 200 }}
         {@attach shareHeight}>
         {#each column.entries as entry (entry.key)}

@@ -6,7 +6,7 @@ import { pages } from './pages.svelte.js';
 import { confirm } from './confirm.svelte.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 
-const STORAGE_KEY = 'otl_view';
+const STORAGE_KEY = 'taskbook_view';
 
 /** @typedef {{kind: 'dashboard'} | {kind: 'page', id: string} | {kind: 'new-page'}} View */
 

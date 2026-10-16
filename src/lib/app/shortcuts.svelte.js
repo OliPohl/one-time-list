@@ -5,7 +5,7 @@
 
 import { loadJSON, saveJSON } from '../utils/storage.js';
 
-const STORAGE_KEY = 'otl_shortcuts';
+const STORAGE_KEY = 'taskbook_shortcuts';
 
 /**
  * @typedef {'pages' | 'board' | 'tasks'} ShortcutGroup
@@ -19,10 +19,10 @@ export const ACTIONS = [
     id: `page${index + 1}`,
     label: `Open page ${index + 1}`,
     group: /** @type {ShortcutGroup} */ ('pages'),
-    keys: [String(index + 1)]
+    keys: [`Shift+${index + 1}`]
   })),
-  { id: 'previousPage', label: 'Previous page', group: 'pages', keys: ['Shift+ArrowUp', 'Shift+K'] },
-  { id: 'nextPage', label: 'Next page', group: 'pages', keys: ['Shift+ArrowDown', 'Shift+J'] },
+  { id: 'previousPage', label: 'Previous page', group: 'pages', keys: [] },
+  { id: 'nextPage', label: 'Next page', group: 'pages', keys: ['Shift+Tab'] },
   { id: 'dashboard', label: 'Open the dashboard', group: 'pages', keys: ['Shift+D'] },
   { id: 'newPage', label: 'New page', group: 'pages', keys: ['Shift+N'] },
   { id: 'toggleSidebar', label: 'Open or close the sidebar', group: 'pages', keys: ['Shift+W'] },
@@ -41,8 +41,8 @@ export const ACTIONS = [
   { id: 'selectTask', label: 'Make current task', group: 'tasks', keys: ['Space'] },
   { id: 'completeTask', label: 'Complete task', group: 'tasks', keys: ['Shift+C'] },
   { id: 'completeCurrentTask', label: 'Complete current task', group: 'tasks', keys: ['C'] },
-  { id: 'moveTaskUp', label: 'Move task up', group: 'tasks', keys: [] },
-  { id: 'moveTaskDown', label: 'Move task down', group: 'tasks', keys: [] }
+  { id: 'moveTaskUp', label: 'Move task up', group: 'tasks', keys: ['Shift+K', 'Shift+ArrowUp'] },
+  { id: 'moveTaskDown', label: 'Move task down', group: 'tasks', keys: ['Shift+J', 'Shift+ArrowDown'] }
 ];
 
 /** Keys that only change other keys, never a shortcut of their own. */
@@ -51,15 +51,17 @@ const MODIFIER_KEYS = ['Control', 'Alt', 'Shift', 'Meta', 'AltGraph', 'CapsLock'
 /**
  * The key combination of a key press, like "Shift+N", "Alt+ArrowUp" or "?", or null for a modifier alone.
  * Letters are upper case, with Shift when it's held. Other characters are what the key typed, Shift is already in
- * them ("?" not "Shift+/"), so they work the same on every keyboard layout.
+ * them ("?" not "Shift+/"), so they work the same on every keyboard layout. Digits with Shift are the exception:
+ * what they type differs on every layout ("!", "§", or the digit itself), so they're the key: "Shift+1".
  * @param {KeyboardEvent} event
  * @returns {string | null}
  */
 export function comboOf(event) {
   if (MODIFIER_KEYS.includes(event.key)) return null;
 
-  let key = event.key === ' ' ? 'Space' : event.key;
-  const isCharacter = key.length === 1;
+  const digit = event.shiftKey ? /^(?:Digit|Numpad)(\d)$/.exec(event.code ?? '')?.[1] : undefined;
+  let key = digit ?? (event.key === ' ' ? 'Space' : event.key);
+  const isCharacter = key.length === 1 && !digit;
   const isLetter = isCharacter && key.toLowerCase() !== key.toUpperCase();
   if (isLetter) key = key.toUpperCase();
 
@@ -254,6 +256,8 @@ class Shortcuts {
     if (isTyping(document.activeElement)) return;
 
     const combo = comboOf(event);
+    // Enter and Space press a focused button or link, as they do everywhere.
+    if ((combo === 'Enter' || combo === 'Space') && target?.closest('button, a[href], [role="button"], summary')) return;
     const id = combo && this.#byCombo.get(combo);
     if (!id) return;
 

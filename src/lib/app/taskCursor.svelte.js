@@ -3,7 +3,9 @@
 // (shown with an outline, on a board or the dashboard its page too, in the page's wave color). There the keys also
 // stop on pages without tasks (`data-list-kind`): opening one writes in the note, draws, or opens the page. Tasks and their lists are found in the page by attributes, in the order they're shown:
 // a list is `[data-task-list="<key>"]` (a Tasks page, a board's column), its tasks `[data-cursor-task="<id>"]`
-// (the current task first). The page that shows them does the changes (`TaskOps`).
+// (the current task first). Lists stacked in a board's column (`[data-cursor-column]`) are one column for the keys:
+// up and down go on into the list above or below, left and right to the next column. The page that shows them does
+// the changes (`TaskOps`).
 
 import { shortcuts } from './shortcuts.svelte.js';
 
@@ -43,11 +45,56 @@ function taskIds(key) {
 /** @param {string} list @param {string} id */
 const taskElement = (list, id) => listElement(list)?.querySelector(`[data-cursor-task="${CSS.escape(id)}"]`);
 
+/** The lists by column, left to right, each top to bottom. A list outside a column is a column of its own. */
+function columns() {
+  /** @type {string[][]} */
+  const result = [];
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- built fresh each time, not state
+  const byColumn = new Map();
+  for (const key of listKeys()) {
+    const column = listElement(key)?.closest('[data-cursor-column]');
+    const keys = column && byColumn.get(column);
+    if (keys) keys.push(key);
+    else {
+      result.push([key]);
+      if (column) byColumn.set(column, result.at(-1));
+    }
+  }
+  return result;
+}
+
+/** The middle of an element from the top of the window. @param {Element | null | undefined} element */
+const middleOf = (element) => {
+  const box = element?.getBoundingClientRect();
+  return box ? box.top + box.height / 2 : 0;
+};
+
+/**
+ * In a column, the task (or list without tasks) nearest to the height `y`, of the lists `accepts` lets in.
+ * @param {string[]} column @param {number} y @param {(list: string) => boolean} [accepts]
+ * @returns {{list: string, id: string | null} | null}
+ */
+function nearestIn(column, y, accepts = () => true) {
+  let best = null;
+  let bestDistance = Infinity;
+  for (const list of column.filter(accepts)) {
+    const ids = taskIds(list);
+    const spots = ids.length > 0 ? ids.map((id) => ({ list, id, element: taskElement(list, id) })) : [{ list, id: null, element: listElement(list) }];
+    for (const spot of spots) {
+      const distance = Math.abs(middleOf(spot.element) - y);
+      if (distance < bestDistance) [best, bestDistance] = [{ list: spot.list, id: spot.id }, distance];
+    }
+  }
+  return best;
+}
+
 class TaskCursor {
   /** Picked with the keys. @type {{list: string, id: string | null} | null} */
   picked = $state(null);
   /** Under the mouse. @type {{list: string, id: string} | null} */
   hovered = $state(null);
+  /** The height of the task left and right started from, kept over a page without tasks (a note, a whiteboard). @type {number | null} */
+  #sidewaysY = null;
 
   /** Starts showing the picked task and following the mouse. Called once the app runs in the browser. */
   start() {
@@ -104,35 +151,55 @@ class TaskCursor {
   /** @param {string} list @param {string | null} id */
   #pick(list, id) {
     this.picked = { list, id };
+    // A button clicked before keeps the focus, Enter and Space would press it instead of acting on the task.
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && focused !== document.body && focused.matches('button, a, [role="button"]')) focused.blur();
     requestAnimationFrame(() => {
       const element = id ? taskElement(list, id) : listElement(list);
       element?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
     });
   }
 
-  /** Picks the task `by` steps down (up when negative) in its list. @param {number} by */
+  /**
+   * Picks the task `by` steps down (up when negative) in its list. Past its ends, on into the list above or below in
+   * the same column, at its first (going down) or last task.
+   * @param {number} by
+   */
   step(by) {
+    this.#sidewaysY = null;
     const lists = listKeys();
     if (lists.length === 0) return false;
     const target = this.target();
-    const list = target?.list ?? lists[0];
+    if (!target) {
+      const ids = taskIds(lists[0]);
+      return this.#pick(lists[0], (by > 0 ? ids[0] : ids.at(-1)) ?? null);
+    }
+    const list = target.list;
     const ids = taskIds(list);
-    if (ids.length === 0) return this.#pick(list, null);
-    const index = target?.id ? ids.indexOf(target.id) : -1;
-    const next = index === -1 ? (by > 0 ? 0 : ids.length - 1) : Math.min(ids.length - 1, Math.max(0, index + by));
-    this.#pick(list, ids[next]);
+    // A list picked without a task starts at its end, one without tasks is left at once.
+    const next = target.id ? ids.indexOf(target.id) + by : by > 0 ? 0 : ids.length - 1;
+    if (next >= 0 && next < ids.length) return this.#pick(list, ids[next]);
+
+    const column = columns().find((keys) => keys.includes(list)) ?? [list];
+    const to = column[column.indexOf(list) + Math.sign(by)];
+    if (to === undefined) return;
+    const toIds = taskIds(to);
+    this.#pick(to, (by > 0 ? toIds[0] : toIds.at(-1)) ?? null);
   }
 
-  /** Picks the task at the same height in the list `by` steps right (left when negative). @param {number} by */
+  /** Picks the task at the same height in the column `by` steps right (left when negative). @param {number} by */
   stepList(by) {
-    const lists = listKeys();
-    if (lists.length < 2) return false;
+    const all = columns();
+    if (all.length < 2) return false;
     const target = this.target();
-    const from = target ? lists.indexOf(target.list) : -1;
-    const to = lists[from === -1 ? 0 : Math.min(lists.length - 1, Math.max(0, from + by))];
-    const index = target?.id ? Math.max(0, taskIds(target.list).indexOf(target.id)) : 0;
-    const ids = taskIds(to);
-    this.#pick(to, ids[Math.min(index, ids.length - 1)] ?? null);
+    const from = target ? all.findIndex((keys) => keys.includes(target.list)) : -1;
+    const to = all[from === -1 ? 0 : from + by];
+    if (!to) return;
+    if (!target) return this.#pick(to[0], taskIds(to[0])[0] ?? null);
+    const y = target.id ? middleOf(taskElement(target.list, target.id)) : (this.#sidewaysY ?? middleOf(listElement(target.list)));
+    const spot = nearestIn(to, y);
+    if (spot) this.#pick(spot.list, spot.id);
+    this.#sidewaysY = y;
   }
 
   /**
@@ -193,12 +260,14 @@ class TaskCursor {
   /** @param {TaskOps} ops @param {number} by */
   #moveToList(ops, by) {
     const target = this.target();
-    const lists = listKeys();
     if (!ops.moveToList || !target?.id) return false;
-    // Over notes and whiteboards, to the next task list.
-    let index = lists.indexOf(target.list) + by;
-    while (lists[index] !== undefined && kindOf(lists[index]) !== 'tasks') index += by;
-    const to = lists[index];
+    // To the task list nearest in the next column, over columns of only notes and whiteboards.
+    const all = columns();
+    const y = middleOf(taskElement(target.list, target.id));
+    const isTasks = (/** @type {string} */ list) => kindOf(list) === 'tasks';
+    let index = all.findIndex((keys) => keys.includes(target.list)) + by;
+    while (all[index] && !all[index].some(isTasks)) index += by;
+    const to = all[index] && nearestIn(all[index], y, isTasks)?.list;
     if (to === undefined) return;
     const moved = ops.moveToList(target.list, target.id, to);
     // It stays picked where it went, so it can be moved on.

@@ -7,7 +7,7 @@
 		<script>
 			// Apply the saved theme and default colors before the first paint, so nothing flashes (see app/settings.svelte.js).
 			try {
-				var saved = JSON.parse(localStorage.getItem('otl_settings')) || {};
+				var saved = JSON.parse(localStorage.getItem('taskbook_settings')) || {};
 				var theme = saved.theme;
 				if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 				document.documentElement.dataset.theme = theme;

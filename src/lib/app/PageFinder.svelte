@@ -1,6 +1,6 @@
 <!-- src/lib/app/PageFinder.svelte -->
-<!-- Finds a page by its name and opens it, from a keyboard shortcut ("/" by default, see shortcuts.svelte.js).
-     Lists the dashboard and every page in sidebar order, the arrow keys pick one, Enter opens it. -->
+<!-- Finds a page by its name and opens it, from a keyboard shortcut (Shift T by default, see shortcuts.svelte.js).
+     Lists the dashboard and every page in sidebar order, the arrow keys (or Ctrl J, Ctrl K) pick one, Enter opens it. -->
 <script>
   import { fade, scale } from 'svelte/transition';
   import { PAGE_TYPES } from '../pages/index.js';
@@ -64,13 +64,17 @@
   // Capture phase, so Escape doesn't also close the sidebar behind it.
   /** @param {KeyboardEvent} event */
   function handleKeyDown(event) {
+    // Typing the name, J and K move with Ctrl (like Vim's in a list).
+    const ctrl = event.ctrlKey && !event.altKey && !event.metaKey;
+    const down = event.key === 'ArrowDown' || (ctrl && event.key.toLowerCase() === 'j');
+    const up = event.key === 'ArrowUp' || (ctrl && event.key.toLowerCase() === 'k');
     if (event.key === 'Escape') {
       event.stopPropagation();
       close();
-    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    } else if (down || up) {
       event.preventDefault();
       const count = results.length;
-      if (count) index = (index + (event.key === 'ArrowDown' ? 1 : -1) + count) % count;
+      if (count) index = (index + (down ? 1 : -1) + count) % count;
     } else if (event.key === 'Enter') {
       event.preventDefault();
       open(results[index]);

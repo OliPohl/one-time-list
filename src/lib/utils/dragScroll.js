@@ -1,7 +1,7 @@
 // src/lib/utils/dragScroll.js
 // Svelte attachment that scrolls by dragging empty space with the mouse, like a finger does on a phone: up and down
 // whatever scrolls that way under the pointer (a column's tasks, a note, the page), sideways the `sideways` element
-// (the board). Released while moving, it glides on and slows down. Touch scrolls by itself, it's left alone.
+// (the board). Released while moving, it glides on and slows down, held still before, it stays. Touch scrolls by itself, it's left alone.
 // Attached to the page's body, the empty space beside a page counts too, `vertical` is what scrolls up and down there.
 
 /** Movement before deciding which way the drag scrolls. */
@@ -11,6 +11,8 @@ const FRICTION = 0.93;
 const MIN_VELOCITY = 0.02;
 /** Fastest glide (px/ms), so a quick flick doesn't throw it to the end: it glides about 450px at most. */
 const MAX_VELOCITY = 2;
+/** Held still this long (ms) before letting go, it doesn't glide: the speed is only measured while it moves. */
+const STILL_TIME = 60;
 /** Pressing these does what they do, never scrolls: text, buttons, things that are dragged themselves. */
 const IGNORE = 'button, a, input, textarea, select, label, [contenteditable="true"], [role="button"], [data-press-drag], [data-dialog], [data-sidebar], .widget, .excalidraw';
 
@@ -101,10 +103,12 @@ export function dragScroll({ sideways, vertical, onPanChange } = {}) {
       else scroller.scrollTop = pan.start - delta;
     }
 
-    function handlePointerUp() {
+    /** @param {PointerEvent} event */
+    function handlePointerUp(event) {
       if (pan?.axis) {
         swallowNextClick();
-        const velocity = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, -pan.velocity));
+        const still = event.timeStamp - pan.time > STILL_TIME;
+        const velocity = still ? 0 : Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, -pan.velocity));
         startGlide(pan.axis, /** @type {Element} */ (pan.scroller), velocity);
       }
       stop();

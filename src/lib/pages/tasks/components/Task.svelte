@@ -132,7 +132,9 @@
     }
   }
 
+  // Also when the text is changed elsewhere (in the task's popup): the card grows or shrinks with it.
   $effect(() => {
+    void currentText;
     handleInput();
   });
 

@@ -28,6 +28,7 @@
   import PageFinder from './PageFinder.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import KeyboardHint from './KeyboardHint.svelte';
+  import { showFavicon } from './favicon.js';
 
   let isLoaded = $state(false);
 
@@ -58,6 +59,19 @@
       clearTimeout(cleanUp);
       stopAnimations();
     };
+  });
+
+  /** Carries the colors of what's shown. @type {HTMLElement | undefined} */
+  let pageColorsEl = $state();
+
+  // The tab's icon in the colors of what's shown, also when the default colors or the theme change. Read once the
+  // colors are applied (the settings set the defaults in an effect of their own).
+  $effect(() => {
+    void pageStyle;
+    void settings.colors;
+    void settings.resolvedTheme;
+    const element = pageColorsEl;
+    if (element) queueMicrotask(() => showFavicon(element));
   });
 
   // Another page, the one that gave the keyboard back isn't shown anymore.
@@ -104,13 +118,13 @@
   onpointerdowncapture={(event) => shortcuts.takeOnClick(event)} />
 
 <svelte:head>
-  <title>{(isLoaded && title) || 'One Time List'}</title>
+  <title>{(isLoaded && title) || 'Taskbook'}</title>
 </svelte:head>
 
 {#if isLoaded}
   <div class="app">
     <!-- Only the page gets its colors (e.g. the Tasks color set), the sidebar and dialogs keep the defaults. -->
-    <div class="page-colors" data-page-colors style={pageStyle}>
+    <div class="page-colors" data-page-colors style={pageStyle} bind:this={pageColorsEl}>
       <!-- Behind every page, tinted with the page's accent. -->
       <Grain />
       {#if navigation.view.kind === 'dashboard'}

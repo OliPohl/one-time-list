@@ -52,6 +52,26 @@
     pendingSave?.();
   }
 
+  /** Excalidraw's state, once it's there. @type {(() => any) | undefined} */
+  let appStateOf;
+
+  /**
+   * Whether Escape would end something on the whiteboard: writing or drawing, a tool picked (it goes back to the
+   * selection tool), one of its menus or popups. A selection stays on Escape, it doesn't count. Otherwise a whiteboard in a window closes on Escape.
+   */
+  export function usesEscape() {
+    const state = appStateOf?.();
+    if (!state) return false;
+    if (document.activeElement?.closest('.excalidraw input, .excalidraw textarea')) return true;
+    const tool = state.activeTool;
+    return Boolean(
+      state.editingTextElement || state.newElement || state.multiElement || state.editingLinearElement ||
+        state.selectionElement || state.croppingElementId || state.openMenu || state.openPopup ||
+        state.openDialog || state.contextMenu || (state.openSidebar && !state.defaultSidebarDockedPreference) ||
+        (tool && tool.type !== 'selection' && !tool.locked)
+    );
+  }
+
   /** @returns {import('./palette.js').Theme} */
   const theme = () => (settings.resolvedTheme === 'light' ? 'light' : 'dark');
   let failed = $state(false);
@@ -491,6 +511,7 @@
               zenModeEnabled: preview,
               excalidrawAPI: (/** @type {any} */ value) => {
                 api = value;
+                appStateOf = () => api.getAppState();
                 api.registerAction(colorAction('strokeColor'));
                 api.registerAction(colorAction('backgroundColor'));
                 if (preview) requestAnimationFrame(fitPreview);

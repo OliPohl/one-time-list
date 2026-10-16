@@ -4,7 +4,7 @@
 import { loadJSON, saveJSON } from '../../utils/storage.js';
 
 /** @param {string} pageId */
-const storageKey = (pageId) => `otl_whiteboard_${pageId}`;
+const storageKey = (pageId) => `taskbook_whiteboard_${pageId}`;
 
 /**
  * What's saved of a drawing. `view` is the scroll position and zoom, so it opens where it was left.
@@ -42,7 +42,7 @@ export function cleanUpWidgetDrawings() {
     const drawings = Object.keys(localStorage).filter((key) => key.startsWith(prefix));
     if (drawings.length === 0) return;
     const saved = Object.keys(localStorage)
-      .filter((key) => key.startsWith('otl_') && !key.startsWith(storageKey('')))
+      .filter((key) => key.startsWith('taskbook_') && !key.startsWith(storageKey('')))
       .map((key) => localStorage.getItem(key) ?? '')
       .join('\n');
     for (const key of drawings) {

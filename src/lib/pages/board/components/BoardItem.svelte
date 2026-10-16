@@ -225,7 +225,7 @@
         {/if}
         {#if linked}
           <button onclick={openPage}><span class="m3-icon">open_in_new</span>Go to Page</button>
-          <button onclick={remove}><span class="m3-icon">link_off</span>Remove from Board</button>
+          <button onclick={remove}><span class="m3-icon">link_off</span>Remove from Spread</button>
         {:else}
           <button onclick={exportPage}><span class="m3-icon">output</span>Export to Own Page</button>
           <button class="danger" onclick={remove}><span class="m3-icon">delete</span>Delete Page</button>

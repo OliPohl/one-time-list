@@ -1,6 +1,6 @@
 // src/lib/utils/menuKeys.js
 // Menus opened with a keyboard shortcut (a board's "Add New Column", the dashboard's "Link Page"): the first option
-// gets the focus, the arrow keys move it, Enter presses the focused option.
+// gets the focus, the arrow keys (or J and K) move it, Enter presses the focused option.
 
 /** Focuses the first option of the menu inside `root`. @param {HTMLElement | undefined} root */
 export function focusFirstOption(root) {
@@ -8,14 +8,27 @@ export function focusFirstOption(root) {
 }
 
 /**
- * Moves the focus to the next (ArrowDown) or previous (ArrowUp) option, going round at the ends. For `onkeydown` on the menu.
+ * Moves the focus to the next (ArrowDown, J) or previous (ArrowUp, K) option, going round at the ends. For `onkeydown` on the menu.
  * @param {KeyboardEvent} event
  */
 export function moveFocus(event) {
-  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+  const key = arrowOf(event);
+  if (key !== 'ArrowDown' && key !== 'ArrowUp') return;
   event.preventDefault();
   const menu = /** @type {HTMLElement} */ (event.currentTarget);
   const buttons = /** @type {HTMLElement[]} */ ([...menu.querySelectorAll('button')]);
   const index = buttons.indexOf(/** @type {HTMLElement} */ (document.activeElement));
-  buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
+  buttons[(index + (key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
+}
+
+/** Vim's keys for the arrows, without modifiers. */
+const VIM_ARROWS = /** @type {Record<string, string>} */ ({ h: 'ArrowLeft', j: 'ArrowDown', k: 'ArrowUp', l: 'ArrowRight' });
+
+/**
+ * The arrow key a key press means: an arrow key, or H, J, K, L (like Vim's). Otherwise its key.
+ * @param {KeyboardEvent} event
+ */
+export function arrowOf(event) {
+  if (event.ctrlKey || event.altKey || event.metaKey) return event.key;
+  return VIM_ARROWS[event.key.toLowerCase()] ?? event.key;
 }

@@ -5,7 +5,7 @@
 import { WidgetStore } from '../../widgets/store.svelte.js';
 
 /** @param {string} pageId */
-const storageKey = (pageId) => `otl_widget_page_${pageId}`;
+const storageKey = (pageId) => `taskbook_widget_page_${pageId}`;
 
 /** @type {Map<string, WidgetStore>} */
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a cache, the stores themselves are reactive

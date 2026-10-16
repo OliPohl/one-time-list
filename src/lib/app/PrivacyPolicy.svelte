@@ -3,7 +3,7 @@
      sending data anywhere, loads anything from another server or sets cookies. -->
 <script>
   const GITHUB_PRIVACY = 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement';
-  const ISSUES = 'https://github.com/OliPohl/one-time-list/issues';
+  const ISSUES = 'https://github.com/OliPohl/taskbook/issues';
 </script>
 
 <div class="policy">
@@ -46,7 +46,7 @@
     <li>Links on a whiteboard open their sites when you click them.</li>
     <li>
       Web embeds on a whiteboard (a YouTube or Vimeo video, a tweet, a Figma file and the like) are loaded from
-      their site when you open a whiteboard that has one and the embed is on screen. Previews (on a board, the
+      their site when you open a whiteboard that has one and the embed is on screen. Previews (on a spread, the
       dashboard or a widget) only show a placeholder and load nothing. The site learns the address of this app and
       may set its own cookies and track what you do in the embed, under its own privacy policy. YouTube videos are
       loaded from youtube-nocookie.com, YouTube's privacy-enhanced mode, which according to YouTube doesn't use

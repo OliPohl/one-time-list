@@ -2,7 +2,7 @@
 <!-- The popup of an advanced task, like a card in Trello or Jira: its title, priority, labels, widgets and a
      Markdown description (the editor of the Notes pages). Every change is saved right away. The page's labels can
      be created, renamed, recolored and deleted here too. Widgets only while the list has them turned on
-     (`widgetStore`). Without the mouse: the arrow keys move an outline over everything, Space presses it (or starts
+     (`widgetStore`). Without the mouse: the arrow keys (or H, J, K, L) move an outline over everything, Space presses it (or starts
      writing in the title or description), Escape stops writing and then closes the popup. -->
 <script>
   import { onMount } from 'svelte';
@@ -13,6 +13,7 @@
   import { PRIORITIES, LABEL_COLORS, LABEL_ICONS, labelIcon } from '../list.svelte.js';
   import { createEditor } from '../../notes/editor/editor.js';
   import { confirm, confirmState } from '../../../app/confirm.svelte.js';
+  import { arrowOf } from '../../../utils/menuKeys.js';
 
   /**
    * @type {{
@@ -243,10 +244,11 @@
     }
 
     if (writing || event.ctrlKey || event.altKey || event.metaKey) return;
-    if (event.key.startsWith('Arrow')) {
+    const arrow = arrowOf(event);
+    if (arrow.startsWith('Arrow')) {
       event.preventDefault();
       event.stopPropagation();
-      moveCursor(event.key);
+      moveCursor(arrow);
     } else if (event.key === ' ') {
       event.preventDefault();
       event.stopPropagation();

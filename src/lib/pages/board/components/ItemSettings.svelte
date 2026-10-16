@@ -90,7 +90,7 @@
       {@const own = item.options.own === true}
       <div class="field">
         <span class="label">Settings</span>
-        <Toggle checked={!own} onchange={setBoardSettings}>Same as the board</Toggle>
+        <Toggle checked={!own} onchange={setBoardSettings}>Same as the spread</Toggle>
       </div>
       {#if own}
         <ColorOptions options={item.options} />

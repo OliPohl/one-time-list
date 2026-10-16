@@ -30,7 +30,6 @@
  * @property {(page: Page) => any[]} [ringingWidgets] the widgets of the page whose alarm or timer rings, the sidebar then blinks it
  * @property {(page: Page) => void} [init] called once for every page on startup, e.g. to start its timers
  * @property {(page: Page) => void} [destroy] called when a page is deleted, removes its saved data
- * @property {(pageId: string) => boolean} [importLegacy] moves data from before multiple pages existed into `pageId`
  */
 
 export {};

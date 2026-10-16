@@ -6,7 +6,7 @@
 import { loadJSON, saveJSON } from '../../utils/storage.js';
 import { confirm } from '../../app/confirm.svelte.js';
 
-const STORAGE_KEY = 'otl_whiteboard_library';
+const STORAGE_KEY = 'taskbook_whiteboard_library';
 
 /** Hosts a library may be loaded from, like Excalidraw's own check (its ALLOWED_LIBRARY_URLS). */
 const ALLOWED = [

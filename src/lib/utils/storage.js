@@ -17,7 +17,7 @@ export function loadJSON(key, fallback) {
 }
 
 /** Every key the app saves starts with this. Other sites on the same address share the storage. */
-export const KEY_PREFIX = 'otl_';
+export const KEY_PREFIX = 'taskbook_';
 
 let paused = false;
 

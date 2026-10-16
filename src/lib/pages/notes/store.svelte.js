@@ -4,7 +4,7 @@
 import { loadJSON, saveJSON } from '../../utils/storage.js';
 
 /** @param {string} pageId */
-const storageKey = (pageId) => `otl_notes_${pageId}`;
+const storageKey = (pageId) => `taskbook_notes_${pageId}`;
 
 class Note {
   /** Markdown source. */

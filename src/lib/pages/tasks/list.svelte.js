@@ -76,9 +76,9 @@ export function descriptionPreview(description) {
 /** `priority`: most urgent first, the custom order within a priority. @typedef {'custom' | 'alphanumeric' | 'random' | 'priority'} SortMode */
 
 /** @param {string} pageId */
-const listKey = (pageId) => `otl_list_${pageId}`;
+const listKey = (pageId) => `taskbook_list_${pageId}`;
 /** @param {string} pageId */
-const widgetsKey = (pageId) => `otl_widgets_${pageId}`;
+const widgetsKey = (pageId) => `taskbook_widgets_${pageId}`;
 
 /** @param {TaskItem} a @param {TaskItem} b */
 function compareAlphanumeric(a, b) {
@@ -527,50 +527,4 @@ export function deleteListStore(pageId) {
   optionWatchers.delete(pageId);
   (stores.get(pageId) ?? new ListStore(pageId)).destroy();
   stores.delete(pageId);
-}
-
-/**
- * Removes the data of the old single list. It's only read while no page exists, once a list page has loaded
- * it's a leftover (and the privacy policy promises that deleting a page removes its data).
- */
-export function removeLegacyList() {
-  try {
-    for (const key of [...Object.values(LEGACY_KEYS), 'otl_sort_mode']) localStorage.removeItem(key);
-  } catch {
-    // Storage is blocked, nothing was saved there either.
-  }
-}
-
-/** Keys used before there were multiple pages. */
-const LEGACY_KEYS = {
-  tasks: 'otl_tasks',
-  currentTask: 'otl_current_task',
-  history: 'otl_history',
-  customOrder: 'otl_custom_order',
-  widgets: 'otl_widgets'
-};
-
-/**
- * Moves the data of the old single list into the page `pageId`.
- * @param {string} pageId
- * @returns {boolean} true if there was old data
- */
-export function importLegacyList(pageId) {
-  try {
-    const hasLegacy = Object.values(LEGACY_KEYS).some((key) => localStorage.getItem(key) !== null);
-    if (!hasLegacy) return false;
-
-    saveJSON(listKey(pageId), {
-      tasks: loadJSON(LEGACY_KEYS.tasks, undefined),
-      currentTask: loadJSON(LEGACY_KEYS.currentTask, null),
-      history: loadJSON(LEGACY_KEYS.history, undefined),
-      customOrder: loadJSON(LEGACY_KEYS.customOrder, undefined),
-      sortMode: localStorage.getItem('otl_sort_mode') ?? undefined
-    });
-    saveJSON(widgetsKey(pageId), loadJSON(LEGACY_KEYS.widgets, []));
-    // The old keys are removed by `removeLegacyList` once the page has loaded its copy.
-    return true;
-  } catch {
-    return false;
-  }
 }

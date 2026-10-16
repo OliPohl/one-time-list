@@ -1,7 +1,7 @@
 <!-- src/lib/pages/whiteboard/WhiteboardWindow.svelte -->
 <!-- A whiteboard maximized (on a board, or a whiteboard widget): a window over the page with the whole whiteboard to
-     draw on, its name and a button to minimize it back to where it came from. Clicking beside the window minimizes it too. Escape doesn't,
-     Excalidraw uses it (to stop drawing, to deselect). -->
+     draw on, its name and a button to minimize it back to where it came from. Clicking beside the window or Escape
+     minimizes it too, so does clicking its bar. Escape only once Excalidraw has nothing left to end with it (writing, drawing, a selection, a menu). -->
 <script>
   import { fade, scale } from 'svelte/transition';
   import Whiteboard from './Whiteboard.svelte';
@@ -17,7 +17,17 @@
     whiteboard?.flush();
     onClose();
   }
+
+  /** Before Excalidraw gets it: it deselects first, the next Escape closes. @param {KeyboardEvent} event */
+  function handleKeydown(event) {
+    if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing || whiteboard?.usesEscape()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+  }
 </script>
+
+<svelte:window onkeydowncapture={handleKeydown} />
 
 <!-- `data-dialog`: drawn over everything, also when it's inside a board, which leaves its clicks and mouse wheel alone. -->
 <div class="window-layer" data-dialog>
@@ -26,9 +36,13 @@
   <div class="scrim" transition:fade={{ duration: 200 }} onclick={close}></div>
 
   <div class="window" role="dialog" aria-modal="true" aria-label={name} transition:scale={{ duration: 200, start: 0.94 }}>
-    <div class="bar">
+    <!-- The bar is outside the drawing, clicking it closes the window like clicking beside it. -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="bar" onclick={close}>
       <h2 class="name">{name}</h2>
-      <button class="minimize m3-icon" title="Minimize" onclick={close}>close_fullscreen</button>
+      <!-- Closes with the bar. -->
+      <button class="minimize m3-icon" title="Minimize">close_fullscreen</button>
     </div>
     <div class="area">
       <Whiteboard {drawingId} bind:this={whiteboard} />
@@ -69,6 +83,7 @@
 
   .bar {
     flex-shrink: 0;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 10px;

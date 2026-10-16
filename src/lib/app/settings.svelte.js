@@ -6,7 +6,7 @@ import { setVolume as applyVolume } from '../utils/sounds.js';
 import { COLORS, DEFAULT_COLORS, colorsStyle } from '../colors.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 
-const STORAGE_KEY = 'otl_settings';
+const STORAGE_KEY = 'taskbook_settings';
 /** `auto` follows the system setting. */
 export const THEMES = /** @type {const} */ (['auto', 'light', 'dark']);
 /** Volume used when unmuting after the slider was dragged all the way down. */

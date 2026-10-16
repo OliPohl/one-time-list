@@ -4,7 +4,7 @@
 import { pages } from './pages.svelte.js';
 import { loadJSON, saveJSON } from '../utils/storage.js';
 
-const STORAGE_KEY = 'otl_dashboard';
+const STORAGE_KEY = 'taskbook_dashboard';
 
 class Dashboard {
   /** Page ids. Deleted pages are skipped and dropped on the next save. @type {string[]} */
